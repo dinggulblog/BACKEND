@@ -42,6 +42,9 @@ try {
   mkdirSync('uploads');
 }
 
+// Cors policy
+app.use(cors({ credentials: true }));
+
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -66,9 +69,6 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   app.use(morgan('dev'));
 }
-
-// Cors policy
-app.use(cors({ origin: true, credentials: true }));
 
 // Setup auth manager
 app.use(authManager.providePassport().initialize());
