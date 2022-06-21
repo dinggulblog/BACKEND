@@ -1,10 +1,11 @@
 import NodeCache from 'node-cache';
-import { check, param, checkSchema, validationResult } from 'express-validator';
+import { param, checkSchema, validationResult } from 'express-validator';
 
 import { UserModel } from '../model/user.js';
 import { RoleModel } from '../model/role.js';
-import UnauthorizedError from '../error/unauthorized.js';
+import NotFoundError from '../error/not-found.js';
 import InvalidRequestError from '../error/invalid-request.js';
+import UnauthorizedError from '../error/unauthorized.js';
 
 class UserHandler {
   constructor() {
@@ -16,7 +17,8 @@ class UserHandler {
       'email': {
         trim: true,
         notEmpty: true,
-        isEmail: { errorMessage: 'Invalid email format' },
+        isEmail: true,
+        normalizeEmail: true,
         errorMessage: 'Invalid email provided'
       },
       'password': {
@@ -90,7 +92,7 @@ class UserHandler {
         throw new InvalidRequestError('Validation errors: ' + errorMessages.join(' && '));
       }
       
-      const roles = this._memCache.get('default_roles')
+      const roles = this._memCache.get('default_roles');
       if (!roles) {
         req.body.roles = await RoleModel.find({ name: 'USER' }).select('_id');
         this._memCache.set('default_roles', req.body.roles, 86400);
@@ -98,8 +100,8 @@ class UserHandler {
         req.body.roles = roles;
       }
 
-      const { nickname } = await UserModel.create(req.body);
-      callback.onSuccess({ nickname });
+      const { _id } = await UserModel.create(req.body);
+      callback.onSuccess({ _id });
     } catch (error) {
       callback.onError(error);
     }
@@ -107,13 +109,13 @@ class UserHandler {
 
   async getUserInfo(req, token, callback) {
     try {
-      await check('id')
-        .notEmpty().withMessage('There are no token in header')
-        .isMongoId().withMessage('Invalid token')
-        .run(token);
-      await param('nickname')
-        .notEmpty().withMessage('There are no params in request')
-        .isAlphanumeric().withMessage('Invalid nickname')
+      await param('id')
+        .notEmpty()
+        .isMongoId()
+        .custom(value => {
+          if (value !== token.id) throw new UnauthorizedError('Token ID does not match parameter ID');
+          return true;
+        })
         .run(req);
 
       const errors = validationResult(req);
@@ -122,12 +124,9 @@ class UserHandler {
         throw new InvalidRequestError('Validation errors: ' + errorMessages.join(' && '));
       }
 
-      const user = await UserModel.findOne({ 
-        _id: token.id,
-        nickname: req.params.nickname
-      }).populate('roles').select('-_id').lean().exec();
+      const user = await UserModel.findOne({ _id: req.params.id }).populate('roles').lean().exec();
       if (!user) {
-        throw new UnauthorizedError('Authorization errors');
+        throw new NotFoundError('The requested user could not be found.');
       }
       
       callback.onSuccess(user);
@@ -138,13 +137,13 @@ class UserHandler {
 
   async updateUser(req, token, callback) {
     try {
-      await check('id')
-        .notEmpty().withMessage('There are no token in header')
-        .isMongoId().withMessage('Invalid token')
-        .run(token);
-      await param('nickname')
-        .notEmpty().withMessage('There are no params in request')
-        .isAlphanumeric().withMessage('Invalid nickname')
+      await param('id')
+        .notEmpty()
+        .isMongoId()
+        .custom(value => {
+          if (value !== token.id) throw new UnauthorizedError('Token ID does not match parameter ID');
+          return true;
+        })
         .run(req);
       await checkSchema(UserHandler.USER_UPDATE_VALIDATION_SCHEMA, ['body']).run(req);
 
@@ -154,12 +153,9 @@ class UserHandler {
         throw new InvalidRequestError('Validation errors: ' + errorMessages.join(' && '));
       }
       
-      const user = await UserModel.findOne({ 
-        _id: token.id,
-        nickname: req.params.nickname
-      }).select('password').exec();
+      const user = await UserModel.findOne({ _id: req.params.id }).select('password').exec();
       if (!user) {
-        throw new UnauthorizedError('Authorization errors');
+        throw new NotFoundError('The requested user could not be found.');
       }
       
       // Update user object
@@ -167,9 +163,9 @@ class UserHandler {
       user.password = req.body.newPassword ? req.body.newPassword : user.password;
       for (const key in req.body) user[key] = req.body[key];
       
-      const { nickname } = await user.save();
+      const { _id } = await user.save();
 
-      callback.onSuccess({ nickname });
+      callback.onSuccess({ _id });
     } catch (error) {
       callback.onError(error);
     }

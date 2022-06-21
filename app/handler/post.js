@@ -48,7 +48,7 @@ class PostHandler extends BaseAutoBindedClass {
     return {
       'subject': {
         optional: { options: { nullable: true } },
-        isMongoId: { errorMessage: 'Invalid subject ID' },
+        customSanitizer: { options: value => mongoose.Types.ObjectId(value) }
       },
       'category': {
         optional: { options: { nullable: true } },
@@ -83,10 +83,6 @@ class PostHandler extends BaseAutoBindedClass {
 
   async createPost(req, token, callback) {
     try {
-      await check('id')
-        .notEmpty().withMessage('There are no token in header')
-        .isMongoId().withMessage('Invalid token')
-        .run(token);
       await checkSchema(PostHandler.POST_VALIDATION_SCHEMA, ['body']).run(req);
       
       const errors = validationResult(req);
@@ -127,16 +123,16 @@ class PostHandler extends BaseAutoBindedClass {
       const maxPage = Math.ceil(await PostModel.countDocuments(searchQuery) / limit);
       const posts = await PostModel.aggregate([
         { $match: searchQuery },
+        { $unwind: '$author' },
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
         { $lookup: {
           from: 'users',
           localField: 'author',
           foreignField: '_id',
           as: 'author'
         } },
-        { $unwind: '$author' },
-        { $sort: { createdAt: -1 } },
-        { $skip: skip },
-        { $limit: limit },
         { $lookup: {
           from: 'comments',
           localField: '_id',
@@ -167,10 +163,7 @@ class PostHandler extends BaseAutoBindedClass {
 
   async getPost(req, callback) {
     try {
-      await param('id')
-        .notEmpty().withMessage('There are no post ID in params')
-        .isMongoId().withMessage('Invalid post ID provided')
-        .run(req);
+      await param('id').notEmpty().isMongoId().run(req);
 
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -204,14 +197,7 @@ class PostHandler extends BaseAutoBindedClass {
 
   async updatePost(req, token, callback) {
     try {
-      await check('id')
-        .notEmpty().withMessage('There are no token in header')
-        .isMongoId().withMessage('Invalid token')
-        .run(token);
-      await param('id')
-        .notEmpty().withMessage('There are no post ID in params')
-        .isMongoId().withMessage('Invalid post ID provided')
-        .run(req);
+      await param('id').notEmpty().isMongoId().run(req);
       await checkSchema(PostHandler.POST_VALIDATION_SCHEMA).run(req);
 
       const errors = validationResult(req);
@@ -223,7 +209,7 @@ class PostHandler extends BaseAutoBindedClass {
       const updatedPost = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: token.id },
         { $set: req.body },
-        { new: true, runValidators: true }
+        { returnDocument: true }
       ).lean().exec();
       if (!updatedPost) {
         throw new NotFoundError('Post not found');
@@ -237,14 +223,7 @@ class PostHandler extends BaseAutoBindedClass {
 
   async deletePost(req, token, callback) {
     try {
-      await check('id')
-        .notEmpty().withMessage('There are no token in header')
-        .isMongoId().withMessage('Invalid token')
-        .run(token);
-      await param('id')
-        .notEmpty().withMessage('There are no post ID in params')
-        .isMongoId().withMessage('Invalid post ID provided')
-        .run(req);
+      await param('id').notEmpty().isMongoId().run(req);
 
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -270,10 +249,10 @@ class PostHandler extends BaseAutoBindedClass {
 
     // Menu Query filtering
     if (queries.subject) {
-      searchQuery.subject = mongoose.Types.ObjectId(queries.subject);
+      searchQuery.subject = queries.subject;
     }
     if (queries.category) {
-      searchQuery.category = mongoose.Types.ObjectId(queries.category);
+      searchQuery.category = queries.category;
     }
 
     // Search Query filtering

@@ -15,7 +15,7 @@ class CredentialsAuthStrategy extends LocalAuthStrategy {
 
   static async handleUserAuth(username, password, done) {
     try {
-      const user = await UserModel.findOne({ email: username }).select({ password: 1, nickname: 1 });
+      const user = await UserModel.findOne({ email: username }).select({ password: 1 });
 
       if (!user) {
         return done(new NotFoundError('User not found'), false);

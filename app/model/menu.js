@@ -1,18 +1,25 @@
 import mongoose from 'mongoose';
 
 const MenuSchema = new mongoose.Schema({
-  owner: {
+  title: {
     type: String,
-    enum: ['sol', 'ming', 'guest'],
-    required: [true, 'Menu name is required!']
+    required: [true, 'Menu title is required!'],
+    trim: true,
+    lowercase: true
   },
   subject: {
     type: String,
-    default: 'default'
+    default: 'default',
+    trim: true,
+    lowercase: true
   },
   categories: [{
-    type: String
+    type: String,
+    trim: true,
+    lowercase: true
   }]
-}, { versionKey: false });
+}, { toObject: { virtuals: true } });
+
+MenuSchema.index({ title: 1, subject: 1 }, { unique: true });
 
 export const MenuModel = mongoose.model('Menu', MenuSchema);

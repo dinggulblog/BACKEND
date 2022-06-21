@@ -1,4 +1,4 @@
-import { check, param, checkSchema, validationResult } from 'express-validator';
+import { param, checkSchema, validationResult } from 'express-validator';
 
 import { PostModel } from '../model/post.js';
 import { CommentModel } from '../model/comment.js';
@@ -51,7 +51,6 @@ class CommentHandler extends BaseAutoBindedClass {
 
   async createComment(req, token, callback) {
     try {
-      await check('id', 'Invalid token provided').notEmpty().isMongoId().run(token);
       await checkSchema(CommentHandler.POSTID_VALIDATION_SCHEMA, ['params']).run(req);
       await checkSchema(CommentHandler.COMMENT_VALIDATION_SCHEMA, ['body']).run(req);
 
@@ -99,7 +98,6 @@ class CommentHandler extends BaseAutoBindedClass {
 
   async updateComment(req, token, callback) {
     try {
-      await check('id', 'Invalid token provided').notEmpty().isMongoId().run(token);
       await param('cid', 'Invalid comment ID provided').notEmpty().isMongoId().run(req);
       await checkSchema(CommentHandler.POSTID_VALIDATION_SCHEMA, ['params']).run(req);
       await checkSchema(CommentHandler.COMMENT_VALIDATION_SCHEMA, ['body']).run(req);
@@ -127,7 +125,6 @@ class CommentHandler extends BaseAutoBindedClass {
 
   async deleteComment(req, token, callback) {
     try {
-      await check('id', 'Invalid token provided').notEmpty().isMongoId().run(token);
       await param('cid', 'Invalid comment ID provided').notEmpty().isMongoId().run(req);
       await checkSchema(CommentHandler.POSTID_VALIDATION_SCHEMA, ['params']).run(req);
 

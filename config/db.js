@@ -26,9 +26,9 @@ const createDefaultDoc = async () => {
     }
     if (!await MenuModel.estimatedDocumentCount()) {
       await Promise.all([
-        new MenuModel({ owner: 'sol' }).save(),
-        new MenuModel({ owner: 'ming' }).save(),
-        new MenuModel({ owner: 'guest' }).save()
+        new MenuModel({ title: 'sol' }).save(),
+        new MenuModel({ title: 'ming' }).save(),
+        new MenuModel({ title: 'guest' }).save()
       ])
     }
   } catch (error) {

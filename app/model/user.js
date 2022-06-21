@@ -52,7 +52,7 @@ UserSchema.virtual('newPassword')
   .get(function() { return this._newPassword })
   .set(function(value) { this._newPassword = value });
 
-const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{4,30}$/;
+const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d!@#$%^&*]{4,30}$/;
 UserSchema.path('password').validate(function (value) {
   if (this.isNew) {
     if (!this.passwordConfirmation) {

@@ -6,6 +6,8 @@ import helmet from 'helmet';
 import csp from 'helmet-csp';
 import hpp from 'hpp';
 import express from 'express';
+import session from 'express-session';
+import cookieParser from 'cookie-parser';
 
 // Set config variables in .env
 import { config } from 'dotenv';
@@ -14,6 +16,7 @@ import { readdirSync, mkdirSync } from 'fs';
 import db from './config/db.js';
 import routes from './app/routes/index.js';
 import authManager from './app/manager/auth.js';
+import responseManager from './app/manager/response.js';
 
 const __dirname = path.resolve();
 
@@ -25,7 +28,6 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   throw new Error('Cannot find process.env.NODE_ENV');
 }
-
 
 // Create an express app
 const app = express();
@@ -42,16 +44,7 @@ try {
   mkdirSync('uploads');
 }
 
-// Cors policy
-app.use(cors({ credentials: true }));
-
 // Middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'uploads')));
-
-// Logging
 if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'));
   app.use(helmet());
@@ -70,10 +63,38 @@ if (process.env.NODE_ENV === 'production') {
   app.use(morgan('dev'));
 }
 
+app.use(cors({ credentials: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'uploads')));
+app.use(cookieParser(process.env.COOKIE_SECRET));
+app.use(session({
+  resave: false,
+  saveUninitialized: false,
+  secret: process.env.COOKIE_SECRET,
+  cookie: {
+    httpOnly: true,
+    secure: false
+  }
+}))
+
 // Setup auth manager
 app.use(authManager.providePassport().initialize());
 
 // Setup routes
 app.use('/', routes);
+
+// Error handling
+app.use((req, res, next) => {
+  const error = new Error(`${req.method} ${req.url} router does not exist.`);
+  error.status = 404;
+  next(error);
+})
+app.use((err, req, res, next) => {
+  res.locals.message = err.message;
+  res.locals.error = process.env.NODE_ENV === 'production' ? {} : err;
+  responseManager.respondWithError(res, err.status || 500, err.message || "")
+})
 
 export default app;
