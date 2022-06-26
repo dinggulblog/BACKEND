@@ -175,7 +175,7 @@ class PostHandler extends BaseAutoBindedClass {
         req.params.id,
         { $inc: { viewCount: 1} },
         { new: true }
-      ).populate('author', { nickname: 1 }).lean().exec();
+      ).populate('author', { _id: 0, nickname: 1 }).lean().exec();
       if (!post) {
         throw new NotFoundError('Post not found');
       }
@@ -209,8 +209,8 @@ class PostHandler extends BaseAutoBindedClass {
       const updatedPost = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: token.id },
         { $set: req.body },
-        { returnDocument: true }
-      ).lean().exec();
+        { new: true }
+      ).populate('author', { _id: 0, nickname: 1 }).lean().exec();
       if (!updatedPost) {
         throw new NotFoundError('Post not found');
       }
