@@ -142,6 +142,7 @@ class PostHandler extends BaseAutoBindedClass {
         { $project: {
           author: { nickname: 1 },
           category: 1,
+          postNum: 1,
           title: 1,
           content: { $substrCP: ['$content', 0, 100] },
           isPublic: 1,
