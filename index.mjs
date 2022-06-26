@@ -64,22 +64,16 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.use(cors({ credentials: true }));
+app.use(cookieParser(process.env.COOKIE_SECRET));
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Header');
+  next();
+})
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'uploads')));
-app.use(cookieParser(process.env.COOKIE_SECRET));
-app.use(session({
-  resave: false,
-  saveUninitialized: false,
-  secret: process.env.COOKIE_SECRET,
-  store: new session.MemoryStore(),
-  cookie: {
-    httpOnly: true,
-    secure: false
-  },
-  name: 'session-cookie'
-}))
 
 // Setup auth manager
 app.use(authManager.providePassport().initialize());
