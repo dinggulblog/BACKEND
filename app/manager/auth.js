@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import passport from 'passport';
-// import { ExtractJwt } from 'passport-jwt';
+import { ExtractJwt } from 'passport-jwt';
 import { readFileSync } from 'fs';
 
 import { UserModel } from '../model/user.js';
@@ -57,8 +57,8 @@ class AuthManager extends BaseAutoBindedClass {
 
   extractJwtToken(req) {
     return {
-      accessToken: req.cookies?.accessToken,
-      refreshToken: req.params?.token // ExtractJwt.fromAuthHeaderAsBearerToken()(req)
+      accessToken: ExtractJwt.fromAuthHeaderAsBearerToken()(req),
+      refreshToken: req.params?.token
     }
   }
 

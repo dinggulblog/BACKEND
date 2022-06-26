@@ -26,7 +26,7 @@ class AuthHandler extends BaseAutoBindedClass {
         { $set: { token: refreshToken } }
       ).lean().exec();
 
-      callback.onSuccess({ accessToken }, { refreshToken });
+      callback.onSuccess({ refreshToken }, { accessToken });
     } else {
       callback.onError(new NotFoundError('User not found'));
     }
@@ -37,7 +37,7 @@ class AuthHandler extends BaseAutoBindedClass {
       const ip = AuthHandler.getUserIp(req);
       const { token: accessToken } = this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, ip), this._provideAccessTokenOptions());
 
-      callback.onSuccess({ accessToken }, { refreshToken });
+      callback.onSuccess({ refreshToken }, { accessToken });
     } else {
       callback.onError(new NotFoundError('User not found'));
     }

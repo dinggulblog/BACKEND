@@ -100,8 +100,9 @@ class UserHandler {
         req.body.roles = roles;
       }
 
-      const { _id } = await UserModel.create(req.body);
-      callback.onSuccess({ _id });
+      await UserModel.create(req.body);
+
+      callback.onSuccess({});
     } catch (error) {
       callback.onError(error);
     }
