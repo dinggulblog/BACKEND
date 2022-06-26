@@ -48,7 +48,6 @@ class ResponseManager {
     }
   }
 
-  /*
   static getDefaultResponseHandlerError(res, successCallback) {
     return {
       onSuccess: (data, message, code) => {
@@ -70,7 +69,6 @@ class ResponseManager {
       }
     };
   }
-  */
 
   static respondWithSuccess(res, code, data, message = '', links = []) {
     const response = Object.assign({}, BasicResponse);
