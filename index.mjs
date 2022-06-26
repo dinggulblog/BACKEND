@@ -66,7 +66,8 @@ if (process.env.NODE_ENV === 'production') {
 app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Header');
+  res.header('Access-Control-Allow-Headers');
+  res.header('Origin, X-requested-With, Content-Type, Accept');
   next();
 })
 
