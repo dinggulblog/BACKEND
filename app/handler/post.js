@@ -123,7 +123,6 @@ class PostHandler extends BaseAutoBindedClass {
       const maxPage = Math.ceil(await PostModel.countDocuments(searchQuery) / limit);
       const posts = await PostModel.aggregate([
         { $match: searchQuery },
-        { $unwind: '$author' },
         { $sort: { createdAt: -1 } },
         { $skip: skip },
         { $limit: limit },
@@ -133,6 +132,7 @@ class PostHandler extends BaseAutoBindedClass {
           foreignField: '_id',
           as: 'author'
         } },
+        { $unwind: '$author' },
         { $lookup: {
           from: 'comments',
           localField: '_id',
