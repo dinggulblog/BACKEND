@@ -1,10 +1,12 @@
 import jwt from 'jsonwebtoken';
 import passport from 'passport';
-import { ExtractJwt } from 'passport-jwt';
+// import { ExtractJwt } from 'passport-jwt';
 import { readFileSync } from 'fs';
 
+import { UserModel } from '../model/user.js';
 import { JwtTokenModel } from '../model/jwt-token.js';
 import { RevokedTokenModel } from '../model/revoked-token.js';
+import { accessOptions } from '../../config/jwt-options.js';
 import BaseAutoBindedClass from '../base/autobind.js';
 import CredentialsAuth from '../authstrategy/credentials.js';
 import JwtAuthStrategy from '../authstrategy/jwt-auth.js';
@@ -14,32 +16,50 @@ import ForbiddenError from '../error/forbidden.js';
 class AuthManager extends BaseAutoBindedClass {
   constructor() {
     super();
+    this._jwt = jwt;
     this._passport = passport;
+
     this._strategies = [];
-    this._jwtTokenHandler = jwt;
     this._setStrategies();
     this._setPassportStrategies();
   }
 
   // Init JWT strategy
   _setStrategies() {
-    const jwtAuth = new JwtAuthStrategy(this._provideJwtOptions(), this._verifyRevokedToken);
-    const secretKeyAuth = new SecretKeyAuth({ secretKey: this._provideSecretKey() });
-    this._strategies.push(jwtAuth);
     this._strategies.push(new CredentialsAuth());
-    this._strategies.push(secretKeyAuth);
+    this._strategies.push(new JwtAuthStrategy(this._provideJwtOptions(), this._verifyRevokedToken));
+    this._strategies.push(new SecretKeyAuth({ secretKey: this._provideSecretKey() }));
   }
 
   // Custom verifier
-  async _verifyRevokedToken(token, payload, callback) {
-    const revokedTokens = await RevokedTokenModel.find({ token: token });
-    revokedTokens.length
-      ? callback.onFailure(new ForbiddenError('Token has been revoked'))
-      : callback.onVerified(token, payload);
+  async _verifyRevokedToken(refreshToken, payload, callback) {
+    try {
+      const revokedTokens = await RevokedTokenModel.find({ token: refreshToken });
+
+      // If the token has been revoked, removes it from the user model and sends a failure response
+      if (revokedTokens.length) {
+        await UserModel.findOneAndUpdate(
+          { token: refreshToken },
+          { $set: { token: '' } }
+        ).lean().exec();
+        return callback.onFailure(new ForbiddenError('Token has been revoked'));
+      }
+  
+      const user = await UserModel.findOne({ token: refreshToken }).lean().exec();
+  
+      user._id === payload.id
+        ? callback.onVerified(refreshToken, user)
+        : callback.onFailure(new ForbiddenError('Access and refresh tokens do not matched'));
+    } catch (error) {
+      callback.onFailure(error);
+    }
   }
 
   extractJwtToken(req) {
-    return ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+    return {
+      accessToken: req.cookies?.accessToken,
+      refreshToken: req.params?.token // ExtractJwt.fromAuthHeaderAsBearerToken()(req)
+    }
   }
 
   _provideJwtOptions() {
@@ -47,8 +67,8 @@ class AuthManager extends BaseAutoBindedClass {
     jwtOptions.extractJwtToken = this.extractJwtToken;
     jwtOptions.privateKey = this._provideJwtPrivateKey();
     jwtOptions.publicKey = this._provideJwtPublicKey();
-    jwtOptions.issuer = process.env.JWT_ISSUER;
-    jwtOptions.audience = process.env.JWT_AUDIENCE;
+    jwtOptions.issuer = accessOptions.issuer;
+    jwtOptions.audience = accessOptions.audience;
     return jwtOptions;
   }
 
@@ -86,7 +106,7 @@ class AuthManager extends BaseAutoBindedClass {
     const key = this.getSecretKeyForStrategy(strategyName);
     switch (strategyName) {
       case 'jwt-auth':
-        return new JwtTokenModel(this._jwtTokenHandler.sign(payload, key, options));
+        return new JwtTokenModel(this._jwt.sign(payload, key, options));
       default:
         throw new TypeError('Cannot sign token for the ' + strategyName + ' strategy');
     }

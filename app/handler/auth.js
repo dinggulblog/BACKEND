@@ -1,8 +1,9 @@
-import jwt from 'jsonwebtoken';
 import { createHash } from 'crypto';
 import { param, validationResult } from 'express-validator';
 
+import { UserModel } from '../model/user.js';
 import { RevokedTokenModel } from '../model/revoked-token.js';
+import { accessOptions, refreshOptions } from '../../config/jwt-options.js';
 import AuthManager from '../manager/auth.js'
 import BaseAutoBindedClass from '../base/autobind.js';
 import NotFoundError from '../error/not-found.js';
@@ -11,14 +12,32 @@ import ForbiddenError from '../error/forbidden.js';
 class AuthHandler extends BaseAutoBindedClass {
   constructor() {
     super();
-    this._jwtTokenHandler = jwt;
     this._authManager = AuthManager;
   }
 
-  issueNewToken(req, user, callback) {
+  async issueNewToken(req, user, callback) {
     if (user) {
-      const token = this._authManager.signToken('jwt-auth', this._provideTokenPayload(user), this._provideTokenOptions());
-      callback.onSuccess(token);
+      const ip = AuthHandler.getUserIp(req);
+      const { token: accessToken } = this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, ip), this._provideAccessTokenOptions());
+      const { token: refreshToken } = this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(ip), this._provideRefreshTokenOptions());
+
+      await UserModel.findOneAndUpdate(
+        { _id: user._id },
+        { $set: { token: refreshToken } }
+      ).lean().exec();
+
+      callback.onSuccess({ accessToken }, { refreshToken });
+    } else {
+      callback.onError(new NotFoundError('User not found'));
+    }
+  }
+
+  async issueRenewedToken(req, refreshToken, user, callback) {
+    if (user) {
+      const ip = AuthHandler.getUserIp(req);
+      const { token: accessToken } = this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, ip), this._provideAccessTokenOptions());
+
+      callback.onSuccess({ accessToken }, { refreshToken });
     } else {
       callback.onError(new NotFoundError('User not found'));
     }
@@ -26,7 +45,7 @@ class AuthHandler extends BaseAutoBindedClass {
 
   async revokeToken(req, token, callback) {
     try {
-      await param('token', 'Invalid token id provided').notEmpty().isAlphanumeric().isLength(64).run(req);
+      await param('token').isAlphanumeric().run(req);
       
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -53,17 +72,33 @@ class AuthHandler extends BaseAutoBindedClass {
     return this._hashToken(token) === hashed;
   }
 
-  _provideTokenPayload(user) {
-    return { id: user.id, nickname: user.nickname, scope: 'default' };
+  _provideAccessTokenPayload(user, ip) {
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      roles: user.roles,
+      ip: ip,
+      scope: 'access'
+    };
   }
 
-  _provideTokenOptions() {
+  _provideRefreshTokenPayload(ip) {
     return {
-      expiresIn: '60m',
-      audience: process.env.JWT_AUDIENCE,
-      issuer: process.env.JWT_ISSUER,
-      algorithm: process.env.JWT_ALGORITHM
+      ip: ip,
+      scope: 'refresh'
     };
+  }
+
+  _provideAccessTokenOptions() {
+    return accessOptions;
+  }
+
+  _provideRefreshTokenOptions() {
+    return refreshOptions;
+  }
+
+  static getUserIp(req) {
+    return req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
   }
 }
 

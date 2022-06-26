@@ -30,6 +30,11 @@ const UserSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  token: {
+    type: String,
+    select: false,
+    trim: true
   }
 }, { toObject: { virtuals: true }, timestamps: true, versionKey: false });
 

@@ -13,8 +13,19 @@ class AuthController extends BaseController {
   // Request token by credentials
   create(req, res, next) {
     this.authenticate(req, res, next, (user) => {
-      this._authHandler.issueNewToken(req, user, this._responseManager.getDefaultResponseHandler(res));
+      this._authHandler.issueNewToken(req, user, this._responseManager.getDefaultResponseHandlerCookies(res));
     });
+  }
+
+  refresh(req, res, next) {
+    this._passport.authenticate('jwt-auth', {
+      onVerified: (refreshToken, user) => {
+        this._authHandler.issueRenewedToken(req, refreshToken, user, this._responseManager.getDefaultResponseHandlerCookies(res));
+      },
+      onFailure: (error) => {
+        this._responseManager.respondWithError(res, error.status || 403, error.message);
+      }
+    })(req, res, next);
   }
 
   // Revoke Token

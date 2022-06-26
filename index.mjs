@@ -73,10 +73,12 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   secret: process.env.COOKIE_SECRET,
+  store: new session.MemoryStore(),
   cookie: {
     httpOnly: true,
     secure: false
-  }
+  },
+  name: 'session-cookie'
 }))
 
 // Setup auth manager

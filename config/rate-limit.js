@@ -1,5 +1,5 @@
 import RateLimit from 'express-rate-limit';
-import ResponseManager from '../manager/response.js';
+import ResponseManager from '../app/manager/response.js';
 
 export const RateLimiter = new RateLimit({
   windowMs: 60 * 1000,

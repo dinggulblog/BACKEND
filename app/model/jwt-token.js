@@ -1,6 +1,6 @@
 class JwtToken {
   constructor(token) {
-      this.token = token;
+    this.token = token;
   }
 }
 

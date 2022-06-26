@@ -57,28 +57,29 @@ class JwtAuthStrategy extends BaseAuthStrategy {
   }
 
   authenticate(req, callback) {
-    const token = this._extractJwtToken(req);
+    const { accessToken, refreshToken } = this._extractJwtToken(req);
 
-    if (!token) {
-      return callback.onFailure(new Error('No auth token provided'));
+    if (!accessToken) {
+      return callback.onFailure(new Error('No access token provided'));
     }
 
-    // Verify the JWT
-    JwtAuthStrategy._verifyDefault(token, this._publicKey, this._jwtOptions, (jwt_error, payload) => {
-      if (jwt_error) {
-        return callback.onFailure(jwt_error);
-      } else {
-        try {
-          // If custom verifier was set then delegate the flow control
-          this._customVerifier
-            ? this._customVerifier(token, payload, callback)
-            : callback.onVerified(token, payload);
+    try {
+      const accessTokenDecoded = jwt.verify(accessToken, this._publicKey, this._jwtOptions);
 
-        } catch (error) {
-          callback.onFailure(error);
-        }
+      // Verified only the access token
+      if (!refreshToken) {
+        return callback.onVerified(accessToken, accessTokenDecoded);
       }
-    });
+      
+      jwt.verify(refreshToken, this._privateKey, this._jwtOptions);
+
+      // If access token and refresh token exist together, delegate the flow control to custom verifier
+      this._customVerifier
+        ? this._customVerifier(refreshToken, accessTokenDecoded, callback)
+        : callback.onFailure(new Error('No custom verifier exists'));
+    } catch (error) {
+      callback.onFailure(error);
+    }
   }
 
   provideSecretKey() {
@@ -87,10 +88,6 @@ class JwtAuthStrategy extends BaseAuthStrategy {
 
   provideOptions() {
     return this._options;
-  }
-
-  static _verifyDefault(token, publicKey, options, callback) {
-    return jwt.verify(token, publicKey, options, callback);
   }
 }
 

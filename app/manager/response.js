@@ -37,6 +37,18 @@ class ResponseManager {
     };
   }
 
+  static getDefaultResponseHandlerCookies(res) {
+    return {
+      onSuccess: (cookies, data, message, code) => {
+        this.respondWithSuccessCookies(res, code || this.HTTP_STATUS.OK, cookies, data, message);
+      },
+      onError: (error) => {
+        this.respondWithErrorData(res, error.status || 500, error.message || 'Unknown error', error.data);
+      }
+    }
+  }
+
+  /*
   static getDefaultResponseHandlerError(res, successCallback) {
     return {
       onSuccess: (data, message, code) => {
@@ -58,13 +70,26 @@ class ResponseManager {
       }
     };
   }
+  */
 
-  static respondWithSuccess(res, code, data = '', message = '', links = []) {
+  static respondWithSuccess(res, code, data, message = '', links = []) {
     const response = Object.assign({}, BasicResponse);
     response.success = true;
     response.message = message;
     response.data = data;
     response.links = links;
+    res.status(code).json(response);
+  }
+
+  static respondWithSuccessCookies(res, code, cookies, data, message = '', links = []) {
+    const response = Object.assign({}, BasicResponse);
+    const cookieNames = Object.keys(cookies);
+    response.success = true;
+    response.message = message;
+    response.data = data;
+    response.links = links;
+    
+    cookieNames.forEach(name => res.cookie(name, cookies[name], { secure: false, httpOnly: true }));
     res.status(code).json(response);
   }
 
