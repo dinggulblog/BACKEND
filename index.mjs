@@ -63,7 +63,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(morgan('dev'));
 }
 
-app.use(cors({ origin: 'localhost:8080', credentials: true }));
+app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Header');
