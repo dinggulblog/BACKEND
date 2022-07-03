@@ -11,8 +11,8 @@ class PostController extends BaseController {
   }
 
   create(req, res, next) {
-    this.authenticate(req, res, next, (token, user) => {
-      this._postHandler.createPost(req, user, this._responseManager.getDefaultResponseHandler(res));
+    this.authenticate(req, res, next, (token, payload) => {
+      this._postHandler.createPost(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 
@@ -28,14 +28,14 @@ class PostController extends BaseController {
   }
 
   update(req, res, next) {
-    this.authenticate(req, res, next, (token, user) => {
-      this._postHandler.updatePost(req, user, this._responseManager.getDefaultResponseHandler(res));
+    this.authenticate(req, res, next, (token, payload) => {
+      this._postHandler.updatePost(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 
   delete(req, res, next) {
-    this.authenticate(req, res, next, (token, user) => {
-      this._postHandler.deletePost(req, user, this._responseManager.getDefaultResponseHandler(res));
+    this.authenticate(req, res, next, (token, payload) => {
+      this._postHandler.deletePost(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 

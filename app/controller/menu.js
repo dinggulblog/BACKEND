@@ -11,8 +11,8 @@ class MenuController extends BaseController {
   }
 
   create(req, res, next) {
-    this.authenticate(req, res, next, (token, user) => {
-      this._menuHandler.createMenu(req, user, this._responseManager.getDefaultResponseHandler(res));
+    this.authenticate(req, res, next, (token, payload) => {
+      this._menuHandler.createMenu(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 
@@ -21,14 +21,14 @@ class MenuController extends BaseController {
   }
 
   update(req, res, next) {
-    this.authenticate(req, res, next, (token, user) => {
-      this._menuHandler.updateMenu(req, user, this._responseManager.getDefaultResponseHandler(res));
+    this.authenticate(req, res, next, (token, payload) => {
+      this._menuHandler.updateMenu(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 
   delete(req, res, next) {
-    this.authenticate(req, res, next, (token, user) => {
-      this._menuHandler.deleteMenu(req, user, this._responseManager.getDefaultResponseHandler(res));
+    this.authenticate(req, res, next, (token, payload) => {
+      this._menuHandler.deleteMenu(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 

@@ -81,7 +81,7 @@ class PostHandler extends BaseAutoBindedClass {
     }
   }
 
-  async createPost(req, token, callback) {
+  async createPost(req, payload, callback) {
     try {
       await checkSchema(PostHandler.POST_VALIDATION_SCHEMA, ['body']).run(req);
       
@@ -92,7 +92,7 @@ class PostHandler extends BaseAutoBindedClass {
       }
 
       const newPost = await PostModel.create({
-        author: token.id,
+        author: payload.sub,
         subject: req.body.subject,
         category: req.body?.category,
         title: req.body.title,
@@ -196,7 +196,7 @@ class PostHandler extends BaseAutoBindedClass {
     }
   }
 
-  async updatePost(req, token, callback) {
+  async updatePost(req, payload, callback) {
     try {
       await param('id').notEmpty().isMongoId().run(req);
       await checkSchema(PostHandler.POST_VALIDATION_SCHEMA).run(req);
@@ -208,7 +208,7 @@ class PostHandler extends BaseAutoBindedClass {
       }
 
       const updatedPost = await PostModel.findOneAndUpdate(
-        { _id: req.params.id, author: token.id },
+        { _id: req.params.id, author: payload.sub },
         { $set: req.body },
         { new: true }
       ).populate('author', { _id: 0, nickname: 1 }).lean().exec();
@@ -222,7 +222,7 @@ class PostHandler extends BaseAutoBindedClass {
     }
   }
 
-  async deletePost(req, token, callback) {
+  async deletePost(req, payload, callback) {
     try {
       await param('id').notEmpty().isMongoId().run(req);
 
@@ -233,7 +233,7 @@ class PostHandler extends BaseAutoBindedClass {
       }
 
       const deletedPost = await PostModel.findOneAndRemove(
-        { _id: req.params.id, author: token.id }
+        { _id: req.params.id, author: payload.sub }
       ).lean().exec();
       if (!deletedPost) {
         throw new NotFoundError('Post not found');

@@ -49,7 +49,7 @@ class CommentHandler extends BaseAutoBindedClass {
     };
   }
 
-  async createComment(req, token, callback) {
+  async createComment(req, payload, callback) {
     try {
       await checkSchema(CommentHandler.POSTID_VALIDATION_SCHEMA, ['params']).run(req);
       await checkSchema(CommentHandler.COMMENT_VALIDATION_SCHEMA, ['body']).run(req);
@@ -61,7 +61,7 @@ class CommentHandler extends BaseAutoBindedClass {
       }
 
       const newComment = await CommentModel.create({
-        commenter: token.id,
+        commenter: payload.sub,
         post: req.params.pid,
         parentComment: req.body?.parentComment,
         content: req.body.content,
@@ -96,7 +96,7 @@ class CommentHandler extends BaseAutoBindedClass {
     }
   }
 
-  async updateComment(req, token, callback) {
+  async updateComment(req, payload, callback) {
     try {
       await param('cid', 'Invalid comment ID provided').notEmpty().isMongoId().run(req);
       await checkSchema(CommentHandler.POSTID_VALIDATION_SCHEMA, ['params']).run(req);
@@ -109,7 +109,7 @@ class CommentHandler extends BaseAutoBindedClass {
       }
 
       const updatedComment = await CommentModel.findOneAndUpdate(
-        { _id: req.params.cid, post: req.params.pid, commenter: token.id },
+        { _id: req.params.cid, post: req.params.pid, commenter: payload.sub },
         { $set: req.body },
         { new: true }
       ).lean().exec();
@@ -123,7 +123,7 @@ class CommentHandler extends BaseAutoBindedClass {
     }
   }
 
-  async deleteComment(req, token, callback) {
+  async deleteComment(req, payload, callback) {
     try {
       await param('cid', 'Invalid comment ID provided').notEmpty().isMongoId().run(req);
       await checkSchema(CommentHandler.POSTID_VALIDATION_SCHEMA, ['params']).run(req);
@@ -135,7 +135,7 @@ class CommentHandler extends BaseAutoBindedClass {
       }
 
       const deletedComment = await CommentModel.findOneAndRemove(
-        { _id: req.params.cid, post: req.params.pid, commenter: token.id }
+        { _id: req.params.cid, post: req.params.pid, commenter: payload.sub }
       ).lean().exec();
       if (!deletedComment) {
         throw new NotFoundError('Post not found');

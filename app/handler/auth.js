@@ -5,7 +5,9 @@ import { RevokedTokenModel } from '../model/revoked-token.js';
 import { jwtOptions } from '../../config/jwt-options.js';
 import AuthManager from '../manager/auth.js'
 import BaseAutoBindedClass from '../base/autobind.js';
+import ForbiddenError from '../error/forbidden.js';
 import NotFoundError from '../error/not-found.js';
+
 
 class AuthHandler extends BaseAutoBindedClass {
   constructor() {
@@ -21,7 +23,7 @@ class AuthHandler extends BaseAutoBindedClass {
           { _id: user._id },
           { $push: { tokens: { uuid: UUIDV1, device: req.useragent.isMobile ? 'mobile' : 'pc' } } },
           { new: true }
-        ).populate('roles', 'name').lean().exec();
+        ).populate('roles').lean().exec();
 
         const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(newUser, UUIDV1));
         const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
@@ -40,14 +42,23 @@ class AuthHandler extends BaseAutoBindedClass {
       const UUIDV1 = v1();
       const user = await UserModel.findOneAndUpdate(
         { 'tokens.uuid': payload.jti },
-        { $pull: { tokens: { uuid: payload.jti } },
-          $push: { tokens: { uuid: UUIDV1, device: req.useragent.isMobile ? true : false } } },
+        { $set: { 'tokens.$.uuid': UUIDV1 } },
         { new: true }
-      ).populate('roles', 'name').lean().exec();
+      ).populate('roles').lean().exec();
+
+      if (!user) {
+        return callback.onError(new ForbiddenError('Token is already revoked'));
+      }
 
       const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, UUIDV1));
       const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
 
+      await RevokedTokenModel.findOneAndUpdate(
+        { uuid: payload.jti },
+        { $set: { uuid: payload.jti } },
+        { upsert: true }
+      ).lean().exec();
+      
       callback.onSuccess({ refreshToken }, { accessToken });
     } catch (error) {
       callback.onError(error);

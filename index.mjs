@@ -84,13 +84,13 @@ app.use('/', routes);
 // Error handling
 app.use((req, res, next) => {
   const error = new Error(`${req.method} ${req.url} router does not exist.`);
-  error.status = 404;
+  error.status = 410;
   next(error);
 })
 app.use((err, req, res, next) => {
   res.locals.message = err.message;
   res.locals.error = process.env.NODE_ENV === 'production' ? {} : err;
-  responseManager.respondWithError(res, err.status || 500, err.message || "")
+  responseManager.respondWithError(res, err.status || 410, err.message || "")
 })
 
 export default app;

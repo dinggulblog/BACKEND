@@ -39,7 +39,7 @@ class MenuHandler {
     };
   }
 
-  async createMenu(req, token, callback) {
+  async createMenu(req, payload, callback) {
     try {
       await checkSchema(MenuHandler.MENU_VALIDATION_SCHEMA, ['body']).run(req);
   
@@ -77,7 +77,7 @@ class MenuHandler {
     }
   }
 
-  async updateMenu(req, token, callback) {
+  async updateMenu(req, payload, callback) {
     try {
       await query('id').optional({ options: { nullable: true } }).isMongoId().run(req);
       await query('title').optional({ options: { nullable: true } }).isString().toLowerCase().run(req);
@@ -124,7 +124,7 @@ class MenuHandler {
     }
   }
 
-  async deleteMenu(req, token, callback) {
+  async deleteMenu(req, payload, callback) {
     try {
       await query('id').optional({ options: { nullable: true } }).isMongoId().run(req);
       await query('title').optional({ options: { nullable: true } }).isString().toLowerCase().run(req);
@@ -135,14 +135,27 @@ class MenuHandler {
         throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
       }
 
-      const deletedPost = await PostModel.findOneAndRemove(
-        { _id: req.params.id, author: token.id }
-      ).lean().exec();
-      if (!deletedPost) {
-        throw new NotFoundError('Post not found');
+      if (req.query.title && !req.query.id) {
+        // Change only the title of all menu documents
+        const writeResult = await MenuModel.deleteMany({ title: req.query.title }).lean().exec();
+
+        if (!writeResult.acknowledged || !writeResult.matchedCount) {
+          throw new NotFoundError('Cannot find the requested menu title');
+        }
+      }
+      else if (req.query.id && !req.query.title) {
+        const writeResult = await MenuModel.deleteOne({ _id: req.query.id }).lean().exec();
+
+        if (!writeResult.acknowledged || !writeResult.matchedCount) {
+          throw new NotFoundError('Cannot find the requested menu ID');
+        }
+      }
+      else {
+        throw new InvalidRequestError('Invalid query parameters');
       }
 
-      callback.onSuccess(deletedPost);
+      this._memCache.del('menus');
+      return await this.getMenus(req, callback);
     } catch (error) {
       callback.onError(error);
     }

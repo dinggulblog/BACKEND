@@ -11,8 +11,8 @@ class CommentController extends BaseController {
   }
 
   create(req, res, next) {
-    this.authenticate(req, res, next, (token, user) => {
-      this._commentHandler.createComment(req, user, this._responseManager.getDefaultResponseHandler(res));
+    this.authenticate(req, res, next, (token, payload) => {
+      this._commentHandler.createComment(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 
@@ -21,14 +21,14 @@ class CommentController extends BaseController {
   }
 
   update(req, res, next) {
-    this.authenticate(req, res, next, (token, user) => {
-      this._commentHandler.updateComment(req, user, this._responseManager.getDefaultResponseHandler(res));
+    this.authenticate(req, res, next, (token, payload) => {
+      this._commentHandler.updateComment(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 
   delete(req, res, next) {
-    this.authenticate(req, res, next, (token, user) => {
-      this._commentHandler.deleteComment(req, user, this._responseManager.getDefaultResponseHandler(res));
+    this.authenticate(req, res, next, (token, payload) => {
+      this._commentHandler.deleteComment(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 
