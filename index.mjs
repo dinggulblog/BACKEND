@@ -1,30 +1,29 @@
 // Include dependencies
-import path from 'path';
+import { readdirSync, mkdirSync } from 'fs';
+import { resolve, join } from 'path';
+import { config } from 'dotenv';
 import cors from 'cors';
-import morgan from 'morgan';
+import csurf from 'csurf';
 import helmet from 'helmet';
 import csp from 'helmet-csp';
 import hpp from 'hpp';
+import morgan from 'morgan';
 import express from 'express';
-import session from 'express-session';
+import useragent from 'express-useragent';
 import cookieParser from 'cookie-parser';
-
-// Set config variables in .env
-import { config } from 'dotenv';
-import { readdirSync, mkdirSync } from 'fs';
 
 import db from './config/db.js';
 import routes from './app/routes/index.js';
 import authManager from './app/manager/auth.js';
 import responseManager from './app/manager/response.js';
 
-const __dirname = path.resolve();
+const __dirname = resolve();
 
-// .env config
+// Set config variables in .env
 if (process.env.NODE_ENV === 'production') {
-  config({ path: path.join(__dirname, '.env.production')});
+  config({ path: join(__dirname, '.env.production')});
 } else if (process.env.NODE_ENV === 'develop') {
-  config({ path: path.join(__dirname, '.env.develop')});
+  config({ path: join(__dirname, '.env.develop')});
 } else {
   throw new Error('Cannot find process.env.NODE_ENV');
 }
@@ -64,7 +63,6 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
-app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Origin, X-requested-With, Content-Type, Accept');
   next();
@@ -72,8 +70,10 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'uploads')));
+app.use(express.static(join(__dirname, 'public')));
+app.use(express.static(join(__dirname, 'uploads')));
+app.use(useragent.express());
+app.use(cookieParser(process.env.COOKIE_SECRET));
 
 // Setup auth manager
 app.use(authManager.providePassport().initialize());

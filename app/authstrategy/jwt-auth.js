@@ -1,7 +1,8 @@
-import jwt from 'jsonwebtoken';
+import { jwtVerify, importSPKI } from 'jose';
 import { Strategy } from 'passport-strategy';
 
 import BaseAuthStrategy from './base-auth.js';
+import UnauthorizedError from '../error/unauthorized.js';
 
 class JwtAuthStrategy extends BaseAuthStrategy {
   constructor(options, verify) {
@@ -50,33 +51,31 @@ class JwtAuthStrategy extends BaseAuthStrategy {
     if (options.algorithms) {
       this._jwtOptions.algorithms = options.algorithms;
     }
-
-    if (options.ignoreExpiration != null) {
-      this._jwtOptions.ignoreExpiration = options.ignoreExpiration;
-    }
   }
 
-  authenticate(req, callback) {
-    const { accessToken, refreshToken } = this._extractJwtToken(req);
-
-    if (!accessToken) {
-      return callback.onFailure(new Error('No access token provided'));
-    }
-
+  async authenticate(req, callback) {
     try {
-      const accessTokenDecoded = jwt.verify(accessToken, this._publicKey, this._jwtOptions);
+      const { accessToken, refreshToken } = this._extractJwtToken(req);
+      const importedPublicKey = await importSPKI(this._publicKey, 'EdDSA');
 
-      // Verified only the access token
-      if (!refreshToken) {
-        return callback.onVerified(accessToken, accessTokenDecoded);
+      // JWT authentication needs at least one token
+      if (!accessToken && !refreshToken) {
+        return callback.onFailure(new UnauthorizedError('No token provided'));
       }
-      
-      jwt.verify(refreshToken, this._privateKey, this._jwtOptions);
 
-      // If access token and refresh token exist together, delegate the flow control to custom verifier
-      this._customVerifier
-        ? this._customVerifier(refreshToken, accessTokenDecoded, callback)
-        : callback.onFailure(new Error('No custom verifier exists'));
+      // If refresh token is still valid -> Re-issue the access token and refresh token
+      if (!accessToken && refreshToken) {
+        const { payload } = await jwtVerify(refreshToken, importedPublicKey, this._jwtOptions);
+        callback.onFailure(new Error('TokenRefreshError'), payload);
+      }
+      else {
+        const { payload } = await jwtVerify(accessToken, importedPublicKey, this._jwtOptions);
+
+        // If custom verifier exist, delegate the flow control to custom verifier
+        this._customVerifier
+          ? this._customVerifier(accessToken, payload, callback)
+          : callback.onVerified(accessToken, payload);
+      }
     } catch (error) {
       callback.onFailure(error);
     }

@@ -18,8 +18,8 @@ class UserController extends BaseController {
 
   get(req, res, next) {
     this._passport.authenticate('jwt-auth', {
-      onVerified: (token, user) => {
-        this._authHandler.getUserInfo(req, user, this._responseManager.getDefaultResponseHandler(res));
+      onVerified: (token, payload) => {
+        this._authHandler.getUserInfo(req, payload, this._responseManager.getDefaultResponseHandler(res));
       },
       onFailure: (error) => {
         this._responseManager.respondWithError(res, error.status || 401, error.message);
@@ -29,8 +29,8 @@ class UserController extends BaseController {
 
   update(req, res, next) {
     this._passport.authenticate('jwt-auth', {
-      onVerified: (token, user) => {
-        this._authHandler.updateUser(req, user, this._responseManager.getDefaultResponseHandler(res));
+      onVerified: (token, payload) => {
+        this._authHandler.updateUser(req, payload, this._responseManager.getDefaultResponseHandler(res));
       },
       onFailure: (error) => {
         this._responseManager.respondWithError(res, error.status || 401, error.message);

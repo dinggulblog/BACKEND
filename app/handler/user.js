@@ -1,11 +1,10 @@
 import NodeCache from 'node-cache';
-import { param, checkSchema, validationResult } from 'express-validator';
+import { checkSchema, validationResult } from 'express-validator';
 
 import { UserModel } from '../model/user.js';
 import { RoleModel } from '../model/role.js';
 import NotFoundError from '../error/not-found.js';
 import InvalidRequestError from '../error/invalid-request.js';
-import UnauthorizedError from '../error/unauthorized.js';
 
 class UserHandler {
   constructor() {
@@ -38,7 +37,8 @@ class UserHandler {
       'nickname': {
         trim: true,
         notEmpty: true,
-        isAlphanumeric: true,
+        isString: true,
+        toString: true,
         isLength: {
           options: [{ min: 2, max: 15 }],
           errorMessage: 'nickname must be between 2 and 15 chars long'
@@ -108,24 +108,9 @@ class UserHandler {
     }
   }
 
-  async getUserInfo(req, token, callback) {
+  async getUserInfo(req, payload, callback) {
     try {
-      await param('id')
-        .notEmpty()
-        .isMongoId()
-        .custom(value => {
-          if (value !== token.id) throw new UnauthorizedError('Token ID does not match parameter ID');
-          return true;
-        })
-        .run(req);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors: ' + errorMessages.join(' && '));
-      }
-
-      const user = await UserModel.findOne({ _id: req.params.id }).populate('roles').lean().exec();
+      const user = await UserModel.findOne({ _id: payload.sub }).select({ tokens: 0 }).populate('roles', 'name').lean().exec();
       if (!user) {
         throw new NotFoundError('The requested user could not be found.');
       }
@@ -136,16 +121,8 @@ class UserHandler {
     }
   }
 
-  async updateUser(req, token, callback) {
+  async updateUser(req, payload, callback) {
     try {
-      await param('id')
-        .notEmpty()
-        .isMongoId()
-        .custom(value => {
-          if (value !== token.id) throw new UnauthorizedError('Token ID does not match parameter ID');
-          return true;
-        })
-        .run(req);
       await checkSchema(UserHandler.USER_UPDATE_VALIDATION_SCHEMA, ['body']).run(req);
 
       const errors = validationResult(req);
@@ -154,7 +131,7 @@ class UserHandler {
         throw new InvalidRequestError('Validation errors: ' + errorMessages.join(' && '));
       }
       
-      const user = await UserModel.findOne({ _id: req.params.id }).select('password').exec();
+      const user = await UserModel.findOne({ _id: payload.sub }).select('password').exec();
       if (!user) {
         throw new NotFoundError('The requested user could not be found.');
       }
@@ -164,9 +141,9 @@ class UserHandler {
       user.password = req.body.newPassword ? req.body.newPassword : user.password;
       for (const key in req.body) user[key] = req.body[key];
       
-      const { _id } = await user.save();
+      await user.save();
 
-      callback.onSuccess({ _id });
+      callback.onSuccess({});
     } catch (error) {
       callback.onError(error);
     }

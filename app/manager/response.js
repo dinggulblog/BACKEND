@@ -21,7 +21,7 @@ class ResponseManager {
         this.respondWithSuccess(res, code || this.HTTP_STATUS.OK, data, message);
       },
       onError: (error) => {
-        this.respondWithError(res, error.status || 500, error.message || 'Unknown error');
+        this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
       }
     };
   }
@@ -32,18 +32,29 @@ class ResponseManager {
         this.respondWithSuccess(res, code || this.HTTP_STATUS.OK, data, message);
       },
       onError: (error) => {
-        this.respondWithErrorData(res, error.status || 500, error.message || 'Unknown error', error.data);
+        this.respondWithErrorData(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error', error.data);
       }
     };
   }
 
-  static getDefaultResponseHandlerCookies(res) {
+  static getCookieResponseHandler(res) {
     return {
       onSuccess: (cookies, data, message, code) => {
         this.respondWithSuccessCookies(res, code || this.HTTP_STATUS.OK, cookies, data, message);
       },
       onError: (error) => {
-        this.respondWithErrorData(res, error.status || 500, error.message || 'Unknown error', error.data);
+        this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
+      }
+    }
+  }
+
+  static getResetCookieResponseHandler(res) {
+    return {
+      onSuccess: (cookies, data, message, code) => {
+        this.respondWithResetCookies(res, code || this.HTTP_STATUS.OK, cookies, data, message);
+      },
+      onError: (error) => {
+        this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
       }
     }
   }
@@ -54,7 +65,7 @@ class ResponseManager {
         successCallback(data, message, code);
       },
       onError: (error) => {
-        this.respondWithError(res, error.status || 500, error.message || 'Unknown error');
+        this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
       }
     };
   }
@@ -70,7 +81,7 @@ class ResponseManager {
     };
   }
 
-  static respondWithSuccess(res, code, data, message = '', links = []) {
+  static respondWithSuccess(res, code, data, message = '', links) {
     const response = Object.assign({}, BasicResponse);
     response.success = true;
     response.message = message;
@@ -79,7 +90,7 @@ class ResponseManager {
     res.status(code).json(response);
   }
 
-  static respondWithSuccessCookies(res, code, cookies, data, message = '', links = []) {
+  static respondWithSuccessCookies(res, code, cookies, data, message = '', links) {
     const response = Object.assign({}, BasicResponse);
     const cookieNames = Object.keys(cookies);
     response.success = true;
@@ -87,7 +98,19 @@ class ResponseManager {
     response.data = data;
     response.links = links;
     
-    cookieNames.forEach(name => res.cookie(name, cookies[name], { secure: false, httpOnly: true }));
+    cookieNames.forEach(name => res.cookie(name, cookies[name], { secure: process.env.NODE_ENV === 'production' ? true : false, httpOnly: true }));
+    res.status(code).json(response);
+  }
+
+  static respondWithResetCookies(res, code, cookies, data, message = '', links) {
+    const response = Object.assign({}, BasicResponse);
+    const cookieNames = Object.keys(cookies);
+    response.success = true;
+    response.message = message;
+    response.data = data;
+    response.links = links;
+
+    cookieNames.forEach(name => res.clearCookie(name, { secure: process.env.NODE_ENV === 'production' ? true : false, httpOnly: true }));
     res.status(code).json(response);
   }
 
@@ -99,7 +122,7 @@ class ResponseManager {
     res.status(errorCode).json(response);
   }
 
-  static respondWithErrorData(res, errorCode, message = '', data = '', links = []) {
+  static respondWithErrorData(res, errorCode, message = '', data = '', links) {
     const response = Object.assign({}, BasicResponse);
     response.success = false;
     response.message = message;

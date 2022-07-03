@@ -3,8 +3,10 @@
 /**
  * Module dependencies.
  */
+import { readFileSync } from 'fs';
 import app from '../../index.mjs';
-import { createServer } from 'http';
+import http from 'http';
+import spdy from 'spdy';
 
 /**
  * Get port from environment and store in Express.
@@ -13,15 +15,20 @@ const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
 /**
- * Create HTTP server.
+ * Create server and Listen on provided port, on all network interfaces.
  */
-const server = createServer(app);
-
-/**
- * Listen on provided port, on all network interfaces.
- */
-server.listen(port, () => console.log(app.get('port'), 'Port listening!'));
-server.on('error', onError);
+if (process.env.NODE_ENV === 'production') {
+  // Get TSL certificate credentials.
+  const options = {
+    key: readFileSync('/etc/letsencrypt/live/dinggul.me/privkey.pem', 'utf8'),
+    cert: readFileSync('/etc/letsencrypt/live/dinggul.me/fullchain.pem', 'utf8')
+  }
+  
+  spdy.createServer(options, app).listen(port, () => console.log(app.get('port') + ' Port is listening!')).on('error', onError);
+}
+else {
+  http.createServer(app).listen(port, () => console.log(app.get('port') + ' Port is listening!')).on('error', onError);
+}
 
 /**
  * Normalize a port into a number, string, or false.
@@ -57,11 +64,9 @@ function onError(error) {
     case 'EACCES':
       console.error(bind + ' requires elevated privileges');
       process.exit(1);
-      break;
     case 'EADDRINUSE':
       console.error(bind + ' is already in use');
       process.exit(1);
-      break;
     default:
       throw error;
   }

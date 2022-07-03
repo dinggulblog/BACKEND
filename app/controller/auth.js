@@ -13,26 +13,29 @@ class AuthController extends BaseController {
   // Request token by credentials
   create(req, res, next) {
     this.authenticate(req, res, next, (user) => {
-      this._authHandler.issueNewToken(req, user, this._responseManager.getDefaultResponseHandlerCookies(res));
+      this._authHandler.issueNewToken(req, user, this._responseManager.getCookieResponseHandler(res));
     });
   }
 
+  // Request new token by jwt auth
   refresh(req, res, next) {
     this._passport.authenticate('jwt-auth', {
-      onVerified: (refreshToken, user) => {
-        this._authHandler.issueRenewedToken(req, refreshToken, user, this._responseManager.getDefaultResponseHandlerCookies(res));
+      onVerified: (token, payload) => {
+        this._authHandler.issueRenewedToken(req, payload, this._responseManager.getCookieResponseHandler(res));
       },
-      onFailure: (error) => {
-        this._responseManager.respondWithError(res, error.status || 403, error.message);
+      onFailure: (error, payload) => {
+        payload
+          ? this._authHandler.issueRenewedToken(req, payload, this._responseManager.getCookieResponseHandler(res))
+          : this._responseManager.respondWithError(res, error.status || 403, error.message);
       }
     })(req, res, next);
   }
 
-  // Revoke Token
+  // Revoke Token (Logout)
   remove(req, res, next) {
     this._passport.authenticate('jwt-auth', {
-      onVerified: (token, user) => {
-        this._authHandler.revokeToken(req, token, this._responseManager.getDefaultResponseHandler(res));
+      onVerified: (token, payload) => {
+        this._authHandler.revokeToken(req, payload, this._responseManager.getResetCookieResponseHandler(res));
       },
       onFailure: (error) => {
         this._responseManager.respondWithError(res, error.status || 401, error.message);

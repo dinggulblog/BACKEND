@@ -5,8 +5,8 @@ const router = Router();
 const userController = new UserController();
 
 router.post('/', userController.create);
-router.get('/:id', userController.get);
-router.put('/:id', userController.update);
-router.delete('/:id', userController.delete);
+router.get('/me', userController.get);
+router.put('/me', userController.update);
+router.delete('/me', userController.delete);
 
 export { router as userRouter };

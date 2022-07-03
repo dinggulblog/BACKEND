@@ -9,7 +9,6 @@ const UserSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, 'Email is required!'],
-    match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Email format is incorrect'],
     trim: true,
     unique: true
   },
@@ -25,17 +24,26 @@ const UserSchema = new mongoose.Schema({
   nickname: {
     type: String,
     required: [true, 'Nickname is required!'],
+    trim: true,
     unique: true
   },
   isActive: {
     type: Boolean,
     default: true
   },
-  token: {
-    type: String,
-    select: false,
-    trim: true
-  }
+  lastLoginIP: {
+    type: String
+  },
+  tokens: [{
+    uuid: {
+      type: String,
+      trim: true
+    },
+    device: {
+      type: String,
+      enum: ['pc', 'mobile']
+    }
+  }]
 }, { toObject: { virtuals: true }, timestamps: true, versionKey: false });
 
 UserSchema.virtual('id')

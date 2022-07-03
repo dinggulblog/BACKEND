@@ -1,13 +1,11 @@
-import { createHash } from 'crypto';
-import { param, validationResult } from 'express-validator';
+import { v1 } from 'uuid'
 
 import { UserModel } from '../model/user.js';
 import { RevokedTokenModel } from '../model/revoked-token.js';
-import { accessOptions, refreshOptions } from '../../config/jwt-options.js';
+import { jwtOptions } from '../../config/jwt-options.js';
 import AuthManager from '../manager/auth.js'
 import BaseAutoBindedClass from '../base/autobind.js';
 import NotFoundError from '../error/not-found.js';
-import ForbiddenError from '../error/forbidden.js';
 
 class AuthHandler extends BaseAutoBindedClass {
   constructor() {
@@ -17,88 +15,87 @@ class AuthHandler extends BaseAutoBindedClass {
 
   async issueNewToken(req, user, callback) {
     if (user) {
-      const ip = AuthHandler.getUserIp(req);
-      const { token: accessToken } = this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, ip), this._provideAccessTokenOptions());
-      const { token: refreshToken } = this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(ip), this._provideRefreshTokenOptions());
+      try {
+        const UUIDV1 = v1();
+        const newUser = await UserModel.findByIdAndUpdate(
+          { _id: user._id },
+          { $push: { tokens: { uuid: UUIDV1, device: req.useragent.isMobile ? 'mobile' : 'pc' } } },
+          { new: true }
+        ).populate('roles', 'name').lean().exec();
 
-      await UserModel.findOneAndUpdate(
-        { _id: user._id },
-        { $set: { token: refreshToken } }
-      ).lean().exec();
+        const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(newUser, UUIDV1));
+        const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
 
-      callback.onSuccess({ refreshToken }, { accessToken });
+        callback.onSuccess({ refreshToken }, { accessToken });
+      } catch (error) {
+        callback.onError(new Error('Cannot sign with JWT'));
+      }
     } else {
       callback.onError(new NotFoundError('User not found'));
     }
   }
 
-  async issueRenewedToken(req, refreshToken, user, callback) {
-    if (user) {
-      const ip = AuthHandler.getUserIp(req);
-      const { token: accessToken } = this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, ip), this._provideAccessTokenOptions());
-
-      callback.onSuccess({ refreshToken }, { accessToken });
-    } else {
-      callback.onError(new NotFoundError('User not found'));
-    }
-  }
-
-  async revokeToken(req, token, callback) {
+  async issueRenewedToken(req, payload, callback) {
     try {
-      await param('token').isAlphanumeric().run(req);
-      
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new ForbiddenError('Invalid token id :' + errorMessages.join(' && '));
-      }
-      
-      if (this._compareHashedToken(token, req.params.token)) {
-        await RevokedTokenModel.create({ token: token });
-        callback.onSuccess('Token has been successfully revoked');
-      } else {
-        throw new ForbiddenError('Invalid credentials');
-      }
+      const UUIDV1 = v1();
+      const user = await UserModel.findOneAndUpdate(
+        { 'tokens.uuid': payload.jti },
+        { $pull: { tokens: { uuid: payload.jti } },
+          $push: { tokens: { uuid: UUIDV1, device: req.useragent.isMobile ? true : false } } },
+        { new: true }
+      ).populate('roles', 'name').lean().exec();
+
+      const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, UUIDV1));
+      const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
+
+      callback.onSuccess({ refreshToken }, { accessToken });
     } catch (error) {
       callback.onError(error);
     }
   }
 
-  _hashToken(token) {
-    return createHash('sha256').update(token).digest('hex');
+  async revokeToken(req, payload, callback) {
+    try {
+      await UserModel.findOneAndUpdate(
+        { 'tokens.uuid': payload.jti },
+        { $pull: { tokens: { uuid: payload.jti } } }
+      ).lean().exec();
+
+      await RevokedTokenModel.findOneAndUpdate(
+        { uuid: payload.jti },
+        { $set: { uuid: payload.jti } },
+        { upsert: true }
+      ).lean().exec();
+      
+      callback.onSuccess({ refreshToken: '' }, '', 'Token has been successfully revoked');
+    } catch (error) {
+      callback.onError(error);
+    }
   }
 
-  _compareHashedToken(token, hashed) {
-    return this._hashToken(token) === hashed;
-  }
-
-  _provideAccessTokenPayload(user, ip) {
+  _provideAccessTokenPayload(user, uuid) {
     return {
-      id: user.id,
-      nickname: user.nickname,
-      roles: user.roles,
-      ip: ip,
-      scope: 'access'
+      sub: user._id,
+      iss: jwtOptions.issuer,
+      aud: jwtOptions.audience,
+      exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour
+      nbf: Math.floor(Date.now() / 1000),
+      jti: uuid,
+      data: {
+        nickname: user.nickname,
+        roles: user.roles
+      }
     };
   }
 
-  _provideRefreshTokenPayload(ip) {
+  _provideRefreshTokenPayload(uuid) {
     return {
-      ip: ip,
-      scope: 'refresh'
+      iss: jwtOptions.issuer,
+      aud: jwtOptions.audience,
+      exp: Math.floor(Date.now() / 1000) + (86400 * 14), // 2 weeks
+      nbf: Math.floor(Date.now() / 1000),
+      jti: uuid
     };
-  }
-
-  _provideAccessTokenOptions() {
-    return accessOptions;
-  }
-
-  _provideRefreshTokenOptions() {
-    return refreshOptions;
-  }
-
-  static getUserIp(req) {
-    return req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
   }
 }
 

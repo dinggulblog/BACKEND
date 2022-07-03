@@ -1,14 +1,10 @@
 import mongoose from 'mongoose';
 
 const RevokedTokenSchema = new mongoose.Schema({
-  token: {
+  uuid: {
     type: String,
     required: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now()
   }
-});
+}, { versionKey: false });
 
 export const RevokedTokenModel = mongoose.model('RevokedToken', RevokedTokenSchema);
