@@ -35,7 +35,7 @@ class AuthManager extends BaseAutoBindedClass {
       const revokedToken = await RevokedTokenModel.findOne({ uuid: payload.jti })
 
       revokedToken
-        ? callback.onFailure(new ForbiddenError('Token has been revoked'))
+        ? callback.onFailure(new ForbiddenError('Refresh token has been revoked'))
         : callback.onVerified(token, payload);
     } catch (error) {
       callback.onFailure(error);

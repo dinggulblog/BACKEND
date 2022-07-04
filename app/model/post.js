@@ -30,6 +30,10 @@ const PostSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
   viewCount: {
     type: Number,
     default: 0

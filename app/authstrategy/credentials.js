@@ -13,9 +13,13 @@ class CredentialsAuthStrategy extends LocalAuthStrategy {
     return 'credentials-auth';
   }
 
-  static async handleUserAuth(username, password, done) {
+  static async handleUserAuth(req, username, password, done) {
     try {
-      const user = await UserModel.findOne({ email: username }).select({ _id: 1, password: 1 }).exec();
+      const lastLoginIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+      const user = await UserModel.findOneAndUpdate({ email: username }, { $set: { lastLoginIP } })
+        .select({ _id: 1, roles:1, password: 1, nickname:1 })
+        .populate('roles')
+        .exec();
       
       if (!user) {
         return done(new NotFoundError('User not found'), false);
@@ -38,7 +42,7 @@ class CredentialsAuthStrategy extends LocalAuthStrategy {
     return {
       usernameField: 'email',
       passwordField: 'password',
-      passReqToCallback: false,
+      passReqToCallback: true,
       session: false
     };
   }

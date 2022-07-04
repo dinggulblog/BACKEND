@@ -1,11 +1,10 @@
 import { v1 } from 'uuid'
+import NodeCache from 'node-cache'
 
 import { UserModel } from '../model/user.js';
-import { RevokedTokenModel } from '../model/revoked-token.js';
 import { jwtOptions } from '../../config/jwt-options.js';
 import AuthManager from '../manager/auth.js'
 import BaseAutoBindedClass from '../base/autobind.js';
-import ForbiddenError from '../error/forbidden.js';
 import NotFoundError from '../error/not-found.js';
 
 
@@ -13,20 +12,19 @@ class AuthHandler extends BaseAutoBindedClass {
   constructor() {
     super();
     this._authManager = AuthManager;
+    this._nodeCache = new NodeCache({ stdTTL: 86400 * 7 });
   }
 
   async issueNewToken(req, user, callback) {
     if (user) {
       try {
         const UUIDV1 = v1();
-        const newUser = await UserModel.findByIdAndUpdate(
-          { _id: user._id },
-          { $push: { tokens: { uuid: UUIDV1, device: req.useragent.isMobile ? 'mobile' : 'pc' } } },
-          { new: true }
-        ).populate('roles').lean().exec();
+        // this._nodeCache.flushAll(); // test
 
-        const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(newUser, UUIDV1));
+        const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, UUIDV1));
         const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
+
+        this._nodeCache.set(UUIDV1, user._id);
 
         callback.onSuccess({ refreshToken }, { accessToken });
       } catch (error) {
@@ -40,44 +38,27 @@ class AuthHandler extends BaseAutoBindedClass {
   async issueRenewedToken(req, payload, callback) {
     try {
       const UUIDV1 = v1();
-      const user = await UserModel.findOneAndUpdate(
-        { 'tokens.uuid': payload.jti },
-        { $set: { 'tokens.$.uuid': UUIDV1 } },
-        { new: true }
-      ).populate('roles').lean().exec();
 
-      if (!user) {
-        return callback.onError(new ForbiddenError('Token is already revoked'));
-      }
+      const userId = this._nodeCache.get(payload.jti);
+      const user = await UserModel.findById(userId).populate('roles').lean().exec();
 
       const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, UUIDV1));
       const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
 
-      await RevokedTokenModel.findOneAndUpdate(
-        { uuid: payload.jti },
-        { $set: { uuid: payload.jti } },
-        { upsert: true }
-      ).lean().exec();
+      this._nodeCache.del(payload.jti);
+      this._nodeCache.set(UUIDV1, user._id);
       
       callback.onSuccess({ refreshToken }, { accessToken });
     } catch (error) {
+      error.message = 'Cannot sign tokens with revoked one'
       callback.onError(error);
     }
   }
 
   async revokeToken(req, payload, callback) {
     try {
-      await UserModel.findOneAndUpdate(
-        { 'tokens.uuid': payload.jti },
-        { $pull: { tokens: { uuid: payload.jti } } }
-      ).lean().exec();
+      this._nodeCache.del(payload.jti);
 
-      await RevokedTokenModel.findOneAndUpdate(
-        { uuid: payload.jti },
-        { $set: { uuid: payload.jti } },
-        { upsert: true }
-      ).lean().exec();
-      
       callback.onSuccess({ refreshToken: '' }, '', 'Token has been successfully revoked');
     } catch (error) {
       callback.onError(error);
@@ -94,7 +75,7 @@ class AuthHandler extends BaseAutoBindedClass {
       jti: uuid,
       data: {
         nickname: user.nickname,
-        roles: user.roles
+        roles: user.roles.map(role => role.name)
       }
     };
   }
@@ -103,7 +84,7 @@ class AuthHandler extends BaseAutoBindedClass {
     return {
       iss: jwtOptions.issuer,
       aud: jwtOptions.audience,
-      exp: Math.floor(Date.now() / 1000) + (86400 * 14), // 2 weeks
+      exp: Math.floor(Date.now() / 1000) + (86400 * 7), // 1 weeks
       nbf: Math.floor(Date.now() / 1000),
       jti: uuid
     };

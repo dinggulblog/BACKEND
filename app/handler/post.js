@@ -246,7 +246,7 @@ class PostHandler extends BaseAutoBindedClass {
   }
 
   static async #getSearchQuery(queries) {
-    const searchQuery = {};
+    const searchQuery = { isActive: true };
 
     // Menu Query filtering
     if (queries.subject) {

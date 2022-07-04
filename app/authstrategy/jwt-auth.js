@@ -66,15 +66,15 @@ class JwtAuthStrategy extends BaseAuthStrategy {
       // If refresh token is still valid -> Re-issue the access token and refresh token
       if (!accessToken && refreshToken) {
         const { payload } = await jwtVerify(refreshToken, importedPublicKey, this._jwtOptions);
-        callback.onFailure(new Error('TokenRefreshError'), payload);
-      }
-      else {
-        const { payload } = await jwtVerify(accessToken, importedPublicKey, this._jwtOptions);
 
         // If custom verifier exist, delegate the flow control to custom verifier
         this._customVerifier
-          ? this._customVerifier(accessToken, payload, callback)
-          : callback.onVerified(accessToken, payload);
+          ? this._customVerifier(refreshToken, payload, callback)
+          : callback.onVerified(refreshToken, payload);
+      }
+      else {
+        const { payload } = await jwtVerify(accessToken, importedPublicKey, this._jwtOptions);
+        callback.onVerified(accessToken, payload);
       }
     } catch (error) {
       callback.onFailure(error);

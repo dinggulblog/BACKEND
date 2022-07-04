@@ -110,11 +110,16 @@ class UserHandler {
 
   async getUserInfo(req, payload, callback) {
     try {
-      const user = await UserModel.findOne({ _id: payload.sub }).select({ tokens: 0 }).populate('roles', 'name').lean().exec();
+      const user = await UserModel.findOne({ _id: payload.sub })
+        .select({ _id: 0, tokens: 0 })
+        .populate('roles')
+        .lean()
+        .exec();
       if (!user) {
         throw new NotFoundError('The requested user could not be found.');
       }
-      
+
+      user.roles = user.roles.map(role => role.name)
       callback.onSuccess(user);
     } catch (error) {
       callback.onError(error);
@@ -142,6 +147,24 @@ class UserHandler {
       for (const key in req.body) user[key] = req.body[key];
       
       await user.save();
+
+      callback.onSuccess({});
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async deleteUser(req, payload, callback) {
+    try {
+      const user = await UserModel.findOneAndUpdate(
+        { _id: payload.sub },
+        { $set: { isActive: false } },
+        { new: true }
+      ).lean().exec();
+      
+      if (!user) {
+        throw new NotFoundError('The requested user could not be found.');
+      }
 
       callback.onSuccess({});
     } catch (error) {

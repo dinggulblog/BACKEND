@@ -38,6 +38,17 @@ class UserController extends BaseController {
     })(req, res, next);
   }
 
+  delete(req, res, next) {
+    this._passport.authenticate('jwt-auth', {
+      onVerified: (token, payload) => {
+        this._authHandler.deleteUser(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      },
+      onFailure: (error) => {
+        this._responseManager.respondWithError(res, error.status || 401, error.message);
+      }
+    })(req, res, next);
+  }
+
   authenticate(req, res, callback) {
     this._passport.authenticate('secret-key-auth', {
       onVerified: callback,

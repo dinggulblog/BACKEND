@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { genSaltSync, hashSync, compareSync } from 'bcrypt';
 
+import { PostModel } from './post.js';
+
 const UserSchema = new mongoose.Schema({
   roles: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -33,17 +35,7 @@ const UserSchema = new mongoose.Schema({
   },
   lastLoginIP: {
     type: String
-  },
-  tokens: [{
-    uuid: {
-      type: String,
-      trim: true
-    },
-    device: {
-      type: String,
-      enum: ['pc', 'mobile']
-    }
-  }]
+  }
 }, { toObject: { virtuals: true }, timestamps: true, versionKey: false });
 
 UserSchema.virtual('id')
@@ -95,6 +87,10 @@ UserSchema.path('password').validate(function (value) {
   }
 });
 
+UserSchema.methods.comparePassword = function (password) {
+  return compareSync(password, this.password);
+};
+
 UserSchema.pre('save', function (next) {
   if (!this.isModified('password')) next();
   else {
@@ -106,8 +102,15 @@ UserSchema.pre('save', function (next) {
   }
 });
 
-UserSchema.methods.comparePassword = function (password) {
-  return compareSync(password, this.password);
-};
+UserSchema.post('findOneAndUpdate', async function (res, next) {
+  try {
+    if (!res.isActive) {
+      await PostModel.updateMany({ author: res._id, isActive: true }, { $set: { isActive: false } }).lean().exec();
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+})
 
 export const UserModel = mongoose.model('User', UserSchema);
