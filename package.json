@@ -10,7 +10,7 @@
     "url": "https://github.com/dinggulblog/main"
   },
   "scripts": {
-    "start": "cross-env NODE_ENV=production PORT=443 pm2 start ./app/bin/www.js",
+    "start": "cross-env NODE_ENV=production PORT=8181 pm2 start ./app/bin/www.js",
     "dev": "cross-env NODE_ENV=develop PORT=3000 nodemon --inspect ./app/bin/www.js"
   },
   "keywords": [
