@@ -36,7 +36,7 @@ class MenuController extends BaseController {
     this._passport.authenticate('jwt-auth', {
       onVerified: callback,
       onFailure: (error) => {
-        this._responseManager.respondWithError(res, error.status || 401, error.message);
+        this._responseManager.respondWithError(res, error.status || 500, error.message);
       }
     })(req, res, next);
   }

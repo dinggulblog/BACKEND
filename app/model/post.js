@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { MenuModel } from './menu.js';
 import { CounterModel } from './counter.js';
 
 const PostSchema = new mongoose.Schema({
@@ -50,7 +51,9 @@ const PostSchema = new mongoose.Schema({
   }]
 }, { timestamps: true, versionKey: false });
 
-PostSchema.pre('save', async function(next) {
+PostSchema.index({ subject: 1, createdAt: -1 });
+
+PostSchema.pre('save', async function (next) {
   try {
     if (this.isNew) {
       let counter = await CounterModel.findOne({ name: 'posts' }).exec();
@@ -66,6 +69,18 @@ PostSchema.pre('save', async function(next) {
   }
 });
 
-PostSchema.index({ subject: 1, createdAt: -1 });
+PostSchema.post(['save', 'updateOne'], async function (res, next) {
+  try {
+    await MenuModel.updateOne(
+      { _id: res.subject },
+      { $addToSet: { categories: res.category } },
+      { runValidators: true }
+    ).lean().exec();
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 export const PostModel = mongoose.model('Post', PostSchema);

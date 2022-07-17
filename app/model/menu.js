@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { PostModel } from './post.js';
 
 const MenuSchema = new mongoose.Schema({
   title: {

@@ -24,7 +24,7 @@ class AuthController extends BaseController {
         this._authHandler.issueRenewedToken(req, payload, this._responseManager.getCookieResponseHandler(res));
       },
       onFailure: (error) => {
-        this._responseManager.respondWithError(res, error.status || 403, error.message);
+        this._responseManager.respondWithError(res, error.status || 401, error.message);
       }
     })(req, res, next);
   }

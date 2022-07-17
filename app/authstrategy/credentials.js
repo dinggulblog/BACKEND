@@ -1,7 +1,6 @@
 import { Strategy as LocalAuthStrategy } from 'passport-local';
 
 import { UserModel } from '../model/user.js';
-import NotFoundError from '../error/not-found.js';
 import UnauthorizedError from '../error/unauthorized.js';
 
 class CredentialsAuthStrategy extends LocalAuthStrategy {
@@ -21,11 +20,8 @@ class CredentialsAuthStrategy extends LocalAuthStrategy {
         .populate('roles')
         .exec();
       
-      if (!user) {
-        return done(new NotFoundError('User not found'), false);
-      }
-      if (!user.comparePassword(password)) {
-        return done(new UnauthorizedError('ID and password do not match'), false);
+      if (!user || !user.comparePassword(password)) {
+        return done(new UnauthorizedError('아이디가 존재하지 않거나, 아이디와 비밀번호가 일치하지 않습니다.'), false);
       }
 
       return done(null, user);

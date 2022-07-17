@@ -102,7 +102,7 @@ UserSchema.pre('save', function (next) {
   }
 });
 
-UserSchema.post('findOneAndUpdate', async function (res, next) {
+UserSchema.post('findByIdAndUpdate', async function (res, next) {
   try {
     if (!res.isActive) {
       await PostModel.updateMany({ author: res._id, isActive: true }, { $set: { isActive: false } }).lean().exec();

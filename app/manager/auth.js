@@ -51,10 +51,10 @@ class AuthManager extends BaseAutoBindedClass {
 
   _extractTokenFromCookies(req) {
     let token = null;
-    if (req && req.signedCookies.refreshToken) {
+    if (req && req.signedCookies && req.signedCookies.refreshToken) {
       token = req.signedCookies.refreshToken;
     }
-    else if (req && req.cookies.refreshToken) {
+    else if (req && req.cookies && req.cookies.refreshToken) {
       token = req.cookies.refreshToken;
     }
     return token;

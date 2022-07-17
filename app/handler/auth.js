@@ -5,8 +5,9 @@ import { UserModel } from '../model/user.js';
 import { jwtOptions } from '../../config/jwt-options.js';
 import AuthManager from '../manager/auth.js'
 import BaseAutoBindedClass from '../base/autobind.js';
+import JwtError from '../error/jwt-error.js'
+import ServerError from '../error/server-error.js';
 import NotFoundError from '../error/not-found.js';
-
 
 class AuthHandler extends BaseAutoBindedClass {
   constructor() {
@@ -28,7 +29,7 @@ class AuthHandler extends BaseAutoBindedClass {
 
         callback.onSuccess({ refreshToken }, { accessToken });
       } catch (error) {
-        callback.onError(new Error('Cannot sign with JWT'));
+        callback.onError(new ServerError('Internal server error: Cannot sign with JWT'));
       }
     } else {
       callback.onError(new NotFoundError('User not found'));
@@ -50,19 +51,14 @@ class AuthHandler extends BaseAutoBindedClass {
       
       callback.onSuccess({ refreshToken }, { accessToken });
     } catch (error) {
-      error.message = 'Cannot sign tokens with revoked one'
-      callback.onError(error);
+      callback.onError(new JwtError('Invalid refresh token(already deleted).'));
     }
   }
 
-  async revokeToken(req, payload, callback) {
-    try {
-      this._nodeCache.del(payload.jti);
-
-      callback.onSuccess({ refreshToken: '' }, '', 'Token has been successfully revoked');
-    } catch (error) {
-      callback.onError(error);
-    }
+  revokeToken(req, payload, callback) {
+    this._nodeCache.del(payload.jti);
+    console.log('Remaining cache: ', this._nodeCache.keys());
+    callback.onSuccess({ refreshToken: '' }, '', 'Token has been successfully revoked');
   }
 
   _provideAccessTokenPayload(user, uuid) {
@@ -70,12 +66,12 @@ class AuthHandler extends BaseAutoBindedClass {
       sub: user._id,
       iss: jwtOptions.issuer,
       aud: jwtOptions.audience,
-      exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour
+      exp: Math.floor(Date.now() / 1000) + (60 * 60), // 60 min
       nbf: Math.floor(Date.now() / 1000),
       jti: uuid,
       data: {
         nickname: user.nickname,
-        roles: user.roles.map(role => role.name)
+        roles: user.roles?.map(role => role.name)
       }
     };
   }
@@ -84,7 +80,7 @@ class AuthHandler extends BaseAutoBindedClass {
     return {
       iss: jwtOptions.issuer,
       aud: jwtOptions.audience,
-      exp: Math.floor(Date.now() / 1000) + (86400 * 7), // 1 weeks
+      exp: Math.floor(Date.now() / 1000) + (86400 * 7), // 7 days
       nbf: Math.floor(Date.now() / 1000),
       jti: uuid
     };

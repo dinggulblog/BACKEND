@@ -210,7 +210,7 @@ class PostHandler extends BaseAutoBindedClass {
       const updatedPost = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub },
         { $set: req.body },
-        { new: true }
+        { new: true, runValidators: true }
       ).populate('author', { _id: 0, nickname: 1 }).lean().exec();
       if (!updatedPost) {
         throw new NotFoundError('Post not found');

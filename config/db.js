@@ -36,4 +36,4 @@ const createDefaultDoc = async () => {
   }
 }
 
-export default { connect, createDefaultDoc }
+export default { connect, createDefaultDoc };

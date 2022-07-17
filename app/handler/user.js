@@ -156,8 +156,8 @@ class UserHandler {
 
   async deleteUser(req, payload, callback) {
     try {
-      const user = await UserModel.findOneAndUpdate(
-        { _id: payload.sub },
+      const user = await UserModel.findByIdAndUpdate(
+        payload.sub,
         { $set: { isActive: false } },
         { new: true }
       ).lean().exec();
