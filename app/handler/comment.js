@@ -60,7 +60,7 @@ class CommentHandler extends BaseAutoBindedClass {
         throw new InvalidRequestError('Validation errors: ' + errorMessages.join(' && '));
       }
 
-      const newComment = await CommentModel.create({
+      await CommentModel.create({
         commenter: payload.sub,
         post: req.params.pid,
         parentComment: req.body?.parentComment,
@@ -68,7 +68,7 @@ class CommentHandler extends BaseAutoBindedClass {
         isPublic: req.body?.isPublic
       });
 
-      callback.onSuccess(newComment);
+      return await this.getComments(req, callback);
     } catch (error) {
       callback.onError(error);
     }
@@ -108,16 +108,13 @@ class CommentHandler extends BaseAutoBindedClass {
         throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
       }
 
-      const updatedComment = await CommentModel.findOneAndUpdate(
+      await CommentModel.findOneAndUpdate(
         { _id: req.params.cid, post: req.params.pid, commenter: payload.sub },
         { $set: req.body },
         { new: true }
       ).lean().exec();
-      if (!updatedComment) {
-        throw new NotFoundError('Comment not found');
-      }
 
-      callback.onSuccess(updatedComment);
+      return await this.getComments(req, callback);
     } catch (error) {
       callback.onError(error);
     }
@@ -134,14 +131,11 @@ class CommentHandler extends BaseAutoBindedClass {
         throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
       }
 
-      const deletedComment = await CommentModel.findOneAndRemove(
+      await CommentModel.findOneAndRemove(
         { _id: req.params.cid, post: req.params.pid, commenter: payload.sub }
       ).lean().exec();
-      if (!deletedComment) {
-        throw new NotFoundError('Post not found');
-      }
 
-      callback.onSuccess(deletedComment);
+      return await this.getComments(req, callback);
     } catch (error) {
       callback.onError(error);
     }

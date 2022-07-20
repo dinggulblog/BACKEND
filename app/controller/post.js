@@ -33,9 +33,21 @@ class PostController extends BaseController {
     });
   }
 
+  updateLikes(req, res, next) {
+    this.authenticate(req, res, next, (token, payload) => {
+      this._postHandler.updatePostLike(req, payload, this._responseManager.getDefaultResponseHandler(res));
+    });
+  }
+
   delete(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this._postHandler.deletePost(req, payload, this._responseManager.getDefaultResponseHandler(res));
+    });
+  }
+
+  deleteLikes(req, res, next) {
+    this.authenticate(req, res, next, (token, payload) => {
+      this._postHandler.deletePostLike(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 

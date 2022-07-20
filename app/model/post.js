@@ -44,14 +44,14 @@ const PostSchema = new mongoose.Schema({
     ref: 'File'
   },
   likes: [{
-    likedUser: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    }
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }]
 }, { timestamps: true, versionKey: false });
 
-PostSchema.index({ subject: 1, createdAt: -1 });
+PostSchema.index({ _id: 1, createdAt: -1 });
+PostSchema.index({ postNum: 1, createdAt: -1 });
+PostSchema.index({ subject: 1, createdAt: -1 })
 
 PostSchema.pre('save', async function (next) {
   try {

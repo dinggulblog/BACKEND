@@ -28,7 +28,6 @@ class MenuHandler {
       'categories': {
         optional: { options: { nullable: true } },
         isArray: true,
-        isLength: { options: [{ min: 0, max: 10 }] },
         errorMessage: 'Invalid menu categories'
       },
       'categories.*': {
@@ -78,7 +77,7 @@ class MenuHandler {
         this._memCache.set('menus', menus, 86400);
       }
 
-      callback.onSuccess(menus);
+      callback.onSuccess({ menus });
     } catch (error) {
       callback.onError(error);
     }

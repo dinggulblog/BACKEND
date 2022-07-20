@@ -6,8 +6,10 @@ const postController = new PostController();
 
 router.post('/', postController.create);
 router.get('/', postController.getAll);
-router.get('/:id', postController.get);
+router.get('/post', postController.get);
 router.put('/:id', postController.update);
+router.put('/:id', postController.updateLikes);
 router.delete('/:id', postController.delete);
+router.delete('/:id', postController.deleteLikes);
 
 export { router as postRouter };

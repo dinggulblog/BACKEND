@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { param, checkSchema, validationResult, check } from 'express-validator';
+import { query, param, checkSchema, validationResult } from 'express-validator';
 
 import CommentHandler from './comment.js'
 import { UserModel } from '../model/user.js';
@@ -46,9 +46,14 @@ class PostHandler extends BaseAutoBindedClass {
 
   static get POSTS_PAGINATION_SCHEMA() {
     return {
-      'subject': {
+      'subjects': {
         optional: { options: { nullable: true } },
-        customSanitizer: { options: value => mongoose.Types.ObjectId(value) }
+        toArray: true,
+        errorMessage: 'Invalid subjects array provided'
+      },
+      'subjects.*': {
+        optional: { options: { nullable: true } },
+        customSanitizer: { options: value => mongoose.Types.ObjectId(value) },
       },
       'category': {
         optional: { options: { nullable: true } },
@@ -68,9 +73,7 @@ class PostHandler extends BaseAutoBindedClass {
       },
       'searchType': {
         optional: { options: { nullable: true } },
-        isString: true,
-        toString: false,
-        errorMessage: 'Invalid search type provided'
+        isString: { errorMessage: 'Invalid search type provided' },
       },
       'searchText': {
         optional: { options: { nullable: true } },
@@ -100,7 +103,7 @@ class PostHandler extends BaseAutoBindedClass {
         isPublic: req.body?.isPublic
       });
 
-      callback.onSuccess(newPost);
+      callback.onSuccess({ post: newPost });
     } catch (error) {
       callback.onError(error);
     }
@@ -140,23 +143,22 @@ class PostHandler extends BaseAutoBindedClass {
           as: 'comments'
         } },
         { $project: {
-          author: { nickname: 1 },
-          category: 1,
           postNum: 1,
+          author: { nickname: 1 },
+          subject: 1,
+          category: 1,
           title: 1,
           content: { $substrCP: ['$content', 0, 100] },
           isPublic: 1,
           createdAt: 1,
           updatedAt: 1,
           viewCount: 1,
+          likeCount: { $size: '$likes' },
           commentCount: { $size: '$comments' }
         }}
       ]).exec();
 
-      callback.onSuccess({
-        posts,
-        maxPage
-      });
+      callback.onSuccess({ posts, maxPage });
     } catch (error) {
       callback.onError(error);
     }
@@ -164,7 +166,8 @@ class PostHandler extends BaseAutoBindedClass {
 
   async getPost(req, callback) {
     try {
-      await param('id').notEmpty().isMongoId().run(req);
+      await query('id').optional({ options: { nullable: true } }).isMongoId().run(req);
+      await query('postNum').optional({ options: { nullable: true } }).isNumeric().run(req);
 
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -172,8 +175,9 @@ class PostHandler extends BaseAutoBindedClass {
         throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
       }
 
-      const post = await PostModel.findByIdAndUpdate(
-        req.params.id,
+      const filter = req.query.id ? { _id: req.query.id } : { postNum: req.query.postNum };
+      const post = await PostModel.findOneAndUpdate(
+        filter,
         { $inc: { viewCount: 1} },
         { new: true }
       ).populate('author', { _id: 0, nickname: 1 }).lean().exec();
@@ -187,10 +191,7 @@ class PostHandler extends BaseAutoBindedClass {
         .lean()
         .exec();
 
-      callback.onSuccess({
-        post,
-        comments: this._converTrees(comments, '_id', 'parentComment', 'childComments')
-      });
+      callback.onSuccess({ post, comments: this._converTrees(comments, '_id', 'parentComment', 'childComments') });
     } catch (error) {
       callback.onError(error);
     }
@@ -207,16 +208,35 @@ class PostHandler extends BaseAutoBindedClass {
         throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
       }
 
-      const updatedPost = await PostModel.findOneAndUpdate(
+      const post = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub },
         { $set: req.body },
         { new: true, runValidators: true }
       ).populate('author', { _id: 0, nickname: 1 }).lean().exec();
-      if (!updatedPost) {
-        throw new NotFoundError('Post not found');
+
+      callback.onSuccess({ post });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async updatePostLike(req, payload, callback) {
+    try {
+      await param('id').notEmpty().isMongoId().run(req);
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        const errorMessages = errors.array().map(elem => elem.msg);
+        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
       }
 
-      callback.onSuccess(updatedPost);
+      const post = await PostModel.findByIdAndUpdate(
+        req.params.id,
+        { $addToSet: { likes: payload.sub } },
+        { new: true }
+      ).lean().exec();
+
+      callback.onSuccess({ post });
     } catch (error) {
       callback.onError(error);
     }
@@ -232,14 +252,33 @@ class PostHandler extends BaseAutoBindedClass {
         throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
       }
 
-      const deletedPost = await PostModel.findOneAndRemove(
+      const post = await PostModel.findOneAndRemove(
         { _id: req.params.id, author: payload.sub }
       ).lean().exec();
-      if (!deletedPost) {
-        throw new NotFoundError('Post not found');
+
+      callback.onSuccess({ post });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async deletePostLike(req, payload, callback) {
+    try {
+      await param('id').notEmpty().isMongoId().run(req);
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        const errorMessages = errors.array().map(elem => elem.msg);
+        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
       }
 
-      callback.onSuccess(deletedPost);
+      const post = await PostModel.findByIdAndUpdate(
+        req.params.id,
+        { $pull: { likes: payload.sub } },
+        { new: true }
+      ).lean().exec();
+
+      callback.onSuccess({ post });
     } catch (error) {
       callback.onError(error);
     }
@@ -249,8 +288,8 @@ class PostHandler extends BaseAutoBindedClass {
     const searchQuery = { isActive: true };
 
     // Menu Query filtering
-    if (queries.subject) {
-      searchQuery.subject = queries.subject;
+    if (queries.subjects) {
+      searchQuery.subject = { $in: queries.subjects };
     }
     if (queries.category) {
       searchQuery.category = queries.category;

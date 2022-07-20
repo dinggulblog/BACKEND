@@ -76,8 +76,8 @@ class JwtAuthStrategy extends BaseAuthStrategy {
         const { payload } = await jwtVerify(accessToken, importedPublicKey, this._jwtOptions);
         return callback.onVerified(accessToken, payload);
       } catch (error) {
-        error.status = 401; // If the access token expired -> return 401 error (re-request to refresh url)
-        return callback.onFailure(error);
+        // refresh token exists but not the refresh url -> return 401 error (re-request to refresh url)
+        return callback.onFailure(new UnauthorizedError('You need to refresh the access token by making a request to the router "auth/refresh"'));
       }
     } 
 
@@ -86,10 +86,7 @@ class JwtAuthStrategy extends BaseAuthStrategy {
       if (req.url === '/refresh') {
         try {
           const { payload } = await jwtVerify(refreshToken, importedPublicKey, this._jwtOptions);
-          // If custom verifier exist, delegate the flow control to custom verifier
-          return this._customVerifier
-            ? this._customVerifier(refreshToken, payload, callback)
-            : callback.onVerified(refreshToken, payload);
+          return callback.onVerified(refreshToken, payload);
         } catch (error) {
           // If refresh token expired -> return 419 error (Force logout)
           return callback.onFailure(new JwtError('토큰이 만료되어 재 로그인이 필요합니다.'));
