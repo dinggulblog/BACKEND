@@ -8,8 +8,8 @@ router.post('/', postController.create);
 router.get('/', postController.getAll);
 router.get('/post', postController.get);
 router.put('/:id', postController.update);
-router.put('/:id', postController.updateLikes);
+router.put('/like/:id', postController.updateLike);
 router.delete('/:id', postController.delete);
-router.delete('/:id', postController.deleteLikes);
+router.delete('/like/:id', postController.deleteLike);
 
 export { router as postRouter };

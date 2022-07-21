@@ -33,7 +33,7 @@ class PostController extends BaseController {
     });
   }
 
-  updateLikes(req, res, next) {
+  updateLike(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this._postHandler.updatePostLike(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
@@ -45,7 +45,7 @@ class PostController extends BaseController {
     });
   }
 
-  deleteLikes(req, res, next) {
+  deleteLike(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this._postHandler.deletePostLike(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });

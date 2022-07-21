@@ -77,7 +77,7 @@ class JwtAuthStrategy extends BaseAuthStrategy {
         return callback.onVerified(accessToken, payload);
       } catch (error) {
         // refresh token exists but not the refresh url -> return 401 error (re-request to refresh url)
-        return callback.onFailure(new UnauthorizedError('You need to refresh the access token by making a request to the router "auth/refresh"'));
+        return callback.onFailure(new UnauthorizedError('You need to refresh the access token by making a request to the refresh router'));
       }
     } 
 
@@ -94,7 +94,7 @@ class JwtAuthStrategy extends BaseAuthStrategy {
       }
       else {
         // refresh token exists but not the refresh url -> return 401 error (re-request to refresh url)
-        return callback.onFailure(new UnauthorizedError('You need to refresh the access token by making a request to the router "auth/refresh"'));
+        return callback.onFailure(new UnauthorizedError('You need to refresh the access token by making a request to the refresh router'));
       }
     }
 

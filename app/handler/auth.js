@@ -20,12 +20,12 @@ class AuthHandler extends BaseAutoBindedClass {
     if (user) {
       try {
         const UUIDV1 = v1();
-        // this._nodeCache.flushAll(); // test
 
         const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, UUIDV1));
         const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
 
         this._nodeCache.set(UUIDV1, user._id);
+        console.log('Remaining cache: ', this._nodeCache.keys());
 
         callback.onSuccess({ refreshToken }, { accessToken });
       } catch (error) {
@@ -57,7 +57,6 @@ class AuthHandler extends BaseAutoBindedClass {
 
   revokeToken(req, payload, callback) {
     this._nodeCache.del(payload.jti);
-    console.log('Remaining cache: ', this._nodeCache.keys());
     callback.onSuccess({ refreshToken: '' }, '', 'Token has been successfully revoked');
   }
 

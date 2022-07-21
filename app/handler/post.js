@@ -153,7 +153,7 @@ class PostHandler extends BaseAutoBindedClass {
           createdAt: 1,
           updatedAt: 1,
           viewCount: 1,
-          likeCount: { $size: '$likes' },
+          likes: 1,
           commentCount: { $size: '$comments' }
         }}
       ]).exec();
@@ -233,7 +233,7 @@ class PostHandler extends BaseAutoBindedClass {
       const post = await PostModel.findByIdAndUpdate(
         req.params.id,
         { $addToSet: { likes: payload.sub } },
-        { new: true }
+        { new: true, projection: { likes: 1 } }
       ).lean().exec();
 
       callback.onSuccess({ post });
@@ -275,7 +275,7 @@ class PostHandler extends BaseAutoBindedClass {
       const post = await PostModel.findByIdAndUpdate(
         req.params.id,
         { $pull: { likes: payload.sub } },
-        { new: true }
+        { new: true, projection: { likes: 1 } }
       ).lean().exec();
 
       callback.onSuccess({ post });
