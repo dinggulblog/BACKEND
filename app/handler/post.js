@@ -18,28 +18,31 @@ class PostHandler extends BaseAutoBindedClass {
   static get POST_VALIDATION_SCHEMA() {
     return {
       'subject': {
-        optional: { options: { nullable: true } },
-        isMongoId: { errorMessage: 'Invalid subject ID' },
+        isMongoId: { 
+          errorMessage: 'Invalid subject ID'
+        }
       },
       'category': {
-        optional: { options: { nullable: true } },
-        isString: { errorMessage: 'Invalid category' }
+        customSanitizer: { 
+          options: value => value ? String(value) : undefined
+        },
       },
       'title': {
-        notEmpty: true,
-        isLength: { options: [{ min: 1, max: 150 }] },
-        errorMessage: 'Post title must be between 1 and 150 chars long'
+        isLength: { 
+          options: [{ min: 1, max: 150 }],
+          errorMessage: 'Post title must be between 1 and 150 chars long'
+        },
       },
       'content': {
-        notEmpty: true,
-        isLength: { options: [{ min: 1, max: 5000 }] },
-        errorMessage: 'Post content must be between 1 and 5000 chars long'
+        isLength: { 
+          options: [{ min: 1, max: 5000 }],
+          errorMessage: 'Post content must be between 1 and 5000 chars long'
+        },
       },
       'isPublic': {
-        optional: { options: { nullable: true } },
-        isBoolean: true,
-        toBoolean: true,
-        errorMessage: 'Invalid post isPublic provided'
+        customSanitizer: { 
+          options: value => value ? Boolean(value) : true
+        },
       }
     };
   }
@@ -47,39 +50,43 @@ class PostHandler extends BaseAutoBindedClass {
   static get POSTS_PAGINATION_SCHEMA() {
     return {
       'subjects': {
-        optional: { options: { nullable: true } },
-        toArray: true,
-        errorMessage: 'Invalid subjects array provided'
+        toArray: true
       },
       'subjects.*': {
-        optional: { options: { nullable: true } },
-        customSanitizer: { options: value => mongoose.Types.ObjectId(value) },
+        customSanitizer: { 
+          options: value => mongoose.Types.ObjectId(value)
+        },
       },
       'category': {
-        optional: { options: { nullable: true } },
-        isString: { errorMessage: 'Invalid category' }
+        optional: { 
+          options: { nullable: true }
+        }
       },
       'page': {
-        customSanitizer: { options: value => value ? value : 1 },
-        isInt: { options: [{ min: 1, max: Number.MAX_SAFE_INTEGER }] },
         toInt: true,
-        errorMessage: 'Page must be an integer greater than 1'
+        isInt: { 
+          options: [{ min: 1, max: Number.MAX_SAFE_INTEGER }],
+          errorMessage: 'Page must be an integer greater than 1'
+        }
       },
       'limit': {
-        customSanitizer: { options: value => value ? value : 10 },
-        isInt: { options: [{ min: 1, max: 20 }] },
         toInt: true,
-        errorMessage: 'Limit must be an integer between 1 and 20'
+        isInt: { 
+          options: [{ min: 1, max: 10 }],
+          errorMessage: 'Limit must be an integer between 1 and 10'
+        }
       },
       'searchType': {
-        optional: { options: { nullable: true } },
-        isString: { errorMessage: 'Invalid search type provided' },
+        optional: { 
+          options: { nullable: true }
+        }
       },
       'searchText': {
         optional: { options: { nullable: true } },
-        isString: { options: [{ min: 3, max: 100 }] },
-        toString: true,
-        errorMessage: 'Search text must be between 3 and 100 chars long'
+        isString: { 
+          options: [{ min: 3, max: 100 }],
+          errorMessage: 'Search text must be between 3 and 100 chars long'
+        }
       }
     }
   }
@@ -97,10 +104,10 @@ class PostHandler extends BaseAutoBindedClass {
       const newPost = await PostModel.create({
         author: payload.sub,
         subject: req.body.subject,
-        category: req.body?.category,
+        category: req.body.category,
         title: req.body.title,
         content: req.body.content,
-        isPublic: req.body?.isPublic
+        isPublic: req.body.isPublic
       });
 
       callback.onSuccess({ post: newPost });
@@ -148,12 +155,13 @@ class PostHandler extends BaseAutoBindedClass {
           subject: 1,
           category: 1,
           title: 1,
-          content: { $substrCP: ['$content', 0, 100] },
+          content: { $substrCP: ['$content', 0, 200] },
           isPublic: 1,
           createdAt: 1,
           updatedAt: 1,
           viewCount: 1,
           likes: 1,
+          likeCount: { $size: '$likes' },
           commentCount: { $size: '$comments' }
         }}
       ]).exec();
@@ -176,14 +184,16 @@ class PostHandler extends BaseAutoBindedClass {
       }
 
       const filter = req.query.id ? { _id: req.query.id } : { postNum: req.query.postNum };
-      const post = await PostModel.findOneAndUpdate(
-        filter,
-        { $inc: { viewCount: 1} },
-        { new: true }
-      ).populate('author', { _id: 0, nickname: 1 }).lean().exec();
+      const post = await PostModel.findOneAndUpdate(filter, { $inc: { viewCount: 1 } }, { new: true })
+        .populate('author', { _id: 0, nickname: 1 })
+        .lean()
+        .exec();
+
       if (!post) {
         throw new NotFoundError('Post not found');
       }
+
+      post.likeCount = post.likes.length
 
       const comments = await CommentModel.find({ post: post._id })
         .populate('commenter', { nickname: 1 })
@@ -208,13 +218,14 @@ class PostHandler extends BaseAutoBindedClass {
         throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
       }
 
-      const post = await PostModel.findOneAndUpdate(
+      await PostModel.updateOne(
         { _id: req.params.id, author: payload.sub },
-        { $set: req.body },
-        { new: true, runValidators: true }
-      ).populate('author', { _id: 0, nickname: 1 }).lean().exec();
+        { $set: req.body }
+      ).lean().exec();
 
-      callback.onSuccess({ post });
+      req.query.id = req.params.id;
+
+      return await this.getPost(req, callback);
     } catch (error) {
       callback.onError(error);
     }
@@ -233,7 +244,7 @@ class PostHandler extends BaseAutoBindedClass {
       const post = await PostModel.findByIdAndUpdate(
         req.params.id,
         { $addToSet: { likes: payload.sub } },
-        { new: true, projection: { likes: 1 } }
+        { new: true, projection: { likes: 1, likeCount: { $size: '$likes' } } }
       ).lean().exec();
 
       callback.onSuccess({ post });
@@ -253,7 +264,8 @@ class PostHandler extends BaseAutoBindedClass {
       }
 
       const post = await PostModel.findOneAndRemove(
-        { _id: req.params.id, author: payload.sub }
+        { _id: req.params.id, author: payload.sub },
+        { projection: { _id: 1 } }
       ).lean().exec();
 
       callback.onSuccess({ post });
@@ -275,7 +287,7 @@ class PostHandler extends BaseAutoBindedClass {
       const post = await PostModel.findByIdAndUpdate(
         req.params.id,
         { $pull: { likes: payload.sub } },
-        { new: true, projection: { likes: 1 } }
+        { new: true, projection: { likes: 1, likeCount: { $size: '$likes' } } }
       ).lean().exec();
 
       callback.onSuccess({ post });
@@ -288,8 +300,8 @@ class PostHandler extends BaseAutoBindedClass {
     const searchQuery = { isActive: true };
 
     // Menu Query filtering
-    if (queries.subjects) {
-      searchQuery.subject = { $in: queries.subjects };
+    if (Array.isArray(queries.subjects)) {
+      searchQuery.subject = queries.subjects.length === 1 ? mongoose.Types.ObjectId(queries.subjects[0]) : { $in: queries.subjects };
     }
     if (queries.category) {
       searchQuery.category = queries.category;

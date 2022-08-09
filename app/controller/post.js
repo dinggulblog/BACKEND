@@ -22,8 +22,8 @@ class PostController extends BaseController {
 
   get(req, res, next) {
     this._postHandler.getPost(req, this._responseManager.getDefaultResponseHandlerError(res, ((data, message, code) => {
-      const hateosLinks = [this._responseManager.generateHATEOASLink(req.baseUrl + '/:id', 'GET', 'single')];
-      this._responseManager.respondWithSuccess(res, code || this._responseManager.HTTP_STATUS.OK, data, message, hateosLinks);
+      // const hateosLinks = [this._responseManager.generateHATEOASLink(req.baseUrl + '/:id', 'GET', 'single')];
+      this._responseManager.respondWithSuccess(res, code || this._responseManager.HTTP_STATUS.OK, data, message);
     })));
   }
 

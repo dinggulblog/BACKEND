@@ -1,23 +1,19 @@
 import mongoose from 'mongoose';
-import { PostModel } from './post.js';
 
 const MenuSchema = new mongoose.Schema({
   title: {
     type: String,
     required: [true, 'Menu title is required!'],
-    trim: true,
-    lowercase: true
+    trim: true
   },
   subject: {
     type: String,
     default: 'default',
-    trim: true,
-    lowercase: true
+    trim: true
   },
   categories: [{
     type: String,
-    trim: true,
-    lowercase: true
+    trim: true
   }]
 }, { toObject: { virtuals: true } });
 

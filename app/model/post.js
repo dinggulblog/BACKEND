@@ -49,9 +49,8 @@ const PostSchema = new mongoose.Schema({
   }]
 }, { timestamps: true, versionKey: false });
 
-PostSchema.index({ _id: 1, createdAt: -1 });
-PostSchema.index({ postNum: 1, createdAt: -1 });
-PostSchema.index({ subject: 1, createdAt: -1 })
+PostSchema.index({ postNum: 1 });
+PostSchema.index({ subject: 1, createdAt: -1 });
 
 PostSchema.pre('save', async function (next) {
   try {
@@ -62,6 +61,7 @@ PostSchema.pre('save', async function (next) {
       counter.count++;
       await counter.save();
       this.postNum = counter.count;
+
       next();
     }
   } catch (error) {
@@ -71,6 +71,8 @@ PostSchema.pre('save', async function (next) {
 
 PostSchema.post(['save', 'updateOne'], async function (res, next) {
   try {
+    console.log('Post Updated')
+
     await MenuModel.updateOne(
       { _id: res.subject },
       { $addToSet: { categories: res.category } },

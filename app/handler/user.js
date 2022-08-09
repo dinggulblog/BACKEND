@@ -111,7 +111,6 @@ class UserHandler {
   async getUserInfo(req, payload, callback) {
     try {
       const user = await UserModel.findOne({ _id: payload.sub })
-        .select({ _id: 0, tokens: 0 })
         .populate('roles')
         .lean()
         .exec();
@@ -119,8 +118,10 @@ class UserHandler {
         throw new NotFoundError('The requested user could not be found.');
       }
 
-      user.roles = user.roles.map(role => role.name)
-      callback.onSuccess(user);
+      user.id = user._id;
+      user.roles = user.roles.map(role => role.name);
+      
+      callback.onSuccess({ user });
     } catch (error) {
       callback.onError(error);
     }

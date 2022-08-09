@@ -14,7 +14,6 @@ class CommentHandler extends BaseAutoBindedClass {
   static get POSTID_VALIDATION_SCHEMA() {
     return {
       'pid': {
-        notEmpty: { errorMessage: 'No Post ID passed in params' },
         custom: {
           options: async (value) => {
             const post = await PostModel.findById(value).lean().exec();
@@ -30,15 +29,12 @@ class CommentHandler extends BaseAutoBindedClass {
       'parentComment': {
         optional: { options: { nullable: true } },
         isMongoId: { errorMessage: 'Invalid parent comment ID' },
-        errorMessage: 'Invalid parent comment ID provided'
       },
       'content': {
-        notEmpty: true,
         isLength: {
           options: [{ min: 1, max: 1000 }],
           errorMessage: 'Comment content must be between 1 and 1000 chars long'
-        },
-        errorMessage: 'Invalid Comment content'
+        }
       },
       'isPublic': {
         optional: { options: { nullable: true } },
