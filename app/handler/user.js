@@ -58,7 +58,7 @@ class UserHandler {
         .lean()
         .exec();
 
-      user.avatar = join(__dirname, 'uploads', user.avatar.serverFileName || 'default.png');
+      user.avatar = join(__dirname, 'uploads', user.avatar?.serverFileName || 'default.png');
 
       callback.onSuccess({ user });
     } catch (error) {
