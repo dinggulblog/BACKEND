@@ -77,17 +77,18 @@ class PostHandler extends BaseAutoBindedClass {
     }
   }
 
-  async getPostsWithFilter(req, payload, callback) {
+  async getPostsWithFilter(req, callback) {
     try {
       const filterQuery = { isActive: true }
       const limit = req.query.limit;
       const skip = (req.query.page - 1) * limit;
+      const user = await UserModel.findOne({ nickname: req.params.nickname }, { isActive: 1 }).lean().exec();
 
       if (req.params.filter === 'like') {
-        filterQuery.likes = mongoose.Types.ObjectId(payload.sub) 
+        filterQuery.likes = mongoose.Types.ObjectId(user._id);
       }
       else if (req.params.filter === 'comment') {
-        const comments = await CommentModel.find({ commenter: payload.sub }, { post: 1 })
+        const comments = await CommentModel.find({ commenter: user._id }, { post: 1 })
           .sort('-createdAt')
           .skip(skip)
           .limit(limit)

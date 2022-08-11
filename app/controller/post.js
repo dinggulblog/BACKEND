@@ -20,10 +20,8 @@ class PostController extends BaseController {
     this._postHandler.getPosts(req, this._responseManager.getDefaultResponseHandler(res));
   }
 
-  getAllWithFiler(req, res, next) {
-    this.authenticate(req, res, next, (token, payload) => {
-      this._postHandler.getPostsWithFilter(req, payload, this._responseManager.getDefaultResponseHandler(res));
-    });
+  getAllWithFiler(req, res) {
+    this._postHandler.getPostsWithFilter(req, this._responseManager.getDefaultResponseHandler(res));
   }
 
   get(req, res) {

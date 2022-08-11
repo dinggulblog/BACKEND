@@ -40,7 +40,7 @@ class AuthHandler extends BaseAutoBindedClass {
       const UUIDV1 = v1();
       
       const userId = this._nodeCache.get(payload.jti);
-      const user = await UserModel.findOne({ _id: userId }).lean().exec();
+      const user = await UserModel.findOne({ _id: userId }, { isActive: 1 }).lean().exec();
 
       const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, UUIDV1));
       const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
