@@ -95,9 +95,10 @@ class UserHandler {
           introduce: req.body.introduce
         } },
         { new: false,
-          projection: { avatar: 1, greetings: 1, introduce: 1, isActive: 1 } }
+          projection: { avatar: 1, greetings: 1, introduce: 1, isActive: 1 },
+          populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
       ).lean().exec();
-
+      
       if (avatar && user.avatar) {
         const oldAvatar = await FileModel.findByIdAndRemove(user.avatar).select('serverFileName').lean().exec();
         if (oldAvatar) {
@@ -105,9 +106,11 @@ class UserHandler {
           accessSync(filePath, constants.F_OK)
           unlinkSync(filePath)
         }
-        user.avatar = join(__dirname, 'uploads', avatar.serverFileName);
       }
 
+      user.avatar = avatar ? join(__dirname, 'uploads', avatar.serverFileName) : undefined;
+      user.greetings = req.body?.greetings;
+      user.introduce = req.body?.introduce;
       delete user._id;
 
       callback.onSuccess({ user });
