@@ -17,7 +17,7 @@ import routes from './app/routes/index.js';
 import authManager from './app/manager/auth.js';
 import responseManager from './app/manager/response.js';
 
-const __dirname = resolve();
+global.__dirname = resolve();
 
 // Set config variables in .env
 if (process.env.NODE_ENV === 'production') {
@@ -43,7 +43,9 @@ try {
   mkdirSync('uploads');
 }
 
-// Middlewares
+// Cors, Loging and Securities
+app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
+
 if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'));
   app.use(helmet());
@@ -62,18 +64,13 @@ if (process.env.NODE_ENV === 'production') {
   app.use(morgan('dev'));
 }
 
-app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Headers', 'Origin, X-requested-With, Content-Type, Accept');
-  next();
-})
-
+// Express Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(join(__dirname, 'public')));
 app.use(express.static(join(__dirname, 'uploads')));
-app.use(useragent.express());
 app.use(cookieParser(process.env.COOKIE_SECRET));
+app.use(useragent.express());
 
 // Setup auth manager
 app.use(authManager.providePassport().initialize());

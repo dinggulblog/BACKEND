@@ -55,8 +55,8 @@ PostSchema.index({ subject: 1, createdAt: -1 });
 PostSchema.pre('save', async function (next) {
   try {
     if (this.isNew) {
-      let counter = await CounterModel.findOne({ name: 'posts' }).exec();
-      if (!counter) counter = await CounterModel.create({ name: 'posts' });
+      let counter = await CounterModel.findOne({ subject: this.subject, name: 'posts' }).exec();
+      if (!counter) counter = await CounterModel.create({ subject: this.subject, name: 'posts' });
       
       counter.count++;
       await counter.save();
@@ -71,8 +71,6 @@ PostSchema.pre('save', async function (next) {
 
 PostSchema.post(['save', 'updateOne'], async function (res, next) {
   try {
-    console.log('Post Updated')
-
     await MenuModel.updateOne(
       { _id: res.subject },
       { $addToSet: { categories: res.category } },

@@ -26,16 +26,16 @@ const FileSchema = new mongoose.Schema({
   }
 })
 
-const FileModel = mongoose.model('File', FileSchema);
+const fileModel = mongoose.model('File', FileSchema);
 
-FileModel.createNewInstance = async function (file, uploader, post) {
+fileModel.createNewInstance = async function (file, uploader, post) {
   return await FileModel.create({
     uploader: uploader,
     post: post,
-    originalFileName: file.originalFileName,
-    serverFileName: file.fileName,
+    originalFileName: file.originalname,
+    serverFileName: file.filename,
     size: file.size
   })
 }
 
-export default FileModel
+export const FileModel = fileModel

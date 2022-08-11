@@ -1,9 +1,14 @@
 import mongoose from 'mongoose';
 import { genSaltSync, hashSync, compareSync } from 'bcrypt';
 
+import ForbiddenError from '../error/forbidden.js';
 import { PostModel } from './post.js';
 
 const UserSchema = new mongoose.Schema({
+  avatar: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'File'
+  },
   roles: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Role'
@@ -11,7 +16,6 @@ const UserSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, 'Email is required!'],
-    trim: true,
     unique: true
   },
   password: {
@@ -26,8 +30,13 @@ const UserSchema = new mongoose.Schema({
   nickname: {
     type: String,
     required: [true, 'Nickname is required!'],
-    trim: true,
     unique: true
+  },
+  greetings: {
+    type: String
+  },
+  introduce: {
+    type: String
   },
   isActive: {
     type: Boolean,
@@ -98,8 +107,13 @@ UserSchema.pre('save', function (next) {
     const hashed = hashSync(this.password, salt);
     this.salt = salt;
     this.password = hashed;
-    next()
+    next();
   }
+});
+
+UserSchema.post(['findOne', 'findOneAndUpdate'], function (res, next) {
+  if (!res.isActive) next(new ForbiddenError('This is an inactive user.'));
+  next();
 });
 
 UserSchema.post('findByIdAndUpdate', async function (res, next) {
@@ -111,6 +125,6 @@ UserSchema.post('findByIdAndUpdate', async function (res, next) {
   } catch (error) {
     next(error);
   }
-})
+});
 
 export const UserModel = mongoose.model('User', UserSchema);

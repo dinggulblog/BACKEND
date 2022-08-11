@@ -29,13 +29,13 @@ const CommentSchema = new mongoose.Schema({
   }
 }, { toObject: { virtuals: true }, timestamps: true, versionKey: false });
 
+CommentSchema.index({ post: 1, createdAt: -1 });
+
 CommentSchema.virtual('id')
   .get(function () { return this._id });
 
 CommentSchema.virtual('childComments')
   .get(function () { return this._childComments })
   .set(function (value) { this._childComments = value });
-
-CommentSchema.index({ post: 1, createdAt: -1 });
 
 export const CommentModel = mongoose.model('Comment', CommentSchema);

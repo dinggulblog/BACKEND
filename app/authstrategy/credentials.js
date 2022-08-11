@@ -14,10 +14,9 @@ class CredentialsAuthStrategy extends LocalAuthStrategy {
 
   static async handleUserAuth(req, username, password, done) {
     try {
-      const lastLoginIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+      const lastLoginIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress?.split(':').pop();
       const user = await UserModel.findOneAndUpdate({ email: username }, { $set: { lastLoginIP } })
-        .select({ _id: 1, roles:1, password: 1, nickname:1 })
-        .populate('roles')
+        .select({ password: 1, isActive: 1 })
         .exec();
       
       if (!user || !user.comparePassword(password)) {

@@ -65,7 +65,7 @@ class JwtAuthStrategy extends BaseAuthStrategy {
     }
 
     // Logout -> return verified callback 
-    if (req.originalUrl === '/v1/auth/me') {
+    if (req.originalUrl === '/v1/auth' && req.method === 'DELETE') {
       const payload = decodeJwt(accessToken || refreshToken);
       return callback.onVerified(accessToken || refreshToken, payload);
     }

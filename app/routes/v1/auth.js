@@ -5,7 +5,7 @@ const router = Router();
 const authController = new AuthController();
 
 router.post('/', authController.create);
-router.post('/refresh', authController.refresh);
-router.delete('/me', authController.remove);
+router.post('/refresh', authController.update);
+router.delete('/', authController.delete);
 
 export { router as authRouter };

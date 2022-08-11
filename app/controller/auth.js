@@ -18,7 +18,7 @@ class AuthController extends BaseController {
   }
 
   // Request new token by jwt auth
-  refresh(req, res, next) {
+  update(req, res, next) {
     this._passport.authenticate('jwt-auth', {
       onVerified: (token, payload) => {
         this._authHandler.issueRenewedToken(req, payload, this._responseManager.getCookieResponseHandler(res));
@@ -30,7 +30,7 @@ class AuthController extends BaseController {
   }
 
   // Revoke Token (Logout)
-  remove(req, res, next) {
+  delete(req, res, next) {
     this._passport.authenticate('jwt-auth', {
       onVerified: (token, payload) => {
         this._authHandler.revokeToken(req, payload, this._responseManager.getResetCookieResponseHandler(res));

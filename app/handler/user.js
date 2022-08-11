@@ -1,102 +1,25 @@
 import NodeCache from 'node-cache';
-import { checkSchema, validationResult } from 'express-validator';
+import { join } from 'path';
+import { accessSync, constants, unlinkSync } from 'fs'
 
 import { UserModel } from '../model/user.js';
 import { RoleModel } from '../model/role.js';
-import NotFoundError from '../error/not-found.js';
-import InvalidRequestError from '../error/invalid-request.js';
+import { FileModel } from '../model/file.js';
 
 class UserHandler {
   constructor() {
     this._memCache = new NodeCache();
   }
 
-  static get USER_VALIDATION_SCHEMA() {
-    return {
-      'email': {
-        trim: true,
-        notEmpty: true,
-        isEmail: true,
-        normalizeEmail: true,
-        errorMessage: 'Invalid email provided'
-      },
-      'password': {
-        trim: true,
-        notEmpty: true,
-        isLength: {
-          options: [{ min: 4, max: 30 }],
-          errorMessage: 'Password must be between 4 and 30 chars long'
-        },
-        errorMessage: 'Invalid password provided'
-      },
-      'passwordConfirmation': {
-        trim: true,
-        notEmpty: true,
-        errorMessage: 'Invalid confirm password provided'
-      },
-      'nickname': {
-        trim: true,
-        notEmpty: true,
-        isString: true,
-        toString: true,
-        isLength: {
-          options: [{ min: 2, max: 15 }],
-          errorMessage: 'nickname must be between 2 and 15 chars long'
-        },
-        errorMessage: 'Invalid nickname provided'
-      }
-    };
-  }
-
-  static get USER_UPDATE_VALIDATION_SCHEMA() {
-    return {
-      'currentPassword': {
-        trim: true,
-        notEmpty: true,
-        errorMessage: 'Invalid confirm password provided'
-      },
-      'newPassword': {
-        trim: true,
-        notEmpty: true,
-        isLength: {
-          options: [{ min: 4, max: 30 }],
-          errorMessage: 'Password must be between 4 and 30 chars long'
-        },
-        errorMessage: 'Invalid password provided'
-      },
-      'passwordConfirmation': {
-        trim: true,
-        notEmpty: true,
-        errorMessage: 'Invalid confirm password provided'
-      },
-      'nickname': {
-        trim: true,
-        notEmpty: true,
-        isAlphanumeric: true,
-        isLength: {
-          options: [{ min: 2, max: 15 }],
-          errorMessage: 'nickname must be between 2 and 15 chars long'
-        },
-        errorMessage: 'Invalid nickname provided'
-      }
-    }
-  }
-
-  async createUser(req, callback) {
+  async createUserAccount(req, callback) {
     try {
-      await checkSchema(UserHandler.USER_VALIDATION_SCHEMA, ['body']).run(req);
-      
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors: ' + errorMessages.join(' && '));
-      }
-      
       const roles = this._memCache.get('default_roles');
+
       if (!roles) {
         req.body.roles = await RoleModel.find({ name: 'USER' }).select('_id');
         this._memCache.set('default_roles', req.body.roles, 86400);
-      } else {
+      }
+      else {
         req.body.roles = roles;
       }
 
@@ -108,18 +31,18 @@ class UserHandler {
     }
   }
 
-  async getUserInfo(req, payload, callback) {
+  async getUserAccount(req, payload, callback) {
     try {
       const user = await UserModel.findOne({ _id: payload.sub })
-        .populate('roles')
+        .populate({ path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } })
+        .populate({ path: 'roles', select: 'name' })
         .lean()
         .exec();
-      if (!user) {
-        throw new NotFoundError('The requested user could not be found.');
-      }
 
-      user.id = user._id;
+      const IP = user.lastLoginIP.split('.')
+      user.avatar = join(__dirname, 'uploads', user.avatar.serverFileName);
       user.roles = user.roles.map(role => role.name);
+      user.lastLoginIP = IP.shift() + '.' + IP.shift() + '.' + '***.***';
       
       callback.onSuccess({ user });
     } catch (error) {
@@ -127,22 +50,28 @@ class UserHandler {
     }
   }
 
-  async updateUser(req, payload, callback) {
+  async getUserProfile(req, callback) {
     try {
-      await checkSchema(UserHandler.USER_UPDATE_VALIDATION_SCHEMA, ['body']).run(req);
+      const user = await UserModel.findOne({ nickname: req.params.nickname })
+        .select({ _id: 0, roles: 0, createdAt: 0, updatedAt: 0, lastLoginIP: 0 })
+        .populate({ path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } })
+        .lean()
+        .exec();
 
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors: ' + errorMessages.join(' && '));
-      }
+      user.avatar = join(__dirname, 'uploads', user.avatar.serverFileName);
+
+      callback.onSuccess({ user });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async updateUserAccount(req, payload, callback) {
+    try {
+      const user = await UserModel.findOne({ _id: payload.sub })
+        .select('password isActive')
+        .exec();
       
-      const user = await UserModel.findOne({ _id: payload.sub }).select('password').exec();
-      if (!user) {
-        throw new NotFoundError('The requested user could not be found.');
-      }
-      
-      // Update user object
       user.originalPassword = user.password;
       user.password = req.body.newPassword ? req.body.newPassword : user.password;
       for (const key in req.body) user[key] = req.body[key];
@@ -155,17 +84,45 @@ class UserHandler {
     }
   }
 
-  async deleteUser(req, payload, callback) {
+  async updateUserProfile(req, payload, callback) {
     try {
-      const user = await UserModel.findByIdAndUpdate(
+      const avatar = req.file ? await FileModel.createNewInstance(req.file, payload.sub) : undefined;
+      const user = await UserModel.findOneAndUpdate(
+        { _id: payload.sub },
+        { $set: {
+          avatar: avatar,
+          greetings: req.body.greetings,
+          introduce: req.body.introduce
+        } },
+        { new: false,
+          projection: { avatar: 1, greetings: 1, introduce: 1, isActive: 1 } }
+      ).lean().exec();
+
+      if (avatar && user.avatar) {
+        const oldAvatar = await FileModel.findByIdAndRemove(user.avatar).select('serverFileName').lean().exec();
+        if (oldAvatar) {
+          const filePath = join(__dirname, 'uploads', oldAvatar.serverFileName);
+          accessSync(filePath, constants.F_OK)
+          unlinkSync(filePath)
+        }
+        user.avatar = join(__dirname, 'uploads', avatar.serverFileName);
+      }
+
+      delete user._id;
+
+      callback.onSuccess({ user });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async deleteUserAccount(req, payload, callback) {
+    try {
+      await UserModel.findByIdAndUpdate(
         payload.sub,
         { $set: { isActive: false } },
         { new: true }
       ).lean().exec();
-      
-      if (!user) {
-        throw new NotFoundError('The requested user could not be found.');
-      }
 
       callback.onSuccess({});
     } catch (error) {

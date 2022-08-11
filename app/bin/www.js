@@ -27,7 +27,7 @@ if (process.env.NODE_ENV === 'production') {
   spdy.createServer(options, app).listen(port, () => console.log(app.get('port') + '(SSL) Port is listening!')).on('error', onError);
 }
 else {
-  http.createServer(app).listen(port, () => console.log(app.get('port') + ' Port is listening!')).on('error', onError);
+  http.createServer(app).listen(port, () => '0.0.0.0').on('error', onError);
 }
 
 /**

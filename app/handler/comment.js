@@ -1,67 +1,19 @@
-import { param, checkSchema, validationResult } from 'express-validator';
-
-import { PostModel } from '../model/post.js';
 import { CommentModel } from '../model/comment.js';
 import BaseAutoBindedClass from '../base/autobind.js';
-import InvalidRequestError from '../error/invalid-request.js';
-import NotFoundError from '../error/not-found.js';
 
 class CommentHandler extends BaseAutoBindedClass {
   constructor() {
     super();
   }
 
-  static get POSTID_VALIDATION_SCHEMA() {
-    return {
-      'pid': {
-        custom: {
-          options: async (value) => {
-            const post = await PostModel.findById(value).lean().exec();
-            if (!post) return Promise.reject(new NotFoundError('Post not found'));
-          }
-        }
-      }
-    }
-  }
-
-  static get COMMENT_VALIDATION_SCHEMA() {
-    return {
-      'parentComment': {
-        optional: { options: { nullable: true } },
-        isMongoId: { errorMessage: 'Invalid parent comment ID' },
-      },
-      'content': {
-        isLength: {
-          options: [{ min: 1, max: 1000 }],
-          errorMessage: 'Comment content must be between 1 and 1000 chars long'
-        }
-      },
-      'isPublic': {
-        optional: { options: { nullable: true } },
-        isBoolean: true,
-        toBoolean: true,
-        errorMessage: 'Invalid isPublic provided'
-      }
-    };
-  }
-
   async createComment(req, payload, callback) {
     try {
-      await checkSchema(CommentHandler.POSTID_VALIDATION_SCHEMA, ['params']).run(req);
-      await checkSchema(CommentHandler.COMMENT_VALIDATION_SCHEMA, ['body']).run(req);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors: ' + errorMessages.join(' && '));
-      }
-
       await CommentModel.create({
         commenter: payload.sub,
-        post: req.params.pid,
-        parentComment: req.body?.parentComment,
+        post: req.params.postId,
+        parentComment: req.params?.parentId,
         content: req.body.content,
-        isPublic: req.body?.isPublic
+        isPublic: req.body.isPublic
       });
 
       return await this.getComments(req, callback);
@@ -72,16 +24,8 @@ class CommentHandler extends BaseAutoBindedClass {
 
   async getComments(req, callback) {
     try {
-      await checkSchema(CommentHandler.POSTID_VALIDATION_SCHEMA, ['params']).run(req);
-      
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
-      }
-
-      const comments = await CommentModel.find({ post: req.params.pid })
-        .populate('commenter', { nickname: 1 })
+      const comments = await CommentModel.find({ post: req.params.postId })
+        .populate('commenter', { _id: 0, nickname: 1 })
         .sort('-createdAt')
         .lean()
         .exec();
@@ -94,20 +38,9 @@ class CommentHandler extends BaseAutoBindedClass {
 
   async updateComment(req, payload, callback) {
     try {
-      await param('cid', 'Invalid comment ID provided').notEmpty().isMongoId().run(req);
-      await checkSchema(CommentHandler.POSTID_VALIDATION_SCHEMA, ['params']).run(req);
-      await checkSchema(CommentHandler.COMMENT_VALIDATION_SCHEMA, ['body']).run(req);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
-      }
-
       await CommentModel.findOneAndUpdate(
-        { _id: req.params.cid, post: req.params.pid, commenter: payload.sub },
-        { $set: req.body },
-        { new: true }
+        { _id: req.params.id, post: req.params.postId, commenter: payload.sub },
+        { $set: req.body }
       ).lean().exec();
 
       return await this.getComments(req, callback);
@@ -118,17 +51,9 @@ class CommentHandler extends BaseAutoBindedClass {
 
   async deleteComment(req, payload, callback) {
     try {
-      await param('cid', 'Invalid comment ID provided').notEmpty().isMongoId().run(req);
-      await checkSchema(CommentHandler.POSTID_VALIDATION_SCHEMA, ['params']).run(req);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
-      }
-
-      await CommentModel.findOneAndRemove(
-        { _id: req.params.cid, post: req.params.pid, commenter: payload.sub }
+      await CommentModel.findOneAndUpdate(
+        { _id: req.params.id, post: req.params.postId, commenter: payload.sub },
+        { $set: { isActive: false } }
       ).lean().exec();
 
       return await this.getComments(req, callback);

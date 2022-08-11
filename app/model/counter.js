@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 
 const CounterSchema = new mongoose.Schema({
+  subject: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Menu'
+  },
   name: {
     type: String,
     required: true

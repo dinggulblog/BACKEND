@@ -1,13 +1,10 @@
 import mongoose from 'mongoose';
-import { query, param, checkSchema, validationResult } from 'express-validator';
 
 import CommentHandler from './comment.js'
 import { UserModel } from '../model/user.js';
 import { PostModel } from '../model/post.js';
 import { CommentModel } from '../model/comment.js';
 import BaseAutoBindedClass from '../base/autobind.js';
-import InvalidRequestError from '../error/invalid-request.js';
-import NotFoundError from '../error/not-found.js';
 
 class PostHandler extends BaseAutoBindedClass {
   constructor() {
@@ -15,93 +12,9 @@ class PostHandler extends BaseAutoBindedClass {
     this._converTrees = CommentHandler.convertTrees;
   }
 
-  static get POST_VALIDATION_SCHEMA() {
-    return {
-      'subject': {
-        isMongoId: { 
-          errorMessage: 'Invalid subject ID'
-        }
-      },
-      'category': {
-        customSanitizer: { 
-          options: value => value ? String(value) : undefined
-        },
-      },
-      'title': {
-        isLength: { 
-          options: [{ min: 1, max: 150 }],
-          errorMessage: 'Post title must be between 1 and 150 chars long'
-        },
-      },
-      'content': {
-        isLength: { 
-          options: [{ min: 1, max: 5000 }],
-          errorMessage: 'Post content must be between 1 and 5000 chars long'
-        },
-      },
-      'isPublic': {
-        customSanitizer: { 
-          options: value => value ? Boolean(value) : true
-        },
-      }
-    };
-  }
-
-  static get POSTS_PAGINATION_SCHEMA() {
-    return {
-      'subjects': {
-        toArray: true
-      },
-      'subjects.*': {
-        customSanitizer: { 
-          options: value => mongoose.Types.ObjectId(value)
-        },
-      },
-      'category': {
-        optional: { 
-          options: { nullable: true }
-        }
-      },
-      'page': {
-        toInt: true,
-        isInt: { 
-          options: [{ min: 1, max: Number.MAX_SAFE_INTEGER }],
-          errorMessage: 'Page must be an integer greater than 1'
-        }
-      },
-      'limit': {
-        toInt: true,
-        isInt: { 
-          options: [{ min: 1, max: 10 }],
-          errorMessage: 'Limit must be an integer between 1 and 10'
-        }
-      },
-      'searchType': {
-        optional: { 
-          options: { nullable: true }
-        }
-      },
-      'searchText': {
-        optional: { options: { nullable: true } },
-        isString: { 
-          options: [{ min: 3, max: 100 }],
-          errorMessage: 'Search text must be between 3 and 100 chars long'
-        }
-      }
-    }
-  }
-
   async createPost(req, payload, callback) {
     try {
-      await checkSchema(PostHandler.POST_VALIDATION_SCHEMA, ['body']).run(req);
-      
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors: ' + errorMessages.join(' && '));
-      }
-
-      const newPost = await PostModel.create({
+      const post = await PostModel.create({
         author: payload.sub,
         subject: req.body.subject,
         category: req.body.category,
@@ -110,7 +23,7 @@ class PostHandler extends BaseAutoBindedClass {
         isPublic: req.body.isPublic
       });
 
-      callback.onSuccess({ post: newPost });
+      callback.onSuccess({ post });
     } catch (error) {
       callback.onError(error);
     }
@@ -118,14 +31,6 @@ class PostHandler extends BaseAutoBindedClass {
 
   async getPosts(req, callback) {
     try {
-      await checkSchema(PostHandler.POSTS_PAGINATION_SCHEMA, ['query']).run(req);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
-      }
-
       const searchQuery = await PostHandler.#getSearchQuery(req.query);
       const limit = req.query.limit;
       const skip = (req.query.page - 1) * limit;
@@ -159,8 +64,70 @@ class PostHandler extends BaseAutoBindedClass {
           isPublic: 1,
           createdAt: 1,
           updatedAt: 1,
-          viewCount: 1,
           likes: 1,
+          viewCount: 1,
+          likeCount: { $size: '$likes' },
+          commentCount: { $size: '$comments' }
+        } }
+      ]).exec();
+
+      callback.onSuccess({ posts, maxPage });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async getPostsWithFilter(req, payload, callback) {
+    try {
+      const filterQuery = { isActive: true }
+      const limit = req.query.limit;
+      const skip = (req.query.page - 1) * limit;
+
+      if (req.params.filter === 'like') {
+        filterQuery.likes = mongoose.Types.ObjectId(payload.sub) 
+      }
+      else if (req.params.filter === 'comment') {
+        const comments = await CommentModel.find({ commenter: payload.sub }, { post: 1 })
+          .sort('-createdAt')
+          .skip(skip)
+          .limit(limit)
+          .lean()
+          .exec();
+
+        filterQuery._id = { $in: comments.map(comment => comment.post._id) } 
+      }
+
+      const maxPage = Math.ceil(await PostModel.countDocuments(filterQuery) / limit);
+      const posts = await PostModel.aggregate([
+        { $match: filterQuery },
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        { $lookup: {
+          from: 'users',
+          localField: 'author',
+          foreignField: '_id',
+          as: 'author'
+        } },
+        { $unwind: '$author' },
+        { $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'post',
+          as: 'comments'
+        } },
+        { $project: {
+          postNum: 1,
+          author: { nickname: 1 },
+          subject: 1,
+          category: 1,
+          title: 1,
+          content: { $substrCP: ['$content', 0, 200] },
+          isPublic: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          likes: 1,
+          viewCount: 1,
           likeCount: { $size: '$likes' },
           commentCount: { $size: '$comments' }
         }}
@@ -174,29 +141,16 @@ class PostHandler extends BaseAutoBindedClass {
 
   async getPost(req, callback) {
     try {
-      await query('id').optional({ options: { nullable: true } }).isMongoId().run(req);
-      await query('postNum').optional({ options: { nullable: true } }).isNumeric().run(req);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
-      }
-
       const filter = req.query.id ? { _id: req.query.id } : { postNum: req.query.postNum };
       const post = await PostModel.findOneAndUpdate(filter, { $inc: { viewCount: 1 } }, { new: true })
         .populate('author', { _id: 0, nickname: 1 })
         .lean()
         .exec();
 
-      if (!post) {
-        throw new NotFoundError('Post not found');
-      }
-
       post.likeCount = post.likes.length
 
       const comments = await CommentModel.find({ post: post._id })
-        .populate('commenter', { nickname: 1 })
+        .populate('commenter', { _id: 0, nickname: 1 })
         .sort('-createdAt')
         .lean()
         .exec();
@@ -209,15 +163,6 @@ class PostHandler extends BaseAutoBindedClass {
 
   async updatePost(req, payload, callback) {
     try {
-      await param('id').notEmpty().isMongoId().run(req);
-      await checkSchema(PostHandler.POST_VALIDATION_SCHEMA).run(req);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
-      }
-
       await PostModel.updateOne(
         { _id: req.params.id, author: payload.sub },
         { $set: req.body }
@@ -233,14 +178,6 @@ class PostHandler extends BaseAutoBindedClass {
 
   async updatePostLike(req, payload, callback) {
     try {
-      await param('id').notEmpty().isMongoId().run(req);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
-      }
-
       const post = await PostModel.findByIdAndUpdate(
         req.params.id,
         { $addToSet: { likes: payload.sub } },
@@ -255,14 +192,6 @@ class PostHandler extends BaseAutoBindedClass {
 
   async deletePost(req, payload, callback) {
     try {
-      await param('id').notEmpty().isMongoId().run(req);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
-      }
-
       const post = await PostModel.findOneAndRemove(
         { _id: req.params.id, author: payload.sub },
         { projection: { _id: 1 } }
@@ -276,14 +205,6 @@ class PostHandler extends BaseAutoBindedClass {
 
   async deletePostLike(req, payload, callback) {
     try {
-      await param('id').notEmpty().isMongoId().run(req);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
-      }
-
       const post = await PostModel.findByIdAndUpdate(
         req.params.id,
         { $pull: { likes: payload.sub } },
@@ -300,7 +221,7 @@ class PostHandler extends BaseAutoBindedClass {
     const searchQuery = { isActive: true };
 
     // Menu Query filtering
-    if (Array.isArray(queries.subjects)) {
+    if (queries.subjects) {
       searchQuery.subject = queries.subjects.length === 1 ? mongoose.Types.ObjectId(queries.subjects[0]) : { $in: queries.subjects };
     }
     if (queries.category) {

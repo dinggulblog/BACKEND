@@ -16,11 +16,17 @@ class PostController extends BaseController {
     });
   }
 
-  getAll(req, res, next) {
+  getAll(req, res) {
     this._postHandler.getPosts(req, this._responseManager.getDefaultResponseHandler(res));
   }
 
-  get(req, res, next) {
+  getAllWithFiler(req, res, next) {
+    this.authenticate(req, res, next, (token, payload) => {
+      this._postHandler.getPostsWithFilter(req, payload, this._responseManager.getDefaultResponseHandler(res));
+    });
+  }
+
+  get(req, res) {
     this._postHandler.getPost(req, this._responseManager.getDefaultResponseHandlerError(res, ((data, message, code) => {
       // const hateosLinks = [this._responseManager.generateHATEOASLink(req.baseUrl + '/:id', 'GET', 'single')];
       this._responseManager.respondWithSuccess(res, code || this._responseManager.HTTP_STATUS.OK, data, message);
