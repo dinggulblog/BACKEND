@@ -20,7 +20,7 @@ class AuthHandler extends BaseAutoBindedClass {
     if (user) {
       try {
         const UUIDV1 = v1();
-
+        
         const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, UUIDV1));
         const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
 
@@ -38,9 +38,9 @@ class AuthHandler extends BaseAutoBindedClass {
   async issueRenewedToken(req, payload, callback) {
     try {
       const UUIDV1 = v1();
-
+      
       const userId = this._nodeCache.get(payload.jti);
-      const user = await UserModel.findById(userId).select('_id').lean().exec();
+      const user = await UserModel.findOne({ _id: userId }).lean().exec();
 
       const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, UUIDV1));
       const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
@@ -50,7 +50,7 @@ class AuthHandler extends BaseAutoBindedClass {
       
       callback.onSuccess({ refreshToken }, { accessToken });
     } catch (error) {
-      callback.onError(new JwtError('Invalid refresh token(already deleted).'));
+      callback.onError(new JwtError('Invalid token(already deleted).'));
     }
   }
 
