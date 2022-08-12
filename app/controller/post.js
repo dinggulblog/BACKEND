@@ -20,10 +20,6 @@ class PostController extends BaseController {
     this._postHandler.getPosts(req, this._responseManager.getDefaultResponseHandler(res));
   }
 
-  getAllWithFiler(req, res) {
-    this._postHandler.getPostsWithFilter(req, this._responseManager.getDefaultResponseHandler(res));
-  }
-
   get(req, res) {
     this._postHandler.getPost(req, this._responseManager.getDefaultResponseHandlerError(res, ((data, message, code) => {
       // const hateosLinks = [this._responseManager.generateHATEOASLink(req.baseUrl + '/:id', 'GET', 'single')];

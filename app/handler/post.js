@@ -31,10 +31,10 @@ class PostHandler extends BaseAutoBindedClass {
 
   async getPosts(req, callback) {
     try {
-      const searchQuery = await PostHandler.#getSearchQuery(req.query);
       const limit = req.query.limit;
       const skip = (req.query.page - 1) * limit;
 
+      const searchQuery = await PostHandler.#getSearchQuery(req.query, skip, limit);
       const maxPage = Math.ceil(await PostModel.countDocuments(searchQuery) / limit);
       const posts = await PostModel.aggregate([
         { $match: searchQuery },
@@ -77,83 +77,26 @@ class PostHandler extends BaseAutoBindedClass {
     }
   }
 
-  async getPostsWithFilter(req, callback) {
-    try {
-      const filterQuery = { isActive: true }
-      const limit = req.query.limit;
-      const skip = (req.query.page - 1) * limit;
-
-      if (req.params.filter === 'like') {
-        filterQuery.likes = req.params.id;
-      }
-      else if (req.params.filter === 'comment') {
-        const comments = await CommentModel.find({ commenter: req.params.id }, { post: 1 })
-          .sort('-createdAt')
-          .skip(skip)
-          .limit(limit)
-          .lean()
-          .exec();
-
-        filterQuery._id = { $in: comments.map(comment => comment.post._id) } 
-      }
-
-      const maxPage = Math.ceil(await PostModel.countDocuments(filterQuery) / limit);
-      const posts = await PostModel.aggregate([
-        { $match: filterQuery },
-        { $sort: { createdAt: -1 } },
-        { $skip: skip },
-        { $limit: limit },
-        { $lookup: {
-          from: 'users',
-          localField: 'author',
-          foreignField: '_id',
-          as: 'author'
-        } },
-        { $unwind: '$author' },
-        { $lookup: {
-          from: 'comments',
-          localField: '_id',
-          foreignField: 'post',
-          as: 'comments'
-        } },
-        { $project: {
-          postNum: 1,
-          author: { nickname: 1 },
-          subject: 1,
-          category: 1,
-          title: 1,
-          content: { $substrCP: ['$content', 0, 200] },
-          isPublic: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          likes: 1,
-          viewCount: 1,
-          likeCount: { $size: '$likes' },
-          commentCount: { $size: '$comments' }
-        }}
-      ]).exec();
-
-      callback.onSuccess({ posts, maxPage });
-    } catch (error) {
-      callback.onError(error);
-    }
-  }
-
   async getPost(req, callback) {
     try {
       const filter = req.query.id ? { _id: req.query.id } : { postNum: req.query.postNum };
-      const post = await PostModel.findOneAndUpdate(filter, { $inc: { viewCount: 1 } }, { new: true })
-        .populate('author', { _id: 0, nickname: 1 })
-        .lean()
-        .exec();
+      const post = await PostModel.findOneAndUpdate(
+        filter,
+        { $inc: { viewCount: 1 } },
+        { new: true,
+          lean: true,
+          populate: { path: 'author', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: 1} } }
+        ).exec();
 
       post.likeCount = post.likes.length
 
-      const comments = await CommentModel.find({ post: post._id })
-        .populate('commenter', { _id: 0, nickname: 1 })
-        .sort('-createdAt')
-        .lean()
-        .exec();
+      const comments = await CommentModel.find(
+        { post: post._id },
+        null,
+        { lean: true,
+          sort: { createdAt: -1 },
+          populate: { path: 'commenter', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: 1} } }
+        ).exec();
 
       callback.onSuccess({ post, comments: this._converTrees(comments, '_id', 'parentComment', 'childComments') });
     } catch (error) {
@@ -165,8 +108,9 @@ class PostHandler extends BaseAutoBindedClass {
     try {
       await PostModel.updateOne(
         { _id: req.params.id, author: payload.sub },
-        { $set: req.body }
-      ).lean().exec();
+        { $set: req.body },
+        { lean: true }
+      ).exec();
 
       req.query.id = req.params.id;
 
@@ -181,8 +125,10 @@ class PostHandler extends BaseAutoBindedClass {
       const post = await PostModel.findByIdAndUpdate(
         req.params.id,
         { $addToSet: { likes: payload.sub } },
-        { new: true, projection: { likes: 1, likeCount: { $size: '$likes' } } }
-      ).lean().exec();
+        { new: true,
+          lean: true,
+          projection: { likes: 1, likeCount: { $size: '$likes' } } }
+      ).exec();
 
       callback.onSuccess({ post });
     } catch (error) {
@@ -194,8 +140,8 @@ class PostHandler extends BaseAutoBindedClass {
     try {
       const post = await PostModel.findOneAndRemove(
         { _id: req.params.id, author: payload.sub },
-        { projection: { _id: 1 } }
-      ).lean().exec();
+        { lean: true, projection: { _id: 1 } }
+      ).exec();
 
       callback.onSuccess({ post });
     } catch (error) {
@@ -208,8 +154,10 @@ class PostHandler extends BaseAutoBindedClass {
       const post = await PostModel.findByIdAndUpdate(
         req.params.id,
         { $pull: { likes: payload.sub } },
-        { new: true, projection: { likes: 1, likeCount: { $size: '$likes' } } }
-      ).lean().exec();
+        { new: true,
+          lean: true,
+          projection: { likes: 1, likeCount: { $size: '$likes' } } }
+      ).exec();
 
       callback.onSuccess({ post });
     } catch (error) {
@@ -217,15 +165,27 @@ class PostHandler extends BaseAutoBindedClass {
     }
   }
 
-  static async #getSearchQuery(queries) {
+  static async #getSearchQuery(queries, skip, limit) {
     const searchQuery = { isActive: true };
 
-    // Menu Query filtering
-    if (queries.subjects) {
+    if (queries.subjects.length) {
       searchQuery.subject = queries.subjects.length === 1 ? mongoose.Types.ObjectId(queries.subjects[0]) : { $in: queries.subjects };
     }
     if (queries.category) {
       searchQuery.category = queries.category;
+    }
+    if (queries.filter === 'like' && queries.id) {
+      searchQuery.likes = queries.id;
+    }
+    else if (queries.filter === 'comment' && queries.id) {
+      const comments = await CommentModel.find({ commenter: queries.id }, { post: 1, isActive: 1 })
+        .sort('-createdAt')
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec();
+
+      searchQuery._id = { $in: comments.map(comment => comment.post._id) } 
     }
 
     // Search Query filtering

@@ -66,6 +66,7 @@ class UserHandler {
     }
   }
 
+  // Do not use 'lean' option!
   async updateUserAccount(req, payload, callback) {
     try {
       const user = await UserModel.findOne({ _id: payload.sub })
@@ -95,9 +96,10 @@ class UserHandler {
           introduce: req.body.introduce
         } },
         { new: false,
+          lean: true,
           projection: { avatar: 1, greetings: 1, introduce: 1, isActive: 1 },
           populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
-      ).lean().exec();
+      ).exec();
       
       if (avatar && user.avatar) {
         const oldAvatar = await FileModel.findByIdAndRemove(user.avatar).select('serverFileName').lean().exec();
@@ -124,8 +126,8 @@ class UserHandler {
       await UserModel.findByIdAndUpdate(
         payload.sub,
         { $set: { isActive: false } },
-        { new: true }
-      ).lean().exec();
+        { new: true, lean: true }
+      ).exec();
 
       callback.onSuccess({});
     } catch (error) {

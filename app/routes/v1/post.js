@@ -8,7 +8,6 @@ const postController = new PostController();
 
 router.post('/', validate(rules.createPostRules), postController.create);
 router.get('/', validate(rules.getPostsRules), postController.getAll);
-router.get('/:filter/:nickname', validate(rules.getPostsWithFilterRules), postController.getAllWithFiler);
 router.get('/post', validate(rules.getPostRules), postController.get);
 router.put('/:id', validate(rules.updatePostRules), postController.update);
 router.put('/like/:id', validate(rules.checkPostIdRules), postController.updateLike);

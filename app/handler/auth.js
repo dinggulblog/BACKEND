@@ -39,8 +39,12 @@ class AuthHandler extends BaseAutoBindedClass {
     try {
       const UUIDV1 = v1();
       
-      const userId = this._nodeCache.get(payload.jti);
-      const user = await UserModel.findOne({ _id: userId }, { isActive: 1 }).lean().exec();
+      const user = await UserModel.findOne(
+        { _id: this._nodeCache.get(payload.jti) },
+        { roles: 1, isActive: 1 },
+        { lean: true,
+          populate: { path: 'roles', select: { name: 1 } } }
+        ).exec();
 
       const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, UUIDV1));
       const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
@@ -68,7 +72,8 @@ class AuthHandler extends BaseAutoBindedClass {
       aud: jwtOptions.audience,
       exp: Math.floor(Date.now() / 1000) + (60 * 60), // 60 min
       nbf: Math.floor(Date.now() / 1000),
-      jti: uuid
+      jti: uuid,
+      data: { roles: user.roles.map(role => role.name) }
     };
   }
 

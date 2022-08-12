@@ -12,12 +12,17 @@ class CredentialsAuthStrategy extends LocalAuthStrategy {
     return 'credentials-auth';
   }
 
+  // Do not use Model 'lean' option!
   static async handleUserAuth(req, username, password, done) {
     try {
       const lastLoginIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress?.split(':').pop();
-      const user = await UserModel.findOneAndUpdate({ email: username }, { $set: { lastLoginIP } })
-        .select({ password: 1, isActive: 1 })
-        .exec();
+
+      const user = await UserModel.findOneAndUpdate(
+        { email: username },
+        { $set: { lastLoginIP } },
+        { projection: { roles: 1, password: 1, isActive: 1 },
+          populate: { path: 'roles', select: { name: 1 } } }
+        ).exec();
       
       if (!user || !user.comparePassword(password)) {
         return done(new UnauthorizedError('아이디가 존재하지 않거나, 아이디와 비밀번호가 일치하지 않습니다.'), false);

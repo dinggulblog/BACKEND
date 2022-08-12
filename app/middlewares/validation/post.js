@@ -9,10 +9,6 @@ const getPostsRules = [
   checkSchema(PostSchema.POSTS_PAGINATION_SCHEMA(), ['query'])
 ];
 
-const getPostsWithFilterRules = [
-  checkSchema(PostSchema.POSTS_FILTER_SCHEMA(), ['params', 'query'])
-];
-
 const getPostRules = [
   query('id').optional({ options: { nullable: true } }).isMongoId(),
   query('postNum').optional({ options: { nullable: true } }).isNumeric()
@@ -30,7 +26,6 @@ const checkPostIdRules = [
 export default {
   createPostRules,
   getPostsRules,
-  getPostsWithFilterRules,
   getPostRules,
   updatePostRules,
   checkPostIdRules

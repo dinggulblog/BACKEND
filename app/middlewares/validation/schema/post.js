@@ -37,8 +37,7 @@ const POST_VALIDATION_SCHEMA = () => {
 const POSTS_PAGINATION_SCHEMA = () => {
   return {
     'subjects': {
-      toArray: true,
-      notEmpty: true
+      toArray: true
     },
     'subjects.*': {
       customSanitizer: { 
@@ -47,6 +46,23 @@ const POSTS_PAGINATION_SCHEMA = () => {
     },
     'category': {
       optional: { options: { nullable: true } }
+    },
+    'filter': {
+      optional: { options: { nullable: true } },
+      isString: true,
+      matches: {
+        options: [/\b(?:like|comment)\b/],
+        errorMessage: 'Available filtering words: like, comment'
+      }
+    },
+    'nickname': {
+      optional: { options: { nullable: true } },
+      custom: {
+        options: async (nickname, { req }) => {
+          const user = await UserModel.findOne({ nickname }, { isActive: 1 }).lean().exec();
+          user ? req.query.id = user._id : Promise.reject(new ForbiddenError('No posts matching with requested nickname')) 
+        }
+      }
     },
     'page': {
       toInt: true,
@@ -68,52 +84,14 @@ const POSTS_PAGINATION_SCHEMA = () => {
     'searchText': {
       optional: { options: { nullable: true } },
       isString: { 
-        options: [{ min: 3, max: 100 }],
-        errorMessage: 'Search text must be between 3 and 100 chars long'
+        options: [{ min: 2, max: 100 }],
+        errorMessage: 'Search text must be between 2 and 100 chars long'
       }
     }
   };
 };
 
-const POSTS_FILTER_SCHEMA = () => {
-  return {
-    'filter': {
-      in: ['params'],
-      matches: {
-        options: [/\b(?:like|comment)\b/],
-        errorMessage: 'Available filtering words: like, comment'
-      }
-    },
-    'nickname': {
-      in: ['params'],
-      custom: {
-        options: async (nickname, { req }) => {
-          const user = await UserModel.findOne({ nickname }, { isActive: 1 }).lean().exec();
-          user ? req.params.id = user._id : Promise.reject(new ForbiddenError('No posts matching requested nickname')) 
-        }
-      }
-    },
-    'page': {
-      in: ['query'],
-      toInt: true,
-      isInt: { 
-        options: [{ min: 1, max: Number.MAX_SAFE_INTEGER }],
-        errorMessage: 'Page must be an integer greater than 1'
-      }
-    },
-    'limit': {
-      in: ['query'],
-      toInt: true,
-      isInt: { 
-        options: [{ min: 1, max: 10 }],
-        errorMessage: 'Limit must be an integer between 1 and 10'
-      }
-    },
-  }
-}
-
 export default { 
   POST_VALIDATION_SCHEMA,
-  POSTS_PAGINATION_SCHEMA,
-  POSTS_FILTER_SCHEMA
+  POSTS_PAGINATION_SCHEMA
 };
