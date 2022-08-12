@@ -41,7 +41,7 @@ class UserHandler {
 
       const IP = user.lastLoginIP.split('.');
       user.id = user._id;
-      user.avatar = join(__dirname, 'uploads', user.avatar?.serverFileName || 'default.png');
+      user.avatar = user.avatar?.serverFileName || 'default.png';
       user.roles = user.roles.map(role => role.name);
       user.lastLoginIP = IP.shift() + '.' + IP.shift() + '.' + '***.***';
       
@@ -59,7 +59,7 @@ class UserHandler {
         .lean()
         .exec();
 
-      user.avatar = join(__dirname, 'uploads', user.avatar?.serverFileName || 'default.png');
+      user.avatar = user.avatar?.serverFileName || 'default.png';
 
       callback.onSuccess({ user });
     } catch (error) {
@@ -111,7 +111,7 @@ class UserHandler {
         }
       }
 
-      user.avatar = avatar ? join(__dirname, 'uploads', avatar.serverFileName) : undefined;
+      user.avatar = avatar ? avatar.serverFileName : undefined;
       user.greetings = req.body?.greetings;
       user.introduce = req.body?.introduce;
       delete user._id;
