@@ -24,10 +24,14 @@ if (process.env.NODE_ENV === 'production') {
     cert: readFileSync('/etc/letsencrypt/live/dinggul.me/fullchain.pem', 'utf8')
   }
   
-  spdy.createServer(options, app).listen(port, () => console.log(app.get('port') + '(SSL) Port is listening!')).on('error', onError);
+  spdy.createServer(options, app)
+    .listen(port, '0.0.0.0', () => console.log(app.get('port') + '(SSL) Port is listening!'))
+    .on('error', onError);
 }
 else {
-  http.createServer(app).listen(port, () => '0.0.0.0').on('error', onError);
+  http.createServer(app)
+    .listen(port, '0.0.0.0', () => console.log(app.get('port') + ' Port is listening!'))
+    .on('error', onError);
 }
 
 /**
