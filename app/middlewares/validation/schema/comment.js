@@ -6,7 +6,7 @@ const POSTID_VALIDATION_SCHEMA = () => {
     'postId': {
       custom: {
         options: async (value) => {
-          const post = await PostModel.findById(value).select('_id').lean().exec();
+          const post = await PostModel.findById(value, { isActive: 1 }).lean().exec();
           if (!post) return Promise.reject(new ForbiddenError('No posts were found that match that post ID'));
         }
       }

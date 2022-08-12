@@ -47,7 +47,7 @@ const USER_UPDATE_VALIDATION_SCHEMA = () => {
       isString: true,
       isLength: { 
         options: [{ min: 2, max: 15 }],
-        errorMessage: 'nickname must be between 2 and 15 chars long'
+        errorMessage: 'Nickname must be between 2 and 15 chars long'
       },
     }
   };

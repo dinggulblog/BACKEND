@@ -1,5 +1,4 @@
 import NodeCache from 'node-cache';
-import { query, checkSchema, validationResult } from 'express-validator';
 
 import { MenuModel } from '../model/menu.js';
 import InvalidRequestError from '../error/invalid-request.js';
@@ -11,47 +10,10 @@ class MenuHandler {
     this._memCache = new NodeCache();
   }
 
-  static get MENU_VALIDATION_SCHEMA() {
-    return {
-      'title': {
-        notEmpty: true,
-        isString: true,
-        isLength: { options: [{ min: 1, max: 30 }] },
-        errorMessage: 'Invalid menu title'
-      },
-      'subject': {
-        optional: { options: { nullable: true } },
-        isString: true,
-        isLength: { options: [{ min: 1, max: 30 }] },
-        errorMessage: 'Invalid menu subject'
-      },
-      'categories': {
-        optional: { options: { nullable: true } },
-        isArray: true,
-        errorMessage: 'Invalid menu categories'
-      },
-      'categories.*': {
-        optional: { options: { nullable: true } },
-        isString: true,
-        toString: true,
-        isLength: { options: [{ min: 0, max: 30 }] },
-        errorMessage: 'Invalid menu category data'
-      }
-    };
-  }
-
   async createMenu(req, payload, callback) {
     try {
       if (!MenuHandler.#checkRoleAsAdmin(payload)) {
         throw new ForbiddenError('해당 요청에 대한 권한이 없습니다.');
-      }
-      
-      await checkSchema(MenuHandler.MENU_VALIDATION_SCHEMA, ['body']).run(req);
-  
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors: ' + errorMessages.join(' && '));
       }
   
       const newMenu = await MenuModel.create({
@@ -87,16 +49,6 @@ class MenuHandler {
     try {
       if (!MenuHandler.#checkRoleAsAdmin(payload)) {
         throw new ForbiddenError('해당 요청에 대한 권한이 없습니다.');
-      }
-
-      await query('id').optional({ options: { nullable: true } }).isMongoId().run(req);
-      await query('title').optional({ options: { nullable: true } }).isString().toLowerCase().run(req);
-      await checkSchema(MenuHandler.MENU_VALIDATION_SCHEMA, ['body']).run(req);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
       }
 
       if (req.query.title && !req.query.id) {
@@ -138,15 +90,6 @@ class MenuHandler {
     try {
       if (!MenuHandler.#checkRoleAsAdmin(payload)) {
         throw new ForbiddenError('해당 요청에 대한 권한이 없습니다.');
-      }
-
-      await query('id').optional({ options: { nullable: true } }).isMongoId().run(req);
-      await query('title').optional({ options: { nullable: true } }).isString().toLowerCase().run(req);
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        const errorMessages = errors.array().map(elem => elem.msg);
-        throw new InvalidRequestError('Validation errors:' + errorMessages.join(' && '));
       }
 
       if (req.query.title && !req.query.id) {

@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import ForbiddenError from '../../../error/forbidden.js';
+import { UserModel } from '../../../model/user.js'
 
 const POST_VALIDATION_SCHEMA = () => {
   return {
@@ -77,10 +79,18 @@ const POSTS_FILTER_SCHEMA = () => {
   return {
     'filter': {
       in: ['params'],
-      optional: { options: { nullable: true } },
       matches: {
         options: [/\b(?:like|comment)\b/],
         errorMessage: 'Available filtering words: like, comment'
+      }
+    },
+    'nickname': {
+      in: ['params'],
+      custom: {
+        options: async (nickname, { req }) => {
+          const user = await UserModel.findOne({ nickname }, { isActive: 1 }).lean().exec();
+          user ? req.params.id = user._id : Promise.reject(new ForbiddenError('No posts matching requested nickname')) 
+        }
       }
     },
     'page': {
