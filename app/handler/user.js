@@ -39,7 +39,8 @@ class UserHandler {
         .lean()
         .exec();
 
-      const IP = user.lastLoginIP.split('.')
+      const IP = user.lastLoginIP.split('.');
+      user.id = user._id;
       user.avatar = join(__dirname, 'uploads', user.avatar?.serverFileName || 'default.png');
       user.roles = user.roles.map(role => role.name);
       user.lastLoginIP = IP.shift() + '.' + IP.shift() + '.' + '***.***';
