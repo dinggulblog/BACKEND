@@ -105,8 +105,7 @@ class ResponseManager {
     response.data = data;
     response.links = links;
     
-    cookieNames.forEach(name => res.clearCookie(name));
-    // cookieNames.forEach(name => res.cookie(name, cookies[name], CookieOption));
+    cookieNames.forEach(name => res.cookie(name, cookies[name], CookieOption));
     res.status(code).json(response);
   }
 
