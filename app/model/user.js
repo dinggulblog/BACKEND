@@ -1,8 +1,9 @@
-import mongoose from 'mongoose';
 import { genSaltSync, hashSync, compareSync } from 'bcrypt';
+import mongoose from 'mongoose';
 
-import ForbiddenError from '../error/forbidden.js';
 import { PostModel } from './post.js';
+import ForbiddenError from '../error/forbidden.js';
+import UnauthorizedError from '../error/unauthorized.js';
 
 const UserSchema = new mongoose.Schema({
   avatar: {
@@ -112,7 +113,8 @@ UserSchema.pre('save', function (next) {
 });
 
 UserSchema.post(['findOne', 'findOneAndUpdate'], function (res, next) {
-  if (!res.isActive) next(new ForbiddenError('This is an inactive user.'));
+  if (!res) next(new UnauthorizedError('아이디가 존재하지 않습니다.'));
+  else if (!res.isActive) next(new ForbiddenError('비활성화 상태의 유저입니다.'));
   next();
 });
 
