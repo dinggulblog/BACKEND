@@ -1,9 +1,15 @@
 import { StatusCodes } from 'http-status-codes';
 
 const BasicResponse = {
-  'success': false,
-  'message': '',
-  'data': {}
+  success: false,
+  message: '',
+  data: {}
+};
+
+const CookieOption = {
+  secure: process.env.NODE_ENV !== 'develop',
+  httpOnly: true,
+  expires: new Date(Math.floor(Date.now() / 1000) + (86400 * 7))
 };
 
 class ResponseManager {
@@ -98,7 +104,7 @@ class ResponseManager {
     response.data = data;
     response.links = links;
     
-    cookieNames.forEach(name => res.cookie(name, cookies[name], { secure: process.env.NODE_ENV === 'production' ? true : false, httpOnly: true }));
+    cookieNames.forEach(name => res.cookie(name, cookies[name], CookieOption));
     res.status(code).json(response);
   }
 
@@ -110,7 +116,7 @@ class ResponseManager {
     response.data = data;
     response.links = links;
 
-    cookieNames.forEach(name => res.clearCookie(name, { secure: process.env.NODE_ENV === 'production' ? true : false, httpOnly: true }));
+    cookieNames.forEach(name => res.clearCookie(name, CookieOption));
     res.status(code).json(response);
   }
 
