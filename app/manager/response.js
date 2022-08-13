@@ -10,7 +10,7 @@ const CookieOption = {
   httpOnly: true,
   signed: process.env.NODE_ENV !== 'develop',
   secure: process.env.NODE_ENV !== 'develop',
-  maxAge: Math.floor(Date.now() / 1000) + (86400 * 7),
+  maxAge: 0,
   secret: process.env.COOKIE_SECRET
 };
 
