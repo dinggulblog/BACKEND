@@ -7,6 +7,7 @@ const BasicResponse = {
 };
 
 const CookieOption = {
+  signed: process.env.NODE_ENV !== 'develop',
   secure: process.env.NODE_ENV !== 'develop',
   httpOnly: true,
   expires: new Date(Math.floor(Date.now() / 1000) + (86400 * 7))
