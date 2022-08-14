@@ -10,8 +10,7 @@ const CookieOption = {
   httpOnly: true,
   signed: process.env.NODE_ENV !== 'develop',
   secure: process.env.NODE_ENV !== 'develop',
-  secret: process.env.COOKIE_SECRET,
-  expires: new Date(0)
+  secret: process.env.COOKIE_SECRET
 };
 
 class ResponseManager {

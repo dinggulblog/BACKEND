@@ -1,4 +1,4 @@
-import { checkSchema, query, param } from 'express-validator'
+import { checkSchema, check, query, param } from 'express-validator'
 import PostSchema from './schema/post.js'
 
 const createPostRules = [
@@ -15,8 +15,7 @@ const getPostRules = [
 ];
 
 const updatePostRules = [
-  param('id', 'Post ID is not OID').isMongoId(),
-  checkSchema(PostSchema.POST_VALIDATION_SCHEMA())
+  checkSchema(PostSchema.POST_UPDATE_VALIDATION_SCHEMA(), ['body', 'params'])
 ];
 
 const checkPostIdRules = [

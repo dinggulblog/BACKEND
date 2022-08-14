@@ -3,8 +3,10 @@ import mongoose from 'mongoose';
 import CommentHandler from './comment.js'
 import { UserModel } from '../model/user.js';
 import { PostModel } from '../model/post.js';
+import { FileModel } from '../model/file.js';
 import { CommentModel } from '../model/comment.js';
 import BaseAutoBindedClass from '../base/autobind.js';
+
 
 class PostHandler extends BaseAutoBindedClass {
   constructor() {
@@ -14,14 +16,18 @@ class PostHandler extends BaseAutoBindedClass {
 
   async createPost(req, payload, callback) {
     try {
-      const post = await PostModel.create({
+      const post = new PostModel({
+        _id: req.body.id,
         author: payload.sub,
         subject: req.body.subject,
         category: req.body.category,
         title: req.body.title,
         content: req.body.content,
-        isPublic: req.body.isPublic
+        isPublic: req.body.isPublic,
+        images: req.body.images
       });
+
+      post.save();
 
       callback.onSuccess({ post });
     } catch (error) {
@@ -85,6 +91,7 @@ class PostHandler extends BaseAutoBindedClass {
         { $inc: { viewCount: 1 } },
         { new: true,
           lean: true,
+          timestamps: false,
           populate: { path: 'author', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: 1} } }
         ).exec();
 
@@ -106,15 +113,20 @@ class PostHandler extends BaseAutoBindedClass {
 
   async updatePost(req, payload, callback) {
     try {
-      await PostModel.updateOne(
+      const images = Array.isArray(req.files) && req.files.length
+        ? await Promise.all(req.files.map(async (file) => await FileModel.createNewInstance(payload.sub, req.params.id, 'detail', file)))
+        : [];
+
+      const post = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub },
-        { $set: req.body },
-        { lean: true }
+        { $set: req.body, $addToSet: { images: { $each: images.length ? images.map(image => image._id) : [] } } },
+        { new: true,
+          lean: true,
+          upsert: true,
+          projection: { _id: 1 } }
       ).exec();
 
-      req.query.id = req.params.id;
-
-      return await this.getPost(req, callback);
+      callback.onSuccess({ post, images });
     } catch (error) {
       callback.onError(error);
     }
@@ -127,6 +139,7 @@ class PostHandler extends BaseAutoBindedClass {
         { $addToSet: { likes: payload.sub } },
         { new: true,
           lean: true,
+          timestamps: false,
           projection: { likes: 1, likeCount: { $size: '$likes' } } }
       ).exec();
 
@@ -156,6 +169,7 @@ class PostHandler extends BaseAutoBindedClass {
         { $pull: { likes: payload.sub } },
         { new: true,
           lean: true,
+          timestamps: false,
           projection: { likes: 1, likeCount: { $size: '$likes' } } }
       ).exec();
 
@@ -174,11 +188,11 @@ class PostHandler extends BaseAutoBindedClass {
     if (queries.category) {
       searchQuery.category = queries.category;
     }
-    if (queries.filter === 'like' && queries.id) {
-      searchQuery.likes = queries.id;
+    if (queries.filter === 'like' && queries.nickname) {
+      searchQuery.likes = queries.nickname;
     }
-    else if (queries.filter === 'comment' && queries.id) {
-      const comments = await CommentModel.find({ commenter: queries.id }, { post: 1, isActive: 1 })
+    else if (queries.filter === 'comment' && queries.nickname) {
+      const comments = await CommentModel.find({ commenter: queries.nickname }, { post: 1, isActive: 1 })
         .sort('-createdAt')
         .skip(skip)
         .limit(limit)

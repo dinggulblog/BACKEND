@@ -17,14 +17,17 @@ import routes from './app/routes/index.js';
 import authManager from './app/manager/auth.js';
 import responseManager from './app/manager/response.js';
 
+// Global variables
 global.__dirname = resolve();
 
 // Set config variables in .env
 if (process.env.NODE_ENV === 'production') {
   config({ path: join(__dirname, '.env.production')});
-} else if (process.env.NODE_ENV === 'develop') {
+}
+else if (process.env.NODE_ENV === 'develop') {
   config({ path: join(__dirname, '.env.develop')});
-} else {
+}
+else {
   throw new Error('Cannot find process.env.NODE_ENV');
 }
 

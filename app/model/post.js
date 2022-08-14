@@ -10,22 +10,20 @@ const PostSchema = new mongoose.Schema({
   },
   subject: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Menu',
-    required: true
+    ref: 'Menu'
   },
   category: {
-    type: String
+    type: String,
+    default: '기타'
   },
   postNum: {
     type: Number
   },
   title: {
-    type: String,
-    required: [true, 'Title is required!']
+    type: String
   },
   content: {
-    type: String,
-    required: [true, 'Content is required!']
+    type: String
   },
   isPublic: {
     type: Boolean,
@@ -39,15 +37,24 @@ const PostSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  attachment: {
+  thumbnail: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'File'
   },
+  images: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'File'
+  }],
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }]
-}, { timestamps: true, versionKey: false });
+}, { 
+  timestamps: {
+    currentTime: (time = Date.now()) => new Date(time).getTime() - new Date(time).getTimezoneOffset() * 60 * 1000
+  },
+  versionKey: false
+});
 
 PostSchema.index({ postNum: 1 });
 PostSchema.index({ subject: 1, createdAt: -1 });
@@ -69,12 +76,11 @@ PostSchema.pre('save', async function (next) {
   }
 });
 
-PostSchema.post(['save', 'updateOne'], async function (res, next) {
+PostSchema.post(['save'], async function (res, next) {
   try {
     await MenuModel.updateOne(
       { _id: res.subject },
-      { $addToSet: { categories: res.category } },
-      { runValidators: true }
+      { $addToSet: { categories: res.category } }
     ).lean().exec();
 
     next();

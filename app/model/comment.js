@@ -27,7 +27,15 @@ const CommentSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   }
-}, { toObject: { virtuals: true }, timestamps: true, versionKey: false });
+}, { 
+  toObject: { 
+    virtuals: true
+  },
+  timestamps: { 
+    currentTime: (time = Date.now()) => new Date(time).getTime() - new Date(time).getTimezoneOffset() * 60 * 1000
+  },
+  versionKey: false
+});
 
 CommentSchema.index({ post: 1, createdAt: -1 });
 

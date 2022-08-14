@@ -88,7 +88,7 @@ class UserHandler {
 
   async updateUserProfile(req, payload, callback) {
     try {
-      const avatar = req.file ? await FileModel.createNewInstance(req.file, payload.sub) : undefined;
+      const avatar = req.file ? await FileModel.createNewInstance(payload.sub, undefined, 'avatar', req.file) : undefined;
       const user = await UserModel.findOneAndUpdate(
         { _id: payload.sub },
         { $set: {

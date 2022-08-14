@@ -46,7 +46,15 @@ const UserSchema = new mongoose.Schema({
   lastLoginIP: {
     type: String
   }
-}, { toObject: { virtuals: true }, timestamps: true, versionKey: false });
+}, { 
+  toObject: { 
+    virtuals: true
+  },
+  timestamps: { 
+    currentTime: (time = Date.now()) => new Date(time).getTime() - new Date(time).getTimezoneOffset() * 60 * 1000
+  },
+  versionKey: false
+});
 
 UserSchema.virtual('id')
   .get(function () { return this._id });

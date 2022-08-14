@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { upload } from '../../middlewares/multer.js';
 import { validate } from '../../middlewares/validation/validator.js'
 import rules from '../../middlewares/validation/post.js'
 import PostController from '../../controller/post.js';
@@ -9,7 +10,7 @@ const postController = new PostController();
 router.post('/', validate(rules.createPostRules), postController.create);
 router.get('/', validate(rules.getPostsRules), postController.getAll);
 router.get('/post', validate(rules.getPostRules), postController.get);
-router.put('/:id', validate(rules.updatePostRules), postController.update);
+router.put('/:id?', validate(rules.updatePostRules), upload.array('images'), postController.update);
 router.put('/like/:id', validate(rules.checkPostIdRules), postController.updateLike);
 router.delete('/:id', validate(rules.checkPostIdRules), postController.delete);
 router.delete('/like/:id', validate(rules.checkPostIdRules), postController.deleteLike);
