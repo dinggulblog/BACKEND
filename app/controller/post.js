@@ -22,7 +22,7 @@ class PostController extends BaseController {
 
   get(req, res) {
     this._postHandler.getPost(req, this._responseManager.getDefaultResponseHandlerError(res, ((data, message, code) => {
-      // const hateosLinks = [this._responseManager.generateHATEOASLink(req.baseUrl + '/:id', 'GET', 'single')];
+      // const hateosLinks = [this._responseManager.generateHATEOASLink(req.baseUrl + '/:id', 'GET', 'self')];
       this._responseManager.respondWithSuccess(res, code || this._responseManager.HTTP_STATUS.OK, data, message);
     })));
   }
@@ -43,6 +43,12 @@ class PostController extends BaseController {
     this.authenticate(req, res, next, (token, payload) => {
       this._postHandler.deletePost(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
+  }
+
+  deleteFile(req, res, next) {
+    this.authenticate(req, res, next, (token, payload) => {
+      this._postHandler.deletePostFile(req, payload, this._responseManager.getDefaultResponseHandler(res));
+    })
   }
 
   deleteLike(req, res, next) {

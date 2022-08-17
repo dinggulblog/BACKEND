@@ -1,9 +1,7 @@
 import { CommentModel } from '../model/comment.js';
-import BaseAutoBindedClass from '../base/autobind.js';
 
-class CommentHandler extends BaseAutoBindedClass {
+class CommentHandler {
   constructor() {
-    super();
   }
 
   async createComment(req, payload, callback) {
@@ -30,7 +28,7 @@ class CommentHandler extends BaseAutoBindedClass {
         .lean()
         .exec();
 
-      callback.onSuccess(comments);
+      callback.onSuccess({ comments: CommentHandler.convertTrees(comments, '_id', 'parentComment', 'childComments') });
     } catch (error) {
       callback.onError(error);
     }

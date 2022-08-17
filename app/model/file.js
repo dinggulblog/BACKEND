@@ -12,7 +12,7 @@ const FileSchema = new mongoose.Schema({
   },
   kind: {
     type: String,
-    enum: ['avatar', 'thumbnail', 'detail'],
+    enum: ['avatar', 'detail'],
     default: 'detail'
   },
   originalFileName: {
@@ -36,6 +36,8 @@ const FileSchema = new mongoose.Schema({
   },
   versionKey: false
 });
+
+FileSchema.index({ post: 1 });
 
 const fileModel = mongoose.model('File', FileSchema);
 

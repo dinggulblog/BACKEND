@@ -42,29 +42,7 @@ class ResponseManager {
         this.respondWithErrorData(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error', error.data);
       }
     };
-  }
-
-  static getCookieResponseHandler(res) {
-    return {
-      onSuccess: (cookies, data, message, code) => {
-        this.respondWithSuccessCookies(res, code || this.HTTP_STATUS.OK, cookies, data, message);
-      },
-      onError: (error) => {
-        this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
-      }
-    }
-  }
-
-  static getResetCookieResponseHandler(res) {
-    return {
-      onSuccess: (cookies, data, message, code) => {
-        this.respondWithResetCookies(res, code || this.HTTP_STATUS.OK, cookies, data, message);
-      },
-      onError: (error) => {
-        this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
-      }
-    }
-  }
+  }  
 
   static getDefaultResponseHandlerError(res, successCallback) {
     return {
@@ -86,6 +64,28 @@ class ResponseManager {
         errorCallback(error);
       }
     };
+  }
+
+  static getCookieResponseHandler(res) {
+    return {
+      onSuccess: (cookies, data, message, code) => {
+        this.respondWithSuccessCookies(res, code || this.HTTP_STATUS.OK, cookies, data, message);
+      },
+      onError: (error) => {
+        this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
+      }
+    }
+  }
+
+  static getCookieResponseHandlerReset(res) {
+    return {
+      onSuccess: (cookies, data, message, code) => {
+        this.respondWithResetCookies(res, code || this.HTTP_STATUS.OK, cookies, data, message);
+      },
+      onError: (error) => {
+        this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
+      }
+    }
   }
 
   static respondWithSuccess(res, code, data, message = '', links) {

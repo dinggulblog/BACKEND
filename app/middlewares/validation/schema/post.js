@@ -1,85 +1,38 @@
 import mongoose from 'mongoose';
+import { MenuModel } from '../../../model/menu.js';
 import { UserModel } from '../../../model/user.js'
 
 const POST_VALIDATION_SCHEMA = () => {
   return {
-    'id': {
-      customSanitizer: { 
-        options: value => value ? mongoose.Types.ObjectId(value) : new mongoose.Types.ObjectId()
-      }
-    },
     'subject': {
-      isMongoId: {
-        errorMessage: 'Subject ID is not OID'
+      custom: {
+        options: async (value) => await MenuModel.findById(value).select('_id').lean().exec()
       }
     },
     'category': {
       customSanitizer: { 
         options: value => value ? String(value) : undefined
-      },
+      }
     },
     'title': {
       isLength: { 
         options: [{ min: 1, max: 150 }],
         errorMessage: 'Post title must be between 1 and 150 chars long'
-      },
+      }
     },
     'content': {
       isLength: { 
         options: [{ max: 10000 }],
         errorMessage: 'Post content must be under 10000 chars long'
-      },
-    },
-    'isPublic': {
-      customSanitizer: { 
-        options: value => value ? Boolean(value) : true
-      },
-    }
-  };
-};
-
-const POST_UPDATE_VALIDATION_SCHEMA = () => {
-  return {
-    'id': {
-      in: ['params'],
-      custom: {
-        options: value => value ? mongoose.isValidObjectId(value) : true
-      },
-      customSanitizer: { 
-        options: value => value ? mongoose.Types.ObjectId(value) : new mongoose.Types.ObjectId()
       }
     },
-    'subject': {
-      in: ['body'],
-      custom: { 
-        options: value => value ? mongoose.isValidObjectId(value) : true
-      },
-      customSanitizer: { 
-        options: value => value ? mongoose.Types.ObjectId(value) : undefined
-      }
+    'thumbnail': {
+      optional: { options: { nullable: true } }
     },
-    'category': {
-      in: ['body'],
-      customSanitizer: { 
-        options: value => value ? String(value) : undefined
-      },
-    },
-    'title': {
-      in: ['body'],
-      isLength: { 
-        options: [{ max: 150 }],
-        errorMessage: 'Post title must be under 150 chars long'
-      },
-    },
-    'content': {
-      in: ['body'],
-      isLength: { 
-        options: [{ max: 10000 }],
-        errorMessage: 'Post content must be under 10000 chars long'
-      },
+    'images': {
+      toArray: true
     },
     'isPublic': {
-      in: ['body'],
       customSanitizer: { 
         options: value => value ? Boolean(value) : true
       }
@@ -146,6 +99,5 @@ const POSTS_PAGINATION_SCHEMA = () => {
 
 export default { 
   POST_VALIDATION_SCHEMA,
-  POST_UPDATE_VALIDATION_SCHEMA,
   POSTS_PAGINATION_SCHEMA
 };

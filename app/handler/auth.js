@@ -4,14 +4,12 @@ import NodeCache from 'node-cache'
 import { UserModel } from '../model/user.js';
 import { jwtOptions } from '../../config/jwt-options.js';
 import AuthManager from '../manager/auth.js'
-import BaseAutoBindedClass from '../base/autobind.js';
 import JwtError from '../error/jwt-error.js'
 import ServerError from '../error/server-error.js';
 import ForbiddenError from '../error/forbidden.js';
 
-class AuthHandler extends BaseAutoBindedClass {
+class AuthHandler {
   constructor() {
-    super();
     this._authManager = AuthManager;
     this._nodeCache = new NodeCache({ stdTTL: 86400 * 7 }); // Same as refresh token TTL
   }

@@ -5,26 +5,23 @@ import { UserModel } from '../model/user.js';
 import { PostModel } from '../model/post.js';
 import { FileModel } from '../model/file.js';
 import { CommentModel } from '../model/comment.js';
-import BaseAutoBindedClass from '../base/autobind.js';
 
-
-class PostHandler extends BaseAutoBindedClass {
+class PostHandler {
   constructor() {
-    super();
-    this._converTrees = CommentHandler.convertTrees;
+    this.convertTrees = CommentHandler.convertTrees;
   }
 
   async createPost(req, payload, callback) {
     try {
       const post = new PostModel({
-        _id: req.body.id,
         author: payload.sub,
         subject: req.body.subject,
         category: req.body.category,
         title: req.body.title,
         content: req.body.content,
-        isPublic: req.body.isPublic,
-        images: req.body.images
+        thumbnail: req.body.thumbnail,
+        images: req.body.images,
+        isPublic: req.body.isPublic
       });
 
       post.save();
@@ -85,14 +82,16 @@ class PostHandler extends BaseAutoBindedClass {
 
   async getPost(req, callback) {
     try {
-      const filter = req.query.id ? { _id: req.query.id } : { postNum: req.query.postNum };
       const post = await PostModel.findOneAndUpdate(
-        filter,
+        { _id: req.params.id },
         { $inc: { viewCount: 1 } },
         { new: true,
           lean: true,
           timestamps: false,
-          populate: { path: 'author', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: 1} } }
+          populate: [
+            { path: 'author', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: 1 } },
+            { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: 1 } }
+          ] }
         ).exec();
 
       post.likeCount = post.likes.length
@@ -102,10 +101,10 @@ class PostHandler extends BaseAutoBindedClass {
         null,
         { lean: true,
           sort: { createdAt: -1 },
-          populate: { path: 'commenter', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: 1} } }
+          populate: { path: 'commenter', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: 1 } } }
         ).exec();
 
-      callback.onSuccess({ post, comments: this._converTrees(comments, '_id', 'parentComment', 'childComments') });
+      callback.onSuccess({ post, comments: this.convertTrees(comments, '_id', 'parentComment', 'childComments') });
     } catch (error) {
       callback.onError(error);
     }
@@ -122,7 +121,6 @@ class PostHandler extends BaseAutoBindedClass {
         { $set: req.body, $addToSet: { images: { $each: images.length ? images.map(image => image._id) : [] } } },
         { new: true,
           lean: true,
-          upsert: true,
           projection: { _id: 1 } }
       ).exec();
 
@@ -151,12 +149,27 @@ class PostHandler extends BaseAutoBindedClass {
 
   async deletePost(req, payload, callback) {
     try {
-      const post = await PostModel.findOneAndRemove(
+      const { modifiedCount } = await PostModel.updateOne(
         { _id: req.params.id, author: payload.sub },
-        { lean: true, projection: { _id: 1 } }
+        { $set: { isActive: false } },
+        { lean: true }
       ).exec();
 
-      callback.onSuccess({ post });
+      callback.onSuccess({ modifiedCount });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async deletePostFile(req, payload, callback) {
+    try {
+      const { modifiedCount } = await PostModel.updateOne(
+        { _id: req.params.id, author: payload.sub },
+        { $pull: { images: req.body.image } },
+        { lean: true }
+      ).exec();
+
+      callback.onSuccess({ modifiedCount });
     } catch (error) {
       callback.onError(error);
     }

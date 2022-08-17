@@ -111,7 +111,7 @@ class UserHandler {
         }
       }
 
-      user.avatar = avatar ? avatar.serverFileName : undefined;
+      user.avatar = avatar?.serverFileName;
       user.greetings = req.body?.greetings;
       user.introduce = req.body?.introduce;
       delete user._id;

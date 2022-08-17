@@ -1,10 +1,7 @@
 import mongoose from 'mongoose';
-
-import { CounterModel } from './counter.js';
-import { MenuModel } from './menu.js';
 import { FileModel } from './file.js';
 
-const PostSchema = new mongoose.Schema({
+const DraftSchema = new mongoose.Schema({
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -12,8 +9,7 @@ const PostSchema = new mongoose.Schema({
   },
   subject: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Menu',
-    required: true
+    ref: 'Menu'
   },
   category: {
     type: String,
@@ -59,32 +55,11 @@ const PostSchema = new mongoose.Schema({
   versionKey: false
 });
 
-PostSchema.index({ subject: 1, createdAt: -1 });
+DraftSchema.index({ author: 1 });
 
-PostSchema.pre('save', async function (next) {
+DraftSchema.pre('save', async function (next) {
   try {
-    if (this.isNew) {
-      let counter = await CounterModel.findOne({ subject: this.subject, name: 'posts' }).exec();
-      if (!counter) counter = await CounterModel.create({ subject: this.subject, name: 'posts' });
-      
-      counter.count++;
-      await counter.save();
-      this.postNum = counter.count;
-
-      next();
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-
-PostSchema.post('save', async function (res, next) {
-  try {
-    await MenuModel.updateOne(
-      { _id: res.subject },
-      { $addToSet: { categories: res.category } },
-      { lean: true }
-    ).exec();
+    
 
     next();
   } catch (error) {
@@ -92,11 +67,11 @@ PostSchema.post('save', async function (res, next) {
   }
 });
 
-PostSchema.post('updateOne', async function (res, next) {
+DraftSchema.post('updateOne', async function (doc, next) {
   try {
-    if (!res.isActive) {
+    if (!doc.isActive) {
       await FileModel.updateMany(
-        { post: res._id },
+        { post: this._id },
         { $set: { isActive: false } },
         { lean: true }
       ).exec();
@@ -108,4 +83,4 @@ PostSchema.post('updateOne', async function (res, next) {
   }
 });
 
-export const PostModel = mongoose.model('Post', PostSchema);
+export const DraftModel = mongoose.model('Draft', DraftSchema);

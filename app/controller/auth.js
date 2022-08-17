@@ -33,7 +33,7 @@ class AuthController extends BaseController {
   delete(req, res, next) {
     this._passport.authenticate('jwt-auth', {
       onVerified: (token, payload) => {
-        this._authHandler.revokeToken(req, payload, this._responseManager.getResetCookieResponseHandler(res));
+        this._authHandler.revokeToken(req, payload, this._responseManager.getCookieResponseHandlerReset(res));
       },
       onFailure: (error) => {
         this._responseManager.respondWithError(res, error.status || 401, error.message);
