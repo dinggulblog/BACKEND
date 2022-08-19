@@ -61,7 +61,7 @@ class JwtAuthStrategy extends BaseAuthStrategy {
 
     // JWT authentication needs at least one token
     if (!accessToken && !refreshToken) {
-      return callback.onFailure(new InvalidRequestError('No token provided'));
+      return callback.onFailure(new InvalidRequestError('토큰이 존재하지 않습니다.'));
     }
 
     // Logout -> return verified callback 
@@ -77,7 +77,7 @@ class JwtAuthStrategy extends BaseAuthStrategy {
         return callback.onVerified(accessToken, payload);
       } catch (error) {
         // refresh token exists but not the refresh url -> return 401 error (re-request to refresh url)
-        return callback.onFailure(new UnauthorizedError('You need to refresh the access token by making a request to the refresh router'));
+        return callback.onFailure(new UnauthorizedError('토큰이 만료되어 토큰 재발급이 필요합니다.'));
       }
     } 
 
@@ -94,7 +94,7 @@ class JwtAuthStrategy extends BaseAuthStrategy {
       }
       else {
         // refresh token exists but not the refresh url -> return 401 error (re-request to refresh url)
-        return callback.onFailure(new UnauthorizedError('You need to refresh the access token by making a request to the refresh router'));
+        return callback.onFailure(new UnauthorizedError('엑세스 토큰을 먼저 발급받아야 합니다.'));
       }
     }
 
