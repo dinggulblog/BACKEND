@@ -124,8 +124,8 @@ class UserHandler {
 
   async deleteUserAccount(req, payload, callback) {
     try {
-      await UserModel.findByIdAndUpdate(
-        payload.sub,
+      await UserModel.findOneAndUpdate(
+        { _id: payload.sub },
         { $set: { isActive: false } },
         { new: true, lean: true }
       ).exec();

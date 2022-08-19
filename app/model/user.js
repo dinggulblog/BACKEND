@@ -2,8 +2,8 @@ import { genSaltSync, hashSync, compareSync } from 'bcrypt';
 import mongoose from 'mongoose';
 
 import { PostModel } from './post.js';
+import { FileModel } from './file.js';
 import ForbiddenError from '../error/forbidden.js';
-import UnauthorizedError from '../error/unauthorized.js';
 
 const UserSchema = new mongoose.Schema({
   avatar: {
@@ -39,12 +39,16 @@ const UserSchema = new mongoose.Schema({
   introduce: {
     type: String
   },
+  lastLoginIP: {
+    type: String
+  },
   isActive: {
     type: Boolean,
     default: true
   },
-  lastLoginIP: {
-    type: String
+  expiredAt: {
+    type: Date,
+    default: undefined
   }
 }, { 
   toObject: { 
@@ -55,6 +59,8 @@ const UserSchema = new mongoose.Schema({
   },
   versionKey: false
 });
+
+UserSchema.index({ expiredAt: 1 }, { expireAfterSeconds: 0 });
 
 UserSchema.virtual('id')
   .get(function () { return this._id });
@@ -74,6 +80,10 @@ UserSchema.virtual('currentPassword')
 UserSchema.virtual('newPassword')
   .get(function() { return this._newPassword })
   .set(function(value) { this._newPassword = value });
+
+UserSchema.methods.comparePassword = function (password) {
+  return compareSync(password, this.password);
+};
 
 const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d!@#$%^&*]{4,30}$/;
 UserSchema.path('password').validate(function (value) {
@@ -105,10 +115,6 @@ UserSchema.path('password').validate(function (value) {
   }
 });
 
-UserSchema.methods.comparePassword = function (password) {
-  return compareSync(password, this.password);
-};
-
 UserSchema.pre('save', function (next) {
   if (!this.isModified('password')) next();
   else {
@@ -120,17 +126,43 @@ UserSchema.pre('save', function (next) {
   }
 });
 
-UserSchema.post(['findOne', 'findOneAndUpdate'], function (res, next) {
-  if (!res) next(new UnauthorizedError('아이디가 존재하지 않습니다.'));
-  else if (!res.isActive) next(new ForbiddenError('비활성화 상태의 유저입니다.'));
-  next();
+UserSchema.post(/^find/, async function (doc, next) {
+  try {
+    const query = this.getUpdate();
+
+    // 계정이 활성화 상태인 경우
+    if (doc.isActive) return next();
+
+    // 계정이 비활성화 상태이거나 비활성화 된 경우
+    if (!doc.isActive) {
+
+      // 계정이 비활성화 상태이고 활성화를 변경하는 것이 아닌 경우
+      if (!Object.keys(query.$set).includes('isActive')) next(new ForbiddenError('본 계정은 비활성화 상태입니다. 관리자에게 문의하세요.'));
+
+      // 계정이 비활성화 되는 경우
+      else if (query.$set.isActive === false) {
+        await PostModel.updateMany(
+          { author: doc._id },
+          { $set: { isActive: false } },
+          { lean: true }
+        ).exec();
+  
+        await FileModel.updateMany(
+          { uploader: doc._id },
+          { $set: { isActive: false } },
+          { lean: true }
+        ).exec();
+
+        next();
+      }
+    }
+  } catch (error) {
+    next(error);
+  }
 });
 
-UserSchema.post('findByIdAndUpdate', async function (res, next) {
+UserSchema.pre('deleteOne', async function (next) {
   try {
-    if (!res.isActive) {
-      await PostModel.updateMany({ author: res._id, isActive: true }, { $set: { isActive: false } }).lean().exec();
-    }
     next();
   } catch (error) {
     next(error);
