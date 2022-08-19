@@ -89,8 +89,8 @@ class PostHandler {
           lean: true,
           timestamps: false,
           populate: [
-            { path: 'author', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: 1 } },
-            { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: 1 } }
+            { path: 'author', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: true } },
+            { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } }
           ] }
         ).exec();
 
@@ -101,7 +101,7 @@ class PostHandler {
         null,
         { lean: true,
           sort: { createdAt: -1 },
-          populate: { path: 'commenter', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: 1 } } }
+          populate: { path: 'commenter', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: true } } }
         ).exec();
 
       callback.onSuccess({ post, comments: this.convertTrees(comments, '_id', 'parentComment', 'childComments') });
@@ -132,8 +132,8 @@ class PostHandler {
 
   async updatePostLike(req, payload, callback) {
     try {
-      const post = await PostModel.findByIdAndUpdate(
-        req.params.id,
+      const post = await PostModel.findOneAndUpdate(
+        { _id: req.params.id },
         { $addToSet: { likes: payload.sub } },
         { new: true,
           lean: true,
@@ -177,8 +177,8 @@ class PostHandler {
 
   async deletePostLike(req, payload, callback) {
     try {
-      const post = await PostModel.findByIdAndUpdate(
-        req.params.id,
+      const post = await PostModel.findOneAndUpdate(
+        { _id: req.params.id },
         { $pull: { likes: payload.sub } },
         { new: true,
           lean: true,
