@@ -90,7 +90,8 @@ class PostHandler {
           timestamps: false,
           populate: [
             { path: 'author', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: true } },
-            { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } }
+            { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } },
+            { path: 'thumbnail', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } }
           ] }
         ).exec();
 
@@ -114,17 +115,18 @@ class PostHandler {
     try {
       const images = Array.isArray(req.files) && req.files.length
         ? await Promise.all(req.files.map(async (file) => await FileModel.createNewInstance(payload.sub, req.params.id, 'detail', file)))
-        : [];
+        : undefined;
 
       const post = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub },
-        { $set: req.body, $addToSet: { images: { $each: images.length ? images.map(image => image._id) : [] } } },
+        { $set: req.body, $addToSet: { images: { $each: images?.map(image => image._id) ?? [] } } },
         { new: true,
           lean: true,
-          projection: { _id: 1 } }
+          projection: { _id: 1, isActive: 1, images: 1 },
+          populate: { path: 'images', select: { serverFileName: 1 }, match: { isActive: true } } }
       ).exec();
 
-      callback.onSuccess({ post, images });
+      callback.onSuccess({ post });
     } catch (error) {
       callback.onError(error);
     }
@@ -168,6 +170,14 @@ class PostHandler {
         { $pull: { images: req.body.image } },
         { lean: true }
       ).exec();
+
+      if (modifiedCount) {
+        await FileModel.updateOne(
+          { _id: req.body.image },
+          { $set: { isActive: false } },
+          { lean: true }
+        ).exec();
+      }
 
       callback.onSuccess({ modifiedCount });
     } catch (error) {

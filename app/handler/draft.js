@@ -38,7 +38,7 @@ class DraftHandler {
         : undefined;
 
       const draft = await DraftModel.findOneAndUpdate(
-        { _id: req.params.id, author: payload.sub },
+        { _id: req.params.id, author: payload.sub, isActive: true },
         { $set: req.body, $addToSet: { images: { $each: images?.map(image => image._id) ?? [] } } },
         { new: true,
           lean: true,

@@ -67,33 +67,30 @@ PostSchema.pre('save', async function (next) {
     if (this.isNew) {
       let counter = await CounterModel.findOne({ subject: this.subject, name: 'posts' }).exec();
       if (!counter) counter = await CounterModel.create({ subject: this.subject, name: 'posts' });
-      
       counter.count++;
+
       await counter.save();
+      await MenuModel.updateOne(
+        { _id: this.subject },
+        { $addToSet: { categories: this?.category } },
+        { lean: true }
+      ).exec();
+      const draft = await DraftModel.findOneAndUpdate(
+        { author: this.author, isActive: true },
+        { $set: { isActive: false } },
+        { lean: true,
+          projection: { _id: 1, isActive: 1 } }
+      ).exec();
+      await FileModel.updateMany(
+        { post: draft._id },
+        { $set: { post: this._id } },
+        { lean: true }
+      ).exec();
+      
       this.postNum = counter.count;
 
       next();
     }
-  } catch (error) {
-    next(error);
-  }
-});
-
-PostSchema.post('save', async function (res, next) {
-  try {
-    await MenuModel.updateOne(
-      { _id: res.subject },
-      { $addToSet: { categories: res.category } },
-      { lean: true }
-    ).exec();
-
-    await DraftModel.updateOne(
-      { author: res.author._id, isActive: true },
-      { $set: { isActive: false } },
-      { lean: true }
-    ).exec();
-
-    next();
   } catch (error) {
     next(error);
   }

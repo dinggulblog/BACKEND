@@ -1,4 +1,7 @@
 import mongoose from 'mongoose';
+import { join } from 'path';
+import { accessSync, constants, unlinkSync } from 'fs';
+
 import { FileModel } from './file.js';
 
 const DraftSchema = new mongoose.Schema({
@@ -66,7 +69,7 @@ DraftSchema.pre('save', async function (next) {
     ).exec();
 
     if (matchedCount > 2) {
-      await DraftModel.findOneAndRemove(
+      await DraftModel.findOneAndDelete(
         { author: this.author, isActive: false },
         { lean: true, sort: { _id: 1 } }
       ).exec();
@@ -94,12 +97,16 @@ DraftSchema.post('updateOne', async function (doc, next) {
   }
 });
 
-DraftSchema.pre('findOneAndRemove', async function (next) {
+DraftSchema.post('findOneAndDelete', async function (doc, next) {
   try {
-    await FileModel.deleteMany(
-      { post: this._id },
-      { lean: true }
-    ).exec();
+    doc.images.forEach(async (image) => {
+      const deleted = await FileModel.findOneAndDelete({ _id: image }, { lean: true }).exec();
+      if (deleted) {
+        const filePath = join(__dirname, 'uploads', deleted.serverFileName);
+        accessSync(filePath, constants.F_OK);
+        unlinkSync(filePath);
+      }
+    });
 
     next();
   } catch (error) {

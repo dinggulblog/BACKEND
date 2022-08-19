@@ -1,6 +1,6 @@
 import NodeCache from 'node-cache';
 import { join } from 'path';
-import { accessSync, constants, unlinkSync } from 'fs'
+import { accessSync, constants, unlinkSync } from 'fs';
 
 import { UserModel } from '../model/user.js';
 import { RoleModel } from '../model/role.js';
@@ -106,8 +106,8 @@ class UserHandler {
         const oldAvatar = await FileModel.findByIdAndRemove(user.avatar).select('serverFileName').lean().exec();
         if (oldAvatar) {
           const filePath = join(__dirname, 'uploads', oldAvatar.serverFileName);
-          accessSync(filePath, constants.F_OK)
-          unlinkSync(filePath)
+          accessSync(filePath, constants.F_OK);
+          unlinkSync(filePath);
         }
       }
 

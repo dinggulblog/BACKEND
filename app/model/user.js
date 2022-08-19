@@ -126,6 +126,11 @@ UserSchema.pre('save', function (next) {
   }
 });
 
+UserSchema.post('findOne', function (doc, next) {
+  if (!doc.isActive) next(new ForbiddenError('본 계정은 비활성화 상태입니다. 관리자에게 문의하세요.'));
+  next();
+});
+
 UserSchema.post('findOneAndUpate', async function (doc, next) {
   try {
     const query = this.getUpdate();
