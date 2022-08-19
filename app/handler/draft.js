@@ -19,7 +19,10 @@ class DraftHandler {
   async getDraft(req, payload, callback) {
     try {
       const draft = await DraftModel.findOne(
-        { author: payload.sub, isActive: true }
+        { author: payload.sub, isActive: true },
+        null,
+        { lean: true,
+          populate: { path: 'images', select: { serverFileName: 1 } } }
       ).lean().exec();
 
       callback.onSuccess({ draft });

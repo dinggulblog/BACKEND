@@ -68,7 +68,7 @@ DraftSchema.pre('save', async function (next) {
     if (matchedCount > 2) {
       await DraftModel.findOneAndRemove(
         { author: this.author, isActive: false },
-        { lean: true, sort: { _id: -1 } }
+        { lean: true, sort: { _id: 1 } }
       ).exec();
     }
 

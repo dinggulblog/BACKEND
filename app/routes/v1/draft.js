@@ -7,10 +7,10 @@ import DraftController from '../../controller/draft.js';
 const router = Router();
 const draftController = new DraftController();
 
-router.post('/', validate(), draftController.create);
-router.get('/:id', validate(), draftController.get);
-router.put('/:id', validate(), upload.array('images'), draftController.update);
-router.delete('/:id', validate(), draftController.delete);
-router.delete('/:id/file', validate(), draftController.deleteFile);
+router.post('/', draftController.create);
+router.get('/:id', draftController.get);
+router.put('/:id', upload.array('images'), draftController.update);
+router.delete('/:id', draftController.delete);
+router.delete('/:id/file', draftController.deleteFile);
 
 export { router as draftRouter };

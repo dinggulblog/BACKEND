@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { CounterModel } from './counter.js';
 import { MenuModel } from './menu.js';
 import { FileModel } from './file.js';
+import { DraftModel } from './draft.js';
 
 const PostSchema = new mongoose.Schema({
   author: {
@@ -83,6 +84,12 @@ PostSchema.post('save', async function (res, next) {
     await MenuModel.updateOne(
       { _id: res.subject },
       { $addToSet: { categories: res.category } },
+      { lean: true }
+    ).exec();
+
+    await DraftModel.updateOne(
+      { author: res.author._id, isActive: true },
+      { $set: { isActive: false } },
       { lean: true }
     ).exec();
 
