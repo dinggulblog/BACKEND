@@ -23,7 +23,7 @@ class DraftHandler {
         null,
         { lean: true,
           populate: { path: 'images', select: { serverFileName: 1 } } }
-      ).lean().exec();
+      ).exec();
 
       callback.onSuccess({ draft });
     } catch (error) {
