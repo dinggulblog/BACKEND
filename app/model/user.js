@@ -126,21 +126,21 @@ UserSchema.pre('save', function (next) {
   }
 });
 
-UserSchema.post(/^find/, async function (doc, next) {
+UserSchema.post('findOneAndUpate', async function (doc, next) {
   try {
     const query = this.getUpdate();
 
     // 계정이 활성화 상태인 경우
-    if (doc.isActive) return next();
+    if (doc.isActive) next();
 
     // 계정이 비활성화 상태이거나 비활성화 된 경우
-    if (!doc.isActive) {
+    else {
 
       // 계정이 비활성화 상태이고 활성화를 변경하는 것이 아닌 경우
-      if (!Object.keys(query.$set).includes('isActive')) next(new ForbiddenError('본 계정은 비활성화 상태입니다. 관리자에게 문의하세요.'));
+      if (!query.$set || !Object.keys(query.$set).includes('isActive')) next(new ForbiddenError('본 계정은 비활성화 상태입니다. 관리자에게 문의하세요.'));
 
       // 계정이 비활성화 되는 경우
-      else if (query.$set.isActive === false) {
+      else if (query.$set?.isActive === false) {
         await PostModel.updateMany(
           { author: doc._id },
           { $set: { isActive: false } },
@@ -153,6 +153,10 @@ UserSchema.post(/^find/, async function (doc, next) {
           { lean: true }
         ).exec();
 
+        next();
+      }
+
+      else {
         next();
       }
     }
