@@ -8,7 +8,7 @@ const router = Router();
 const draftController = new DraftController();
 
 router.post('/', draftController.create);
-router.get('/:id', draftController.get);
+router.get('/', draftController.get);
 router.put('/:id', upload.array('images'), draftController.update);
 router.delete('/:id', draftController.delete);
 router.delete('/:id/file', draftController.deleteFile);

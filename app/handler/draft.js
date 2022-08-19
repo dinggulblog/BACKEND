@@ -38,7 +38,7 @@ class DraftHandler {
         : undefined;
 
       const draft = await DraftModel.findOneAndUpdate(
-        { author: payload.sub, isActive: true },
+        { _id: req.params.id, author: payload.sub },
         { $set: req.body, $addToSet: { images: { $each: images?.map(image => image._id) ?? [] } } },
         { new: true,
           lean: true,
@@ -55,7 +55,7 @@ class DraftHandler {
   async deleteDraft(req, payload, callback) {
     try {
       await DraftModel.updateOne(
-        { author: payload.sub },
+        { _id: req.params.id, author: payload.sub },
         { $set: { isActive: false } },
         { new: true, lean: true }
       ).exec();
@@ -69,7 +69,7 @@ class DraftHandler {
   async deleteDraftFile(req, payload, callback) {
     try {
       const { modifiedCount } = await DraftModel.updateOne(
-        { author: payload.sub },
+        { _id: req.params.id, author: payload.sub },
         { $pull: { images: req.body.image } },
         { new: true, lean: true }
       ).exec();
