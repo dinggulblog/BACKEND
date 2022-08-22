@@ -1,21 +1,29 @@
 import ForbiddenError from '../../../error/forbidden.js';
 import { PostModel } from '../../../model/post.js';
+import { CommentModel } from '../../../model/comment.js';
 
 const POSTID_VALIDATION_SCHEMA = () => {
   return {
     'postId': {
       custom: {
         options: async (value) => {
-          const post = await PostModel.findById(value, { isActive: 1 }).lean().exec();
-          if (!post) Promise.reject(new ForbiddenError('No posts were found that match that post ID'));
+          const post = await PostModel.findById(value, { isActive: 1 }, { lean: true }).exec();
+          if (!post) Promise.reject(new ForbiddenError('존재하지 않는 게시물입니다.'));
+          else if (!post.isActive) Promise.reject(new ForbiddenError('비활성화된 게시물입니다.'));
+          else return post._id;
         }
       }
     },
     'parentId': {
-      optional: { options: { nullable: true } },
-      isMongoId: {
-        errorMessage: 'Parent comment ID is not OID'
-      },
+      custom: {
+        options: async (value) => {
+          if (!value) return true;
+          const comment = await CommentModel.findById(value, { isActive: 1 }, { lean: true }).exec();
+          if (!comment) Promise.reject(new ForbiddenError('존재하지 않는 댓글입니다.'));
+          else if (!comment.isActive) Promise.reject(new ForbiddenError('비활성화된 댓글입니다.'));
+          else return comment._id;
+        }
+      }
     },
   };
 };
