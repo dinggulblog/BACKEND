@@ -72,18 +72,7 @@ PostSchema.pre('save', async function (next) {
       await counter.save();
       await MenuModel.updateOne(
         { _id: this.subject },
-        { $addToSet: { categories: this?.category } },
-        { lean: true }
-      ).exec();
-      const draft = await DraftModel.findOneAndUpdate(
-        { author: this.author, isActive: true },
-        { $set: { isActive: false } },
-        { lean: true,
-          projection: { _id: 1, isActive: 1 } }
-      ).exec();
-      await FileModel.updateMany(
-        { post: draft._id },
-        { $set: { post: this._id } },
+        { $addToSet: { categories: this.category } },
         { lean: true }
       ).exec();
       
@@ -96,11 +85,31 @@ PostSchema.pre('save', async function (next) {
   }
 });
 
+PostSchema.post('save', async function (doc, next) {
+  try {
+    const draft = await DraftModel.findOneAndUpdate(
+      { author: doc.author, isActive: true },
+      { $set: { isActive: false } },
+      { lean: true,
+        projection: { isActive: 1 } }
+    ).exec();
+    await FileModel.updateMany(
+      { belonging: draft._id },
+      { $set: { belonging: doc._id, belongModel: 'post' } },
+      { lean: true }
+    ).exec();
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+})
+
 PostSchema.post('updateOne', async function (res, next) {
   try {
     if (!res.isActive) {
       await FileModel.updateMany(
-        { post: res._id },
+        { belonging: res._id },
         { $set: { isActive: false } },
         { lean: true }
       ).exec();

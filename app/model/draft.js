@@ -85,7 +85,7 @@ DraftSchema.post('updateOne', async function (doc, next) {
   try {
     if (!doc.isActive) {
       await FileModel.updateMany(
-        { post: this._id },
+        { belonging: this._id },
         { $set: { isActive: false } },
         { lean: true }
       ).exec();

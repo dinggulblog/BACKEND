@@ -126,6 +126,14 @@ UserSchema.pre('save', function (next) {
   }
 });
 
+UserSchema.pre('findOneAndDelete', async function (next) {
+  try {
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 UserSchema.post('findOne', function (doc, next) {
   if (!doc.isActive) next(new ForbiddenError('본 계정은 비활성화 상태입니다. 관리자에게 문의하세요.'));
   next();
@@ -165,14 +173,6 @@ UserSchema.post('findOneAndUpate', async function (doc, next) {
         next();
       }
     }
-  } catch (error) {
-    next(error);
-  }
-});
-
-UserSchema.pre('deleteOne', async function (next) {
-  try {
-    next();
   } catch (error) {
     next(error);
   }

@@ -33,6 +33,12 @@ class PostController extends BaseController {
     });
   }
 
+  updateFiles(req, res, next) {
+    this.authenticate(req, res, next, (token, payload) => {
+      this._postHandler.updatePostFiles(req, payload, this._responseManager.getDefaultResponseHandler(res));
+    });
+  }
+
   updateLike(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this._postHandler.updatePostLike(req, payload, this._responseManager.getDefaultResponseHandler(res));

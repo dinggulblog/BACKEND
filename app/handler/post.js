@@ -57,6 +57,12 @@ class PostHandler {
           foreignField: 'post',
           as: 'comments'
         } },
+        { $lookup: {
+          from: 'files',
+          localField: 'thumbnail',
+          foreignField: '_id',
+          as: 'thumbnail'
+        } },
         { $project: {
           postNum: 1,
           author: { nickname: 1 },
@@ -64,6 +70,7 @@ class PostHandler {
           category: 1,
           title: 1,
           content: { $substrCP: ['$content', 0, 200] },
+          thumbnail: { serverFileName: 1 },
           isPublic: 1,
           createdAt: 1,
           updatedAt: 1,
@@ -90,8 +97,7 @@ class PostHandler {
           timestamps: false,
           populate: [
             { path: 'author', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: true } },
-            { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } },
-            { path: 'thumbnail', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } }
+            { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } }
           ] }
         ).exec();
 
@@ -113,13 +119,28 @@ class PostHandler {
 
   async updatePost(req, payload, callback) {
     try {
+      const post = await PostModel.findOneAndUpdate(
+        { _id: req.params.id, author: payload.sub },
+        { $set: req.body },
+        { new: true,
+          lean: true }
+      ).exec();
+
+      callback.onSuccess({ post });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async updatePostFiles(req, payload, callback) {
+    try {
       const images = Array.isArray(req.files) && req.files.length
-        ? await Promise.all(req.files.map(async (file) => await FileModel.createNewInstance(payload.sub, req.params.id, 'detail', file)))
-        : undefined;
+        ? await Promise.all(req.files.map(async (file) => await FileModel.createNewInstance(payload.sub, req.params.id, 'post', file)))
+        : [];
 
       const post = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub },
-        { $set: req.body, $addToSet: { images: { $each: images?.map(image => image._id) ?? [] } } },
+        { $addToSet: { images: { $each: images.map(image => image._id) } } },
         { new: true,
           lean: true,
           projection: { _id: 1, isActive: 1, images: 1 },

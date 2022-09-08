@@ -3,7 +3,6 @@ import { FileModel } from '../model/file.js';
 
 class DraftHandler {
   constructor() {
-
   }
 
   async createDraft(req, payload, callback) {

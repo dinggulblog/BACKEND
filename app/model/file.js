@@ -6,14 +6,14 @@ const FileSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  post: {
+  belonging: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Post'
+    refPath: 'belongModel',
+    required: true
   },
-  kind: {
+  belongModel: {
     type: String,
-    enum: ['avatar', 'detail'],
-    default: 'detail'
+    enum: ['user', 'post', 'draft', 'comment']
   },
   originalFileName: {
     type: String,
@@ -37,15 +37,37 @@ const FileSchema = new mongoose.Schema({
   versionKey: false
 });
 
-FileSchema.index({ post: 1 });
+FileSchema.post('updateOne', async function (doc, next) {
+  try {
+    const deleted = await FileModel.findOneAndDelete(
+      this._conditions,
+      { lean: true, projection: { serverFileName: 1 } }
+    ).exec();
+    
+    
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+FileSchema.post('updateMany', async function (doc, next) {
+  try {
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+})
 
 const fileModel = mongoose.model('File', FileSchema);
 
-fileModel.createNewInstance = async function (uploader, post, kind, file) {
+fileModel.createNewInstance = async function (uploader, belonging, belongModel, file) {
   return await FileModel.create({
     uploader: uploader,
-    post: post,
-    kind: kind,
+    belonging: belonging,
+    belongModel: belongModel,
     originalFileName: file.originalname,
     serverFileName: file.filename,
     size: file.size

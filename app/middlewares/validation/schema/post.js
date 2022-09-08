@@ -6,7 +6,7 @@ const POST_VALIDATION_SCHEMA = () => {
   return {
     'subject': {
       custom: {
-        options: async (value) => await MenuModel.findById(value).select('_id').lean().exec()
+        options: async (value) => await MenuModel.findById(value).select('_id').lean().exec() === null ? Promise.reject('Invalid Subject ID') : true
       }
     },
     'category': {
@@ -30,7 +30,9 @@ const POST_VALIDATION_SCHEMA = () => {
       optional: { options: { nullable: true } }
     },
     'images': {
-      toArray: true
+      customSanitizer: { 
+        options: value => undefined
+      }
     },
     'isPublic': {
       customSanitizer: { 
