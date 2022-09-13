@@ -33,16 +33,16 @@ class DraftHandler {
   async updateDraft(req, payload, callback) {
     try {
       const images = Array.isArray(req.files) && req.files.length
-        ? await Promise.all(req.files.map(async (file) => await FileModel.createNewInstance(payload.sub, req.params.id, 'detail', file)))
-        : undefined;
+        ? await Promise.all(req.files.map(async (file) => await FileModel.createNewInstance(payload.sub, req.params.id, 'draft', file)))
+        : [];
 
       const draft = await DraftModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub, isActive: true },
-        { $set: req.body, $addToSet: { images: { $each: images?.map(image => image._id) ?? [] } } },
+        { $set: req.body, $addToSet: { images: { $each: images.map(image => image._id) } } },
         { new: true,
           lean: true,
           projection: { _id: 1, isActive: 1, images: 1 },
-          populate: { path: 'images', select: { serverFileName: 1 }, match: { isActive: true } } }
+          populate: { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } } }
       ).exec();
 
       callback.onSuccess({ draft });

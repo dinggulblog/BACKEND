@@ -95,7 +95,7 @@ PostSchema.post('save', async function (doc, next) {
     ).exec();
     await FileModel.updateMany(
       { belonging: draft._id },
-      { $set: { belonging: doc._id, belongModel: 'post' } },
+      { $set: { belonging: doc._id, belongingModel: 'post' } },
       { lean: true }
     ).exec();
 
@@ -105,11 +105,11 @@ PostSchema.post('save', async function (doc, next) {
   }
 })
 
-PostSchema.post('updateOne', async function (res, next) {
+PostSchema.post('updateOne', async function (doc, next) {
   try {
-    if (!res.isActive) {
+    if (!doc.isActive) {
       await FileModel.updateMany(
-        { belonging: res._id },
+        { belonging: this._id },
         { $set: { isActive: false } },
         { lean: true }
       ).exec();

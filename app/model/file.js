@@ -1,5 +1,8 @@
 import mongoose from 'mongoose';
 
+import { join } from 'path';
+import { accessSync, constants, unlinkSync } from 'fs';
+
 const FileSchema = new mongoose.Schema({
   uploader: {
     type: mongoose.Schema.Types.ObjectId,
@@ -8,10 +11,10 @@ const FileSchema = new mongoose.Schema({
   },
   belonging: {
     type: mongoose.Schema.Types.ObjectId,
-    refPath: 'belongModel',
+    refPath: 'belongingModel',
     required: true
   },
-  belongModel: {
+  belongingModel: {
     type: String,
     enum: ['user', 'post', 'draft', 'comment']
   },
@@ -37,14 +40,11 @@ const FileSchema = new mongoose.Schema({
   versionKey: false
 });
 
-FileSchema.post('updateOne', async function (doc, next) {
+FileSchema.post('findOneAndDelete', async function (doc, next) {
   try {
-    const deleted = await FileModel.findOneAndDelete(
-      this._conditions,
-      { lean: true, projection: { serverFileName: 1 } }
-    ).exec();
-    
-    
+    const filePath = join(__dirname, 'uploads', doc.serverFileName);
+    accessSync(filePath, constants.F_OK);
+    unlinkSync(filePath);
 
     next();
   } catch (error) {
@@ -63,11 +63,19 @@ FileSchema.post('updateMany', async function (doc, next) {
 
 const fileModel = mongoose.model('File', FileSchema);
 
-fileModel.createNewInstance = async function (uploader, belonging, belongModel, file) {
+/**
+ * Built-in model function to create file model instance with params
+ * @param {mongoose.Types.ObjectId} uploader 
+ * @param {mongoose.Types.ObjectId} belonging 
+ * @param {String} belongingModel 
+ * @param {Object} file 
+ * @returns 
+ */
+fileModel.createNewInstance = async function (uploader, belonging, belongingModel, file) {
   return await FileModel.create({
-    uploader: uploader,
-    belonging: belonging,
-    belongModel: belongModel,
+    uploader,
+    belonging,
+    belongingModel,
     originalFileName: file.originalname,
     serverFileName: file.filename,
     size: file.size

@@ -14,6 +14,11 @@ const POST_VALIDATION_SCHEMA = () => {
         options: value => value ? String(value) : undefined
       }
     },
+    'isPublic': {
+      customSanitizer: { 
+        options: value => value ? Boolean(value) : true
+      }
+    },
     'title': {
       isLength: { 
         options: [{ min: 1, max: 150 }],
@@ -28,16 +33,6 @@ const POST_VALIDATION_SCHEMA = () => {
     },
     'thumbnail': {
       optional: { options: { nullable: true } }
-    },
-    'images': {
-      customSanitizer: { 
-        options: value => undefined
-      }
-    },
-    'isPublic': {
-      customSanitizer: { 
-        options: value => value ? Boolean(value) : true
-      }
     }
   };
 };
@@ -67,8 +62,8 @@ const POSTS_PAGINATION_SCHEMA = () => {
       optional: { options: { nullable: true } },
       customSanitizer: {
         options: async (nickname) => {
-          const user = await UserModel.findOne({ nickname }, { isActive: 1 }).lean().exec();
-          return user._id;
+          const user = await UserModel.findOne({ nickname }, { isActive: 1 }, { lean: true }).exec();
+          return user?._id;
         }
       }
     },

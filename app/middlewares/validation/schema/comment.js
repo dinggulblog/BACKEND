@@ -1,4 +1,3 @@
-import ForbiddenError from '../../../error/forbidden.js';
 import { PostModel } from '../../../model/post.js';
 import { CommentModel } from '../../../model/comment.js';
 
@@ -8,23 +7,25 @@ const POSTID_VALIDATION_SCHEMA = () => {
       custom: {
         options: async (value) => {
           const post = await PostModel.findById(value, { isActive: 1 }, { lean: true }).exec();
-          if (!post) Promise.reject(new ForbiddenError('존재하지 않는 게시물입니다.'));
-          else if (!post.isActive) Promise.reject(new ForbiddenError('비활성화된 게시물입니다.'));
-          else return post._id;
+          return post?._id;
         }
       }
-    },
+    }
+  };
+};
+
+const PARENTID_VALIDATION_SCHEMA = () => {
+  return {
     'parentId': {
       custom: {
         options: async (value) => {
           if (!value) return true;
           const comment = await CommentModel.findById(value, { isActive: 1 }, { lean: true }).exec();
-          if (!comment) Promise.reject(new ForbiddenError('존재하지 않는 댓글입니다.'));
-          else if (!comment.isActive) Promise.reject(new ForbiddenError('비활성화된 댓글입니다.'));
+          if (!comment || !comment.isActive) Promise.reject('존재하지 않거나 비활성화된 댓글입니다.');
           else return comment._id;
         }
       }
-    },
+    }
   };
 };
 
@@ -46,5 +47,6 @@ const COMMENT_VALIDATION_SCHEMA = () => {
 
 export default { 
   POSTID_VALIDATION_SCHEMA,
+  PARENTID_VALIDATION_SCHEMA,
   COMMENT_VALIDATION_SCHEMA
 };

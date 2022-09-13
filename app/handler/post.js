@@ -119,28 +119,13 @@ class PostHandler {
 
   async updatePost(req, payload, callback) {
     try {
-      const post = await PostModel.findOneAndUpdate(
-        { _id: req.params.id, author: payload.sub },
-        { $set: req.body },
-        { new: true,
-          lean: true }
-      ).exec();
-
-      callback.onSuccess({ post });
-    } catch (error) {
-      callback.onError(error);
-    }
-  }
-
-  async updatePostFiles(req, payload, callback) {
-    try {
       const images = Array.isArray(req.files) && req.files.length
         ? await Promise.all(req.files.map(async (file) => await FileModel.createNewInstance(payload.sub, req.params.id, 'post', file)))
         : [];
 
       const post = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub },
-        { $addToSet: { images: { $each: images.map(image => image._id) } } },
+        { $set: req.body, $addToSet: { images: { $each: images.map(image => image._id) } } },
         { new: true,
           lean: true,
           projection: { _id: 1, isActive: 1, images: 1 },

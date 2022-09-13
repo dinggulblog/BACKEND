@@ -1,4 +1,5 @@
 import { CommentModel } from '../model/comment.js';
+import { FileModel } from '../model/file.js';
 
 class CommentHandler {
   constructor() {
@@ -6,7 +7,7 @@ class CommentHandler {
 
   async createComment(req, payload, callback) {
     try {
-      await CommentModel.create({
+      const comment = await CommentModel.create({
         commenter: payload.sub,
         post: req.params.postId,
         parentComment: req.params?.parentId,
@@ -14,7 +15,13 @@ class CommentHandler {
         isPublic: req.body.isPublic
       });
 
-      return await this.getComments(req, callback);
+      const file = req.file ? await FileModel.createNewInstance(payload.sub, comment._id, 'comment', req.file) : undefined;
+
+      if (file) {
+        await comment.updateOne({ $set: { image: file._id } }, { lean: true }).exec();
+      }
+
+      callback.onSuccess({ comment });
     } catch (error) {
       callback.onError(error);
     }
@@ -22,11 +29,17 @@ class CommentHandler {
 
   async getComments(req, callback) {
     try {
-      const comments = await CommentModel.find({ post: req.params.postId })
-        .populate('commenter', { _id: 0, nickname: 1 })
-        .sort('-createdAt')
-        .lean()
-        .exec();
+      const comments = await CommentModel.find(
+        { post: req.params.postId },
+        null,
+        { lean: true,
+          sort: { createdAt: -1 },
+          populate: [
+            { path: 'commenter', select: { _id: 0, nickname: 1, isActive: 1 } },
+            { path: 'image', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } }
+          ]
+        }
+      ).exec();
 
       callback.onSuccess({ comments: CommentHandler.convertTrees(comments, '_id', 'parentComment', 'childComments') });
     } catch (error) {
@@ -36,12 +49,28 @@ class CommentHandler {
 
   async updateComment(req, payload, callback) {
     try {
-      await CommentModel.findOneAndUpdate(
-        { _id: req.params.id, post: req.params.postId, commenter: payload.sub },
-        { $set: req.body }
-      ).lean().exec();
+      const image = req.file ? await FileModel.createNewInstance(payload.sub, req.params.id, 'comment', req.file) : undefined;
 
-      return await this.getComments(req, callback);
+      if (image) {
+        req.body.image = image._id;
+      }
+
+      const comment = await CommentModel.findOneAndUpdate(
+        { _id: req.params.id, commenter: payload.sub },
+        { $set: req.body },
+        { new: false,
+          lean: true }
+      ).exec();
+
+      if (image && comment.image !== image._id) {
+        await FileModel.updateOne(
+          { _id: comment.image },
+          { $set: { isActive: false } },
+          { lean: true }
+        ).exec();
+      }
+
+      callback.onSuccess({});
     } catch (error) {
       callback.onError(error);
     }
@@ -49,12 +78,13 @@ class CommentHandler {
 
   async deleteComment(req, payload, callback) {
     try {
-      await CommentModel.findOneAndUpdate(
-        { _id: req.params.id, post: req.params.postId, commenter: payload.sub },
-        { $set: { isActive: false } }
-      ).lean().exec();
+      await CommentModel.updateOne(
+        { _id: req.params.id, commenter: payload.sub },
+        { $set: { isActive: false } },
+        { lean: true }
+      ).exec();
 
-      return await this.getComments(req, callback);
+      callback.onSuccess({});
     } catch (error) {
       callback.onError(error);
     }

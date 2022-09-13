@@ -1,6 +1,4 @@
 import mongoose from 'mongoose';
-import { join } from 'path';
-import { accessSync, constants, unlinkSync } from 'fs';
 
 import { FileModel } from './file.js';
 
@@ -99,14 +97,7 @@ DraftSchema.post('updateOne', async function (doc, next) {
 
 DraftSchema.post('findOneAndDelete', async function (doc, next) {
   try {
-    doc.images.forEach(async (image) => {
-      const deleted = await FileModel.findOneAndDelete({ _id: image }, { lean: true }).exec();
-      if (deleted) {
-        const filePath = join(__dirname, 'uploads', deleted.serverFileName);
-        accessSync(filePath, constants.F_OK);
-        unlinkSync(filePath);
-      }
-    });
+    doc.images.forEach(async (image) => await FileModel.findOneAndDelete({ _id: image }, { lean: true }).exec());
 
     next();
   } catch (error) {
