@@ -1,27 +1,14 @@
-import NodeCache from 'node-cache';
-import { join } from 'path';
-import { accessSync, constants, unlinkSync } from 'fs';
-
 import { UserModel } from '../model/user.js';
 import { RoleModel } from '../model/role.js';
 import { FileModel } from '../model/file.js';
 
 class UserHandler {
   constructor() {
-    this._memCache = new NodeCache();
   }
 
   async createUserAccount(req, callback) {
     try {
-      const roles = this._memCache.get('default_roles');
-
-      if (!roles) {
-        req.body.roles = await RoleModel.find({ name: 'USER' }).select('_id');
-        this._memCache.set('default_roles', req.body.roles, 86400);
-      }
-      else {
-        req.body.roles = roles;
-      }
+      req.body.roles = await RoleModel.find({ name: 'USER' }).select('_id');
 
       await UserModel.create(req.body);
 
@@ -40,10 +27,10 @@ class UserHandler {
         .exec();
 
       const IP = user.lastLoginIP.split('.');
+      user.lastLoginIP = IP.shift() + '.' + IP.shift() + '.' + '***.***';
       user.id = user._id;
       user.avatar = user.avatar?.serverFileName || 'default.png';
       user.roles = user.roles.map(role => role.name);
-      user.lastLoginIP = IP.shift() + '.' + IP.shift() + '.' + '***.***';
       
       callback.onSuccess({ user });
     } catch (error) {
@@ -88,11 +75,12 @@ class UserHandler {
 
   async updateUserProfile(req, payload, callback) {
     try {
-      const avatar = req.file ? await FileModel.createNewInstance(payload.sub, undefined, 'avatar', req.file) : undefined;
+      const avatar = req.file ? await FileModel.createNewInstance(payload.sub, payload.sub, 'user', req.file) : undefined;
+
       const user = await UserModel.findOneAndUpdate(
         { _id: payload.sub },
         { $set: {
-          avatar: avatar,
+          avatar: avatar?._id ?? req.body?.avatar,
           greetings: req.body.greetings,
           introduce: req.body.introduce
         } },
@@ -102,16 +90,11 @@ class UserHandler {
           populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
       ).exec();
       
-      if (avatar && user.avatar) {
-        const oldAvatar = await FileModel.findByIdAndRemove(user.avatar).select('serverFileName').lean().exec();
-        if (oldAvatar) {
-          const filePath = join(__dirname, 'uploads', oldAvatar.serverFileName);
-          accessSync(filePath, constants.F_OK);
-          unlinkSync(filePath);
-        }
+      if (avatar && user.avatar._id !== avatar._id) {
+        await FileModel.findOneAndDelete({ _id: user.avatar._id }, { lean: true }).exec();
       }
 
-      user.avatar = avatar?.serverFileName;
+      user.avatar = avatar?.serverFileName ?? user.avatar?.serverFileName;
       user.greetings = req.body?.greetings;
       user.introduce = req.body?.introduce;
       delete user._id;

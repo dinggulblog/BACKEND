@@ -18,7 +18,6 @@ class AuthHandler {
     if (user) {
       try {
         const UUIDV1 = v1();
-        
         const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, UUIDV1));
         const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
 
@@ -29,21 +28,26 @@ class AuthHandler {
         callback.onError(new ServerError('Internal server error: Cannot sign with JWT'));
       }
     } else {
-      callback.onError(new ForbiddenError('User not found'));
+      callback.onError(new ForbiddenError('유저를 찾을 수 없습니다.'));
     }
   }
 
   async issueRenewedToken(req, payload, callback) {
     try {
-      const UUIDV1 = v1();
-      
+      const id = this._nodeCache.get(payload.jti);
+
+      if (!id) {
+        return callback.onError(new JwtError('갱신 토큰의 만료기간이 지났습니다. 다시 로그인 해 주세요.'));
+      }
+
       const user = await UserModel.findOne(
         { _id: this._nodeCache.get(payload.jti) },
         { roles: 1, isActive: 1 },
         { lean: true,
           populate: { path: 'roles', select: { name: 1 } } }
-        ).exec();
-
+      ).exec();
+      
+      const UUIDV1 = v1();
       const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user, UUIDV1));
       const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(UUIDV1));
 
@@ -52,7 +56,7 @@ class AuthHandler {
       
       callback.onSuccess({ refreshToken }, { accessToken });
     } catch (error) {
-      callback.onError(new JwtError('Invalid token(already deleted).'));
+      callback.onError(new ServerError('Internal server error: Cannot sign with JWT'));
     }
   }
 

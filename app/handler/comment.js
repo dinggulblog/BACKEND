@@ -1,3 +1,4 @@
+import { convertFlatToTree } from '../util/util.js';
 import { CommentModel } from '../model/comment.js';
 import { FileModel } from '../model/file.js';
 
@@ -41,7 +42,7 @@ class CommentHandler {
         }
       ).exec();
 
-      callback.onSuccess({ comments: CommentHandler.convertTrees(comments, '_id', 'parentComment', 'childComments') });
+      callback.onSuccess({ comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments') });
     } catch (error) {
       callback.onError(error);
     }
@@ -88,26 +89,6 @@ class CommentHandler {
     } catch (error) {
       callback.onError(error);
     }
-  }
-
-  static convertTrees(array = [], idFieldName, parentIdFieldName, childrenFieldName) {
-    const cloned = array.slice();
-  
-    for (let i = cloned.length - 1; i > -1 ; i--) {
-      const parentId = cloned[i][parentIdFieldName];
-      if (parentId) {
-        const filtered = array.filter(elem => elem[idFieldName].toString() === parentId.toString());
-        if (filtered.length) {
-          const parent = filtered[0];
-          parent[childrenFieldName]
-            ? parent[childrenFieldName].unshift(cloned[i])
-            : parent[childrenFieldName] = [cloned[i]];
-        }
-        cloned.splice(i, 1);
-      }
-    }
-
-    return cloned;
   }
 }
 

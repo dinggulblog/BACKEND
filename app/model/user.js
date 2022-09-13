@@ -48,7 +48,8 @@ const UserSchema = new mongoose.Schema({
   },
   expiredAt: {
     type: Date,
-    default: undefined
+    default: undefined,
+    expires: 0
   }
 }, { 
   toObject: { 
@@ -59,8 +60,6 @@ const UserSchema = new mongoose.Schema({
   },
   versionKey: false
 });
-
-UserSchema.index({ expiredAt: 1 }, { expireAfterSeconds: 0 });
 
 UserSchema.virtual('id')
   .get(function () { return this._id });

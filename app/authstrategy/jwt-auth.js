@@ -5,6 +5,7 @@ import BaseAuthStrategy from './base-auth.js';
 import InvalidRequestError from '../error/invalid-request.js';
 import UnauthorizedError from '../error/unauthorized.js';
 import JwtError from '../error/jwt-error.js';
+import ForbiddenError from '../error/forbidden.js';
 
 class JwtAuthStrategy extends BaseAuthStrategy {
   constructor(options, verify) {
@@ -74,6 +75,15 @@ class JwtAuthStrategy extends BaseAuthStrategy {
     if (accessToken) {
       try {
         const { payload } = await jwtVerify(accessToken, importedPublicKey, this._jwtOptions);
+
+        // If need to verify roles in payload
+        if (req.role) {
+          const { data: { roles } } = payload;
+          return Array.isArray(roles) && roles.includes(req.role)
+            ? callback.onVerified(accessToken, payload)
+            : callback.onFailure(new ForbiddenError('권한이 있는 사용자만 접근할 수 있습니다.'));
+        }
+        
         return callback.onVerified(accessToken, payload);
       } catch (error) {
         // refresh token exists but not the refresh url -> return 401 error (re-request to refresh url)
@@ -93,13 +103,13 @@ class JwtAuthStrategy extends BaseAuthStrategy {
         }
       }
       else {
-        // refresh token exists but not the refresh url -> return 401 error (re-request to refresh url)
+        // refresh token exists but not the refresh url -> return 401 error (Need to re-request with refresh url)
         return callback.onFailure(new UnauthorizedError('엑세스 토큰을 먼저 발급받아야 합니다.'));
       }
     }
 
-    // Invalid request -> return 400 error response
-    return callback.onFailure(new InvalidRequestError('Invalid request'));
+    // !!Never come to here!!
+    return callback.onFailure(new InvalidRequestError('잘못된 요청'));
   }
 
   provideSecretKey() {

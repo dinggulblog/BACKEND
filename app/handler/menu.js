@@ -3,7 +3,6 @@ import NodeCache from 'node-cache';
 import { MenuModel } from '../model/menu.js';
 import InvalidRequestError from '../error/invalid-request.js';
 import NotFoundError from '../error/not-found.js';
-import ForbiddenError from '../error/forbidden.js';
 
 class MenuHandler {
   constructor() {
@@ -12,10 +11,6 @@ class MenuHandler {
 
   async createMenu(req, payload, callback) {
     try {
-      if (!MenuHandler.#checkRoleAsAdmin(payload)) {
-        throw new ForbiddenError('해당 요청에 대한 권한이 없습니다.');
-      }
-  
       const newMenu = await MenuModel.create({
         title: req.body.title,
         subject: req.body?.subject,
@@ -47,10 +42,6 @@ class MenuHandler {
 
   async updateMenu(req, payload, callback) {
     try {
-      if (!MenuHandler.#checkRoleAsAdmin(payload)) {
-        throw new ForbiddenError('해당 요청에 대한 권한이 없습니다.');
-      }
-
       if (req.query.title && !req.query.id) {
         // Change only the title of all menu documents
         const writeResult = await MenuModel.updateMany(
@@ -88,10 +79,6 @@ class MenuHandler {
 
   async deleteMenu(req, payload, callback) {
     try {
-      if (!MenuHandler.#checkRoleAsAdmin(payload)) {
-        throw new ForbiddenError('해당 요청에 대한 권한이 없습니다.');
-      }
-
       if (req.query.title && !req.query.id) {
         // Change only the title of all menu documents
         const writeResult = await MenuModel.deleteMany({ title: req.query.title }).lean().exec();
@@ -130,11 +117,6 @@ class MenuHandler {
     }
     
     return option
-  }
-
-  static #checkRoleAsAdmin(payload) {
-    const { data: { roles } } = payload;
-    return Array.isArray(roles) ? roles.includes('ADMIN') : false;
   }
 }
 

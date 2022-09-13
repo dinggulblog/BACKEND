@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-import CommentHandler from './comment.js'
+import { convertFlatToTree } from '../util/util.js';
 import { UserModel } from '../model/user.js';
 import { PostModel } from '../model/post.js';
 import { FileModel } from '../model/file.js';
@@ -8,23 +8,20 @@ import { CommentModel } from '../model/comment.js';
 
 class PostHandler {
   constructor() {
-    this.convertTrees = CommentHandler.convertTrees;
   }
 
   async createPost(req, payload, callback) {
     try {
-      const post = new PostModel({
+      const post = await new PostModel({
         author: payload.sub,
         subject: req.body.subject,
         category: req.body.category,
         title: req.body.title,
         content: req.body.content,
-        thumbnail: req.body.thumbnail,
-        images: req.body.images,
-        isPublic: req.body.isPublic
-      });
-
-      post.save();
+        isPublic: req.body.isPublic,
+        thumbnail: req.body?.thumbnail,
+        images: req.body?.images
+      }).save();
 
       callback.onSuccess({ post });
     } catch (error) {
@@ -111,7 +108,7 @@ class PostHandler {
           populate: { path: 'commenter', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: true } } }
         ).exec();
 
-      callback.onSuccess({ post, comments: this.convertTrees(comments, '_id', 'parentComment', 'childComments') });
+      callback.onSuccess({ post, comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments') });
     } catch (error) {
       callback.onError(error);
     }

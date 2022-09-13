@@ -93,11 +93,14 @@ PostSchema.post('save', async function (doc, next) {
       { lean: true,
         projection: { isActive: 1 } }
     ).exec();
-    await FileModel.updateMany(
-      { belonging: draft._id },
-      { $set: { belonging: doc._id, belongingModel: 'post' } },
-      { lean: true }
-    ).exec();
+
+    if (draft) {
+      await FileModel.updateMany(
+        { belonging: draft._id },
+        { $set: { belonging: this._id, belongingModel: 'post' } },
+        { lean: true }
+      ).exec();
+    }
 
     next();
   } catch (error) {
