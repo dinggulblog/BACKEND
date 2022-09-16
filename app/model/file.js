@@ -40,7 +40,7 @@ const FileSchema = new mongoose.Schema({
   versionKey: false
 });
 
-FileSchema.post('findOneAndDelete', async function (doc, next) {
+FileSchema.post(['deleteOne', 'findOneAndDelete'], async function (doc, next) {
   try {
     const filePath = join(__dirname, 'uploads', doc.serverFileName);
     accessSync(filePath, constants.F_OK);
@@ -48,18 +48,9 @@ FileSchema.post('findOneAndDelete', async function (doc, next) {
 
     next();
   } catch (error) {
-    next(error);
+    error.code === 'ENOENT' ? next() : next(error);
   }
 });
-
-FileSchema.post('updateMany', async function (doc, next) {
-  try {
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-})
 
 const fileModel = mongoose.model('File', FileSchema);
 

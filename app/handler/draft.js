@@ -7,7 +7,11 @@ class DraftHandler {
 
   async createDraft(req, payload, callback) {
     try {
-      const draft = await new DraftModel({ author: payload.sub }).save({ validateBeforeSave: false });
+      const draft = await new DraftModel(
+        { author: payload.sub }
+      ).save(
+        { validateBeforeSave: false }
+      );
 
       callback.onSuccess({ draft });
     } catch (error) {
@@ -32,16 +36,16 @@ class DraftHandler {
 
   async updateDraft(req, payload, callback) {
     try {
-      const images = Array.isArray(req.files) && req.files.length
+      const images = req.files?.length
         ? await Promise.all(req.files.map(async (file) => await FileModel.createNewInstance(payload.sub, req.params.id, 'draft', file)))
         : [];
 
       const draft = await DraftModel.findOneAndUpdate(
-        { _id: req.params.id, author: payload.sub, isActive: true },
+        { _id: req.params.id, author: payload.sub },
         { $set: req.body, $addToSet: { images: { $each: images.map(image => image._id) } } },
         { new: true,
           lean: true,
-          projection: { _id: 1, isActive: 1, images: 1 },
+          projection: { _id: 1, isActive: 1, thumbnail: 1, images: 1 },
           populate: { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } } }
       ).exec();
 
@@ -74,11 +78,7 @@ class DraftHandler {
       ).exec();
 
       if (modifiedCount) {
-        await FileModel.updateOne(
-          { _id: req.body.image },
-          { $set: { isActive: false } },
-          { lean: true }
-        ).exec();
+        await FileModel.findOneAndDelete({ _id: req.body.image }, { lean: true }).exec();
       }
 
       callback.onSuccess({});

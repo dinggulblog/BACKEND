@@ -1,5 +1,6 @@
 import multer from 'multer';
-import { join, extname, basename } from 'path'
+import { join, extname, basename } from 'path';
+import ForbiddenError from '../error/forbidden.js';
 
 const availableMimetype = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
@@ -10,7 +11,7 @@ export const upload = multer({
     },
     filename: (req, file, done) => {
       const ext = extname(file.originalname);
-      done(null, basename(file.originalname, ext) + Date.now() + ext);
+      done(null, Date.now() + '-' + basename(file.originalname, ext) + ext);
     }
   }),
   limits: {
@@ -19,6 +20,6 @@ export const upload = multer({
   fileFilter: (req, file, done) => {
     return availableMimetype.includes(file.mimetype)
       ? done(null, true)
-      : done(new Error('Unsupported file format'), false);
+      : done(new ForbiddenError('지원하지 않는 파일 형식입니다.\n지원 파일 포맷: [jpg, jpeg, png, webp]'), false);
   }
 });

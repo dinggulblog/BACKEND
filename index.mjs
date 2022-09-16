@@ -1,7 +1,7 @@
-// Include dependencies
-import { readdirSync, mkdirSync } from 'fs';
+import { readdirSync, mkdirSync, accessSync, unlinkSync, constants } from 'fs';
 import { resolve, join } from 'path';
 import { config } from 'dotenv';
+import { exit } from 'process';
 import cors from 'cors';
 import csurf from 'csurf';
 import helmet from 'helmet';
@@ -17,6 +17,7 @@ import routes from './app/routes/index.js';
 import authManager from './app/manager/auth.js';
 import responseManager from './app/manager/response.js';
 
+
 // Global variables
 global.__dirname = resolve();
 
@@ -28,15 +29,18 @@ else if (process.env.NODE_ENV === 'develop') {
   config({ path: join(__dirname, '.env.develop')});
 }
 else {
-  throw new Error('Cannot find process.env.NODE_ENV');
+  console.log('.env 파일을 찾을 수 없습니다. 서버를 종료합니다.');
+  exit(1);
 }
 
-// Create an express app
-const app = express();
-
 // Connect to DB
-db.connect(process.env.MONGO_CONNECT_URL);
-db.createDefaultDoc();
+try {
+  await db.connect(process.env.MONGO_CONNECT_URL);
+  await db.createDefaultDoc();
+} catch (error) {
+  console.error(error);
+  exit(1);
+}
 
 // Create an upload directory
 try {
@@ -45,6 +49,9 @@ try {
   console.error('Create missing directory: "uploads"');
   mkdirSync('uploads');
 }
+
+// Create an express app
+const app = express();
 
 // Cors, Loging and Securities
 app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
@@ -81,16 +88,34 @@ app.use(authManager.providePassport().initialize());
 // Setup routes
 app.use('/', routes);
 
-// Error handling
+// Handling a non-existent route
 app.use((req, res, next) => {
   const error = new Error(`${req.method} ${req.url} router does not exist.`);
   error.status = 410;
   next(error);
-})
+});
+
+// Error handling
 app.use((err, req, res, next) => {
+  console.log(err)
   res.locals.message = err.message;
   res.locals.error = process.env.NODE_ENV === 'production' ? {} : err;
-  responseManager.respondWithError(res, err.status || 410, err.message || "")
-})
+
+  // Deleting files when an error occurs after file uploaded
+  if (req.file) {
+    const filePath = join(__dirname, 'uploads', req.file.filename);
+    accessSync(filePath, constants.F_OK);
+    unlinkSync(filePath);
+  }
+  else if (req.files && req.files.length) {
+    req.files.forEach(file => {
+      const filePath = join(__dirname, 'uploads', file.filename);
+      accessSync(filePath, constants.F_OK);
+      unlinkSync(filePath);
+    })
+  }
+
+  responseManager.respondWithError(res, res.locals.error.status || 500, res.locals.message || '')
+});
 
 export default app;

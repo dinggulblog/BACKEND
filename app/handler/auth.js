@@ -37,7 +37,7 @@ class AuthHandler {
       const id = this._nodeCache.get(payload.jti);
 
       if (!id) {
-        return callback.onError(new JwtError('갱신 토큰의 만료기간이 지났습니다. 다시 로그인 해 주세요.'));
+        return callback.onError(new JwtError('토큰의 만료기간이 지났습니다. 다시 로그인 해 주세요.'));
       }
 
       const user = await UserModel.findOne(

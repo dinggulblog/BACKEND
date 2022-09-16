@@ -1,5 +1,3 @@
-import passport from 'passport';
-
 import BaseController from './base.js';
 import AuthHandler from '../handler/auth.js';
 
@@ -7,7 +5,6 @@ class AuthController extends BaseController {
   constructor() {
     super();
     this._authHandler = new AuthHandler();
-    this._passport = passport;
   }
 
   // Request token by credentials

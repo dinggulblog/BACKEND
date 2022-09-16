@@ -5,10 +5,7 @@ const POSTID_VALIDATION_SCHEMA = () => {
   return {
     'postId': {
       custom: {
-        options: async (value) => {
-          const post = await PostModel.findById(value, { isActive: 1 }, { lean: true }).exec();
-          return post?._id;
-        }
+        options: async (value) => await PostModel.findById(value).select('_id').lean().exec() === null ? Promise.reject('존재하지 않는 게시글입니다.') : true
       }
     }
   };

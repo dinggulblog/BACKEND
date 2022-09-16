@@ -1,7 +1,7 @@
 import { validationResult } from 'express-validator';
 import UnprocessableError from '../../error/unprocessable.js';
 
-export const validate = (schemas) => {
+export const validator = (schemas) => {
   return async (req, res, next) => {
     await Promise.all(schemas.map(schema => schema.run(req)));
     

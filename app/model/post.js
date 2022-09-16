@@ -88,8 +88,8 @@ PostSchema.pre('save', async function (next) {
 PostSchema.post('save', async function (doc, next) {
   try {
     const draft = await DraftModel.findOneAndUpdate(
-      { author: doc.author, isActive: true },
-      { $set: { isActive: false } },
+      { author: doc.author._id, isActive: true },
+      { $set: { isActive: false, images: [] } },
       { lean: true,
         projection: { isActive: 1 } }
     ).exec();
@@ -118,6 +118,16 @@ PostSchema.post('updateOne', async function (doc, next) {
       ).exec();
     }
 
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+PostSchema.post('findOneAndDelete', async function (doc, next) {
+  try {
+    doc.images.forEach(async (image) => await FileModel.findOneAndDelete({ _id: image }, { lean: true }).exec());
+    
     next();
   } catch (error) {
     next(error);

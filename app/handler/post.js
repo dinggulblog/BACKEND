@@ -34,7 +34,7 @@ class PostHandler {
       const limit = req.query.limit;
       const skip = (req.query.page - 1) * limit;
 
-      const searchQuery = await PostHandler.#getSearchQuery(req.query, skip, limit);
+      const searchQuery = await this.#getSearchQuery(req.query, skip, limit);
       const maxPage = Math.ceil(await PostModel.countDocuments(searchQuery) / limit);
       const posts = await PostModel.aggregate([
         { $match: searchQuery },
@@ -116,7 +116,7 @@ class PostHandler {
 
   async updatePost(req, payload, callback) {
     try {
-      const images = Array.isArray(req.files) && req.files.length
+      const images = req.files?.length
         ? await Promise.all(req.files.map(async (file) => await FileModel.createNewInstance(payload.sub, req.params.id, 'post', file)))
         : [];
 
@@ -125,7 +125,7 @@ class PostHandler {
         { $set: req.body, $addToSet: { images: { $each: images.map(image => image._id) } } },
         { new: true,
           lean: true,
-          projection: { _id: 1, isActive: 1, images: 1 },
+          projection: { _id: 1, isActive: 1, thumbnail: 1, images: 1 },
           populate: { path: 'images', select: { serverFileName: 1 }, match: { isActive: true } } }
       ).exec();
 
@@ -166,28 +166,6 @@ class PostHandler {
     }
   }
 
-  async deletePostFile(req, payload, callback) {
-    try {
-      const { modifiedCount } = await PostModel.updateOne(
-        { _id: req.params.id, author: payload.sub },
-        { $pull: { images: req.body.image } },
-        { lean: true }
-      ).exec();
-
-      if (modifiedCount) {
-        await FileModel.updateOne(
-          { _id: req.body.image },
-          { $set: { isActive: false } },
-          { lean: true }
-        ).exec();
-      }
-
-      callback.onSuccess({ modifiedCount });
-    } catch (error) {
-      callback.onError(error);
-    }
-  }
-
   async deletePostLike(req, payload, callback) {
     try {
       const post = await PostModel.findOneAndUpdate(
@@ -205,7 +183,25 @@ class PostHandler {
     }
   }
 
-  static async #getSearchQuery(queries, skip, limit) {
+  async deletePostFile(req, payload, callback) {
+    try {
+      const { modifiedCount } = await PostModel.updateOne(
+        { _id: req.params.id, author: payload.sub },
+        { $pull: { images: req.body.image } },
+        { lean: true }
+      ).exec();
+
+      if (modifiedCount) {
+        await FileModel.findOneAndDelete({ _id: req.body.image }, { lean: true }).exec();
+      }
+
+      callback.onSuccess({ modifiedCount });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async #getSearchQuery(queries, skip, limit) {
     const searchQuery = { isActive: true };
 
     if (queries.subjects.length) {

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { MenuModel } from '../../../model/menu.js';
-import { UserModel } from '../../../model/user.js'
+import { UserModel } from '../../../model/user.js';
 
 const POST_VALIDATION_SCHEMA = () => {
   return {
@@ -52,7 +52,6 @@ const POSTS_PAGINATION_SCHEMA = () => {
     },
     'filter': {
       optional: { options: { nullable: true } },
-      isString: true,
       matches: {
         options: [/\b(?:like|comment)\b/],
         errorMessage: 'Available filtering words: like, comment'

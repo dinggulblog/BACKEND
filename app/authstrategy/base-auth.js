@@ -1,4 +1,4 @@
-import { Passport as BasePassport }from 'passport';
+import { Passport as BasePassport } from 'passport';
 
 class BaseAuthStrategy extends BasePassport {
   constructor() {

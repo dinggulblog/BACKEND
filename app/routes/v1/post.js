@@ -1,20 +1,23 @@
 import { Router } from 'express';
-import { upload } from '../../middlewares/multer.js';
-import { validate } from '../../middlewares/validation/validator.js'
-import { verifyAdmin } from '../../middlewares/verify.js';
-import rules from '../../middlewares/validation/post.js'
+import { verifyRole } from '../../middlewares/verify.js';
 import PostController from '../../controller/post.js';
 
 const router = Router();
 const postController = new PostController();
 
-router.post('/', validate(rules.createPostRules), verifyAdmin('ADMIN'), postController.create);
-router.get('/', validate(rules.getPostsRules), postController.getAll);
-router.get('/:id', validate(rules.getPostRules), postController.get);
-router.put('/:id', validate(rules.updatePostRules), upload.array('images'), postController.update);
-router.put('/:id/like', validate(rules.getPostRules), postController.updateLike);
-router.delete('/:id', validate(rules.getPostRules), postController.delete);
-router.delete('/:id/like', validate(rules.getPostRules), postController.deleteLike);
-router.delete('/:id/file', validate(rules.getPostRules), postController.deleteFile);
+router.route('/')
+  .get(postController.getAll)
+  .post(verifyRole('ADMIN'), postController.create);
+
+router.route('/:id')
+  .get(postController.get)
+  .put(verifyRole('ADMIN'), postController.update)
+  .delete(verifyRole('ADMIN'), postController.delete);
+
+router.route('/:id/like')
+  .put(verifyRole('USER'), postController.updateLike)
+  .delete(verifyRole('USER'), postController.deleteLike);
+
+router.delete('/:id/file', verifyRole('ADMIN'), postController.deleteFile);
 
 export { router as postRouter };

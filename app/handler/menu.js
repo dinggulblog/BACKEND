@@ -55,7 +55,7 @@ class MenuHandler {
         }
       }
       else if (req.query.id && !req.query.title) {
-        const option = MenuHandler.#getUpdateOptions(req);
+        const option = this.#getUpdateOptions(req);
         const writeResult = await MenuModel.updateOne(
           { _id: req.query.id },
           option,
@@ -105,7 +105,7 @@ class MenuHandler {
     }
   }
 
-  static #getUpdateOptions(req) {
+  #getUpdateOptions(req) {
     const option = { $set: {}, $addToSet: {} }
     for (const [key, value] of Object.entries(req.body)) {
       if (typeof value === 'string') {

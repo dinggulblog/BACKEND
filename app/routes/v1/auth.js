@@ -4,8 +4,9 @@ import AuthController from '../../controller/auth.js';
 const router = Router();
 const authController = new AuthController();
 
-router.post('/', authController.create);
-router.post('/refresh', authController.update);
-router.delete('/', authController.delete);
+router.route('/')
+  .post(authController.create)
+  .put(authController.update)
+  .delete(authController.delete);
 
 export { router as authRouter };

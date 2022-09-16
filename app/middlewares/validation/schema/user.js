@@ -1,4 +1,4 @@
-const USER_VALIDATION_SCHEMA = () => {
+const USER_ACCOUNT_VALIDATION_SCHEMA = () => {
   return {
     'email': {
       trim: true,
@@ -17,17 +17,15 @@ const USER_VALIDATION_SCHEMA = () => {
       trim: true
     },
     'nickname': {
-      trim: true,
-      isString: true,
-      isLength: { 
-        options: [{ min: 2, max: 15 }],
+      matches: {
+        options: [/^[ㄱ-ㅎ가-힣a-zA-Z0-9]{2,15}$/],
         errorMessage: 'Nickname must be between 2 and 15 chars long'
-      },
+      }
     }
   };
 };
 
-const USER_UPDATE_VALIDATION_SCHEMA = () => {
+const USER_ACCOUNT_UPDATE_VALIDATION_SCHEMA = () => {
   return {
     'currentPassword': {
       trim: true
@@ -43,17 +41,36 @@ const USER_UPDATE_VALIDATION_SCHEMA = () => {
       trim: true
     },
     'nickname': {
-      trim: true,
-      isString: true,
-      isLength: { 
-        options: [{ min: 2, max: 15 }],
+      matches: {
+        options: [/^[ㄱ-ㅎ가-힣a-zA-Z0-9]{2,15}$/],
         errorMessage: 'Nickname must be between 2 and 15 chars long'
-      },
+      }
+    }
+  };
+};
+
+const USER_PROFILE_UPDATE_VALIDATION_SCHEMA = () => {
+  return {
+    'avatar': {
+      optional: { options: { nullable: true } }
+    },
+    'greetings': {
+      isLength: { 
+        options: [{ max: 1000 }],
+        errorMessage: 'Greetings must be under 1000 chars long'
+      }
+    },
+    'introduce': {
+      isLength: { 
+        options: [{ max: 10000 }],
+        errorMessage: 'Introduce must be under 10000 chars long'
+      }
     }
   };
 };
 
 export default { 
-  USER_VALIDATION_SCHEMA,
-  USER_UPDATE_VALIDATION_SCHEMA
+  USER_ACCOUNT_VALIDATION_SCHEMA,
+  USER_ACCOUNT_UPDATE_VALIDATION_SCHEMA,
+  USER_PROFILE_UPDATE_VALIDATION_SCHEMA
 };

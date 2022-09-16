@@ -1,16 +1,18 @@
 import { Router } from 'express';
-import { upload } from '../../middlewares/multer.js';
-import { validate } from '../../middlewares/validation/validator.js'
-import rules from '../../middlewares/validation/draft.js'
+import { verifyRole } from '../../middlewares/verify.js';
 import DraftController from '../../controller/draft.js';
 
 const router = Router();
 const draftController = new DraftController();
 
-router.post('/', draftController.create);
-router.get('/', draftController.get);
-router.put('/:id', upload.array('images'), draftController.update);
-router.delete('/:id', draftController.delete);
-router.delete('/:id/file', draftController.deleteFile);
+router.route('/')
+  .get(verifyRole('ADMIN'), draftController.get)
+  .post(verifyRole('ADMIN'), draftController.create);
+
+router.route('/:id')
+  .put(verifyRole('ADMIN'), draftController.update)
+  .delete(verifyRole('ADMIN'), draftController.delete);
+
+router.delete('/:id/file', verifyRole('ADMIN'), draftController.deleteFile);
 
 export { router as draftRouter };
