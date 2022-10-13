@@ -16,9 +16,8 @@ class CommentHandler {
         isPublic: req.body.isPublic
       });
 
-      const file = req.file ? await FileModel.createNewInstance(payload.sub, comment._id, 'comment', req.file) : undefined;
-
-      if (file) {
+      if (req.file) {
+        const file = await FileModel.createNewInstance(payload.sub, comment._id, 'comment', req.file);
         await comment.updateOne({ $set: { image: file._id } }, { lean: true }).exec();
       }
 
@@ -50,26 +49,17 @@ class CommentHandler {
 
   async updateComment(req, payload, callback) {
     try {
-      const image = req.file ? await FileModel.createNewInstance(payload.sub, req.params.id, 'comment', req.file) : undefined;
-
-      if (image) {
+      if (req.file) {
+        const image = await FileModel.createNewInstance(payload.sub, req.params.id, 'comment', req.file);
         req.body.image = image._id;
       }
 
-      const comment = await CommentModel.findOneAndUpdate(
+      await CommentModel.updateOne(
         { _id: req.params.id, commenter: payload.sub },
         { $set: req.body },
         { new: false,
           lean: true }
       ).exec();
-
-      if (image && comment.image !== image._id) {
-        await FileModel.updateOne(
-          { _id: comment.image },
-          { $set: { isActive: false } },
-          { lean: true }
-        ).exec();
-      }
 
       callback.onSuccess({});
     } catch (error) {

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 // Not used
 const RevokedTokenSchema = new mongoose.Schema({
-  uuid: {
+  token: {
     type: String,
     required: true
   }

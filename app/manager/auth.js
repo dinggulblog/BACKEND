@@ -16,23 +16,21 @@ class AuthManager extends BaseAutoBindedClass {
   constructor() {
     super();
     this._passport = passport;
-
     this._strategies = [];
+
     this._setStrategies();
     this._setPassportStrategies();
   }
 
-  // Init JWT strategy
   _setStrategies() {
     this._strategies.push(new CredentialsAuth());
     this._strategies.push(new JwtAuthStrategy(this._provideJwtOptions(), this._verifyRevokedToken));
     this._strategies.push(new SecretKeyAuth({ secretKey: this._provideSecretKey() }));
   }
 
-  // Custom verifier
   async _verifyRevokedToken(token, payload, callback) {
     try {
-      const revokedToken = await RevokedTokenModel.findOne({ uuid: payload.jti })
+      const revokedToken = await RevokedTokenModel.findOne({ token })
 
       revokedToken
         ? callback.onFailure(new ForbiddenError('Refresh token has been revoked'))
@@ -42,27 +40,18 @@ class AuthManager extends BaseAutoBindedClass {
     }
   }
 
-  extractJwtToken(req) {
-    return {
-      accessToken: ExtractJwt.fromAuthHeaderAsBearerToken()(req),
-      refreshToken: this._extractTokenFromCookies(req)
-    };
+  extractAccessToken(req) {
+    return ExtractJwt.fromAuthHeaderAsBearerToken()(req);
   }
 
-  _extractTokenFromCookies(req) {
-    let token = null;
-    if (req && req.signedCookies && req.signedCookies.refreshToken) {
-      token = req.signedCookies.refreshToken;
-    }
-    else if (req && req.cookies && req.cookies.refreshToken) {
-      token = req.cookies.refreshToken;
-    }
-    return token;
+  extractRefreshToken(req) {
+    return req.session?.refreshToken;
   }
 
   _provideJwtOptions() {
     const options = {};
-    options.extractJwtToken = this.extractJwtToken;
+    options.extractAccessToken = this.extractAccessToken;
+    options.extractRefreshToken = this.extractRefreshToken;
     options.privateKey = this._provideJwtPrivateKey();
     options.publicKey = this._provideJwtPublicKey();
     options.issuer = jwtOptions.issuer;

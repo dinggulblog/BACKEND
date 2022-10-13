@@ -12,30 +12,34 @@ class PostController extends BaseController {
   }
 
   get(req, res, next) {
-    this.validate(rules.getPostRules(), req, res, next, () => {
+    this.validate(rules.getPostRules, req, res, () => {
       this._postHandler.getPost(req, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 
   getAll(req, res, next) {
-    this.validate(rules.getPostsRules(), req, res, next, () => {
+    this.validate(rules.getPostsRules, req, res, () => {
       this._postHandler.getPosts(req, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 
   create(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this.validate(rules.createPostRules(), req, res, next, () => {
-        this._postHandler.createPost(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      this.verify(payload.roles, res, () => {
+        this.validate(rules.createPostRules, req, res, () => {
+          this._postHandler.createPost(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        });
       });
     });
   }
 
   update(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this.#upload(req, res, next, () => {
-        this.validate(rules.updatePostRules(), req, res, next, () => {
-          this._postHandler.updatePost(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      this.verify(payload.roles, res, () => {
+        this.#upload(req, res, () => {
+          this.validate(rules.updatePostRules, req, res, () => {
+            this._postHandler.updatePost(req, payload, this._responseManager.getDefaultResponseHandler(res));
+          });
         });
       });
     });
@@ -43,7 +47,7 @@ class PostController extends BaseController {
 
   updateLike(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this.validate(rules.getPostRules(), req, res, next, () => {
+      this.validate(rules.getPostRules, req, res, () => {
         this._postHandler.updatePostLike(req, payload, this._responseManager.getDefaultResponseHandler(res));
       });
     });
@@ -51,15 +55,17 @@ class PostController extends BaseController {
 
   delete(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this.validate(rules.getPostRules(), req, res, next, () => {
-        this._postHandler.deletePost(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      this.verify(payload.roles, res, () => {
+        this.validate(rules.getPostRules, req, res, () => {
+          this._postHandler.deletePost(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        });
       });
     });
   }
 
   deleteLike(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this.validate(rules.getPostRules(), req, res, next, () => {
+      this.validate(rules.getPostRules, req, res, () => {
         this._postHandler.deletePostLike(req, payload, this._responseManager.getDefaultResponseHandler(res));
       });
     });
@@ -67,31 +73,18 @@ class PostController extends BaseController {
 
   deleteFile(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this.validate(rules.getPostRules(), req, res, next, () => {
-        this._postHandler.deletePostFile(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      this.verify(payload.roles, res, () => {
+        this.validate(rules.getPostRules, req, res, () => {
+          this._postHandler.deletePostFile(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        });
       });
     });
   }
 
-  authenticate(req, res, next, callback) {
-    this._passport.authenticate('jwt-auth', {
-      onVerified: callback,
-      onFailure: (error) => next(error)
-    })(req, res, next);
-  }
-
-  validate(rules = [], req, res, next, callback) {
-    this._validate(rules)(req, res, (error) => {
-      return error
-        ? next(error)
-        : callback();
-    });
-  }
-
-  #upload(req, res, next, callback) {
+  #upload(req, res, callback) {
     this._upload.array('images', 32)(req, res, (error) => {
       return error
-        ? next(error)
+        ? this._responseManager.respondWithError(res, error.status ?? 400, error.message)
         : callback();
     });
   }

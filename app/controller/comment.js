@@ -16,7 +16,7 @@ class CommentController extends BaseController {
   }
 
   getAll(req, res, next) {
-    this.validate(rules.getCommentsRules(), req, res, next, () => {
+    this.validate(rules.getCommentsRules, req, res, next, () => {
       this._commentHandler.getComments(req, this._responseManager.getDefaultResponseHandler(res));
     });
   }
@@ -24,7 +24,7 @@ class CommentController extends BaseController {
   create(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this.#upload(req, res, next, () => {
-        this.validate(rules.createCommentRules(), req, res, next, () => {
+        this.validate(rules.createCommentRules, req, res, next, () => {
           this._commentHandler.createComment(req, payload, this._responseManager.getDefaultResponseHandler(res));
         });
       });
@@ -34,7 +34,7 @@ class CommentController extends BaseController {
   update(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this.#upload(req, res, next, () => {
-        this.validate(rules.updateCommentRules(), req, res, next, () => {
+        this.validate(rules.updateCommentRules, req, res, next, () => {
           this._commentHandler.updateComment(req, payload, this._responseManager.getDefaultResponseHandler(res));
         });
       });
@@ -43,31 +43,16 @@ class CommentController extends BaseController {
 
   delete(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this.validate(rules.deleteCommentRules(), req, res, next, () => {
+      this.validate(rules.deleteCommentRules, req, res, next, () => {
         this._commentHandler.deleteComment(req, payload, this._responseManager.getDefaultResponseHandler(res));
       });
-    });
-  }
-
-  authenticate(req, res, next, callback) {
-    this._passport.authenticate('jwt-auth', {
-      onVerified: callback,
-      onFailure: (error) => next(error)
-    })(req, res, next);
-  }
-
-  validate(rules = [], req, res, next, callback) {
-    this._validate(rules)(req, res, (error) => {
-      return error
-        ? next(error)
-        : callback();
     });
   }
 
   #upload(req, res, next, callback) {
     this._upload.single('image')(req, res, (error) => {
       return error
-        ? next(error)
+        ? this._responseManager.respondWithError(res, error.status ?? 400, error.message)
         : callback();
     });
   }

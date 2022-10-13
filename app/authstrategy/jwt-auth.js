@@ -1,18 +1,17 @@
-import { jwtVerify, decodeJwt, importSPKI } from 'jose';
+import { jwtVerify, importSPKI } from 'jose';
 import { Strategy } from 'passport-strategy';
 
 import BaseAuthStrategy from './base-auth.js';
-import InvalidRequestError from '../error/invalid-request.js';
 import UnauthorizedError from '../error/unauthorized.js';
+import ServerError from '../error/server-error.js';
 import JwtError from '../error/jwt-error.js';
-import ForbiddenError from '../error/forbidden.js';
 
 class JwtAuthStrategy extends BaseAuthStrategy {
   constructor(options, verify) {
     super();
     this._options = options;
-    // this._customVerifier = verify;
     this._initStrategy();
+    // this._customVerifier = verify;
   }
 
   get name() {
@@ -21,8 +20,8 @@ class JwtAuthStrategy extends BaseAuthStrategy {
 
   _initStrategy() {
     Strategy.call(this);
-    const options = this.provideOptions();
 
+    const options = this.provideOptions();
     if (!options) {
       throw new TypeError('JwtAuthStrategy requires options');
     }
@@ -36,9 +35,14 @@ class JwtAuthStrategy extends BaseAuthStrategy {
       throw new TypeError('JwtAuthStrategy requires a public key');
     }
 
-    this._extractJwtToken = options.extractJwtToken;
-    if (!this._extractJwtToken) {
-      throw new TypeError('JwtAuthStrategy requires a function to parse jwt from requests');
+    this._extractAccessToken = options.extractAccessToken;
+    if (!this._extractAccessToken) {
+      throw new TypeError('JwtAuthStrategy requires a function to parse jwt from request header');
+    }
+
+    this._extractRefreshToken = options.extractRefreshToken;
+    if (!this._extractRefreshToken) {
+      throw new TypeError('JwtAuthStrategy requires a function to parse jwt from request cookies');
     }
 
     this._jwtOptions = {};
@@ -57,53 +61,32 @@ class JwtAuthStrategy extends BaseAuthStrategy {
   }
 
   async authenticate(req, callback) {
-    const { accessToken, refreshToken } = this._extractJwtToken(req);
-    const importedPublicKey = await importSPKI(this._publicKey, 'EdDSA');
+    const ecPublicKey = await importSPKI(this._publicKey, 'EdDSA');
+    const refreshToken = this._extractRefreshToken(req);
+    const accessToken = this._extractAccessToken(req);
 
-    // JWT authentication needs at least refresh token
+    if (!ecPublicKey) {
+      return callback.onFailure(new ServerError('서버 에러: JWT 인증에 사용할 공개키가 존재하지 않음'))
+    }
+
     if (!refreshToken) {
-      return callback.onFailure(new InvalidRequestError('잘못된 요청입니다(토큰이 존재하지 않음).'));
+      return callback.onFailure(new JwtError('인증에 필요한 토큰이 존재하지 않습니다.'));
     }
 
-    if (req.originalUrl === '/v1/auth') {
-
-      // Logout -> Remove the token in cache
-      if (req.method === 'DELETE') {
-        const payload = decodeJwt(accessToken || refreshToken);
-        return callback.onVerified(accessToken || refreshToken, payload);
-      }
-
-      // Refresh token verify -> Re-issue both tokens
-      else if (req.method === 'PUT') {
-        try {
-          const { payload } = await jwtVerify(refreshToken, importedPublicKey, this._jwtOptions);
-          return callback.onVerified(refreshToken, payload);
-        } catch (error) {
-          return callback.onFailure(new JwtError('토큰이 만료되어 다시 로그인이 필요합니다.')); // Refresh token expired -> return 419 (Force logout)
-        }
-      }
-
-    }
-
-    // Access token verified -> return callback
-    if (accessToken) {
+    if (req.originalUrl === '/v1/auth' && req.method === 'PUT') {
       try {
-        const { payload } = await jwtVerify(accessToken, importedPublicKey, this._jwtOptions);
-        const { data: { roles } } = payload;
-
-        // If need to verify roles in payload
-        if (req.role && !roles?.includes(req.role)) {
-          return callback.onFailure(new ForbiddenError('권한이 있는 사용자만 접근할 수 있습니다.'));
-        }
-        
-        return callback.onVerified(accessToken, payload);
+        const { payload } = await jwtVerify(refreshToken, ecPublicKey, this._jwtOptions);
+        return callback.onVerified(refreshToken, payload);
       } catch (error) {
-        return callback.onFailure(new UnauthorizedError('토큰이 만료되었거나, 올바르지 않은 토큰입니다.'));
+        return callback.onFailure(new JwtError('토큰이 만료되어 다시 로그인이 필요합니다.'));
       }
-    } 
-    else {
-      // refresh token exists but not the refresh url -> return 401 error (Need to re-request with refresh url)
-      return callback.onFailure(new UnauthorizedError('엑세스 토큰을 먼저 발급받아야 합니다.'));
+    }
+    
+    try {
+      const { payload } = await jwtVerify(accessToken, ecPublicKey, this._jwtOptions);
+      return callback.onVerified(accessToken, payload);
+    } catch (error) {
+      return callback.onFailure(new UnauthorizedError('엑세스 토큰 재발급이 필요합니다.'));
     }
   }
 

@@ -24,11 +24,14 @@
   "dependencies": {
     "auto-bind": "^5.0.1",
     "bcrypt": "^5.0.1",
+    "connect-mongo": "^4.6.0",
+    "connect-redis": "^6.1.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "csurf": "^1.11.0",
     "dotenv": "^16.0.1",
     "express": "~4.16.1",
+    "express-session": "^1.17.3",
     "express-useragent": "^1.0.15",
     "express-validator": "^6.14.0",
     "helmet": "^5.1.0",
@@ -44,6 +47,7 @@
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
     "passport-strategy": "^1.0.0",
+    "redis": "^4.3.1",
     "spdy": "^4.0.2",
     "uuid": "^8.3.2",
     "winston": "^3.7.2"

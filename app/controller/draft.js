@@ -22,49 +22,42 @@ class DraftController extends BaseController {
 
   create(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this._draftHandler.createDraft(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      this.verify(payload.roles, res, () => {
+        this._draftHandler.createDraft(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      });
     });
   }
 
   update(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this.#upload(req, res, next, () => {
-        this._draftHandler.updateDraft(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      this.verify(payload.roles, res, () => {
+        this.#upload(req, res, next, () => {
+          this._draftHandler.updateDraft(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        });
       });
     });
   }
 
   delete(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this._draftHandler.deleteDraft(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      this.verify(payload.roles, res, () => {
+        this._draftHandler.deleteDraft(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      });
     });
   }
 
   deleteFile(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this._draftHandler.deleteDraftFile(req, payload, this._responseManager.getDefaultResponseHandler(res));
-    })
-  }
-
-  authenticate(req, res, next, callback) {
-    this._passport.authenticate('jwt-auth', {
-      onVerified: callback,
-      onFailure: (error) => next(error)
-    })(req, res, next);
-  }
-
-  validate(rules = [], req, res, next, callback) {
-    this._validate(rules)(req, res, (error) => {
-      return error
-        ? next(error)
-        : callback();
+      this.verify(payload.roles, res, () => {
+        this._draftHandler.deleteDraftFile(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      });
     });
   }
 
-  #upload(req, res, next, callback) {
+  #upload(req, res, callback) {
     this._upload.array('images', 32)(req, res, (error) => {
       return error
-        ? next(error)
+        ? this._responseManager.respondWithError(res, error.status ?? 400, error.message)
         : callback();
     });
   }

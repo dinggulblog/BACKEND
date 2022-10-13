@@ -8,7 +8,7 @@ class UserHandler {
 
   async createUserAccount(req, callback) {
     try {
-      req.body.roles = await RoleModel.find({ name: 'USER' }).select('_id');
+      req.body.roles = await RoleModel.findOne({ name: 'USER' }).select('_id');
 
       await UserModel.create(req.body);
 

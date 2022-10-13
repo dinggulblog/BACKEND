@@ -1,16 +1,19 @@
 import { validationResult } from 'express-validator';
 import UnprocessableError from '../../error/unprocessable.js';
 
-export const validator = (schemas) => {
-  return async (req, res, next) => {
-    await Promise.all(schemas.map(schema => schema.run(req)));
-    
-    const errors = validationResult(req);
-    if (errors.isEmpty()) {
-      return next();
-    }
+/**
+ * Express validator with callback
+ * @param {Array} schemas Array of validator
+ * @param {Object} request Request object to be validated
+ * @param {Function} done Callback function
+ * @returns Execute callback with null or error params
+ */
+export const validator = async (schemas = [], request, done) => {
+  await Promise.all(schemas.map(schema => schema.run(request)));
+  const errors = validationResult(request);
+  const errorMessages = errors.array().map(err => err.msg);
 
-    const errorMessages = errors.array().map(err => err.msg);
-    return next(new UnprocessableError('Validation errors: ' + errorMessages.join(' & ')));
-  };
-};
+  return errors.isEmpty()
+    ? done(null)
+    : done(new UnprocessableError('Validation errors: ' + errorMessages.join(' & ')));
+}

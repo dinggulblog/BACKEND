@@ -185,17 +185,13 @@ class PostHandler {
 
   async deletePostFile(req, payload, callback) {
     try {
-      const { modifiedCount } = await PostModel.updateOne(
+      await PostModel.updateOne(
         { _id: req.params.id, author: payload.sub },
         { $pull: { images: req.body.image } },
         { lean: true }
       ).exec();
 
-      if (modifiedCount) {
-        await FileModel.findOneAndDelete({ _id: req.body.image }, { lean: true }).exec();
-      }
-
-      callback.onSuccess({ modifiedCount });
+      callback.onSuccess({});
     } catch (error) {
       callback.onError(error);
     }
@@ -208,7 +204,7 @@ class PostHandler {
       searchQuery.subject = queries.subjects.length === 1 ? mongoose.Types.ObjectId(queries.subjects[0]) : { $in: queries.subjects };
     }
     if (queries.category) {
-      searchQuery.category = queries.category;
+      searchQuery.category = queries.category === 'all' ? null : queries.category;
     }
     if (queries.filter === 'like' && queries.nickname) {
       searchQuery.likes = queries.nickname;

@@ -1,25 +1,20 @@
-import NodeCache from 'node-cache';
-
 import { MenuModel } from '../model/menu.js';
 import InvalidRequestError from '../error/invalid-request.js';
 import NotFoundError from '../error/not-found.js';
 
 class MenuHandler {
   constructor() {
-    this._memCache = new NodeCache();
   }
 
-  async createMenu(req, payload, callback) {
+  async createMenu(req, callback) {
     try {
-      const newMenu = await MenuModel.create({
+      const menu = await MenuModel.create({
         title: req.body.title,
         subject: req.body?.subject,
         categories: req.body?.categories
-      })
+      });
 
-      this._memCache.del('menus');
-
-      callback.onSuccess(newMenu);
+      callback.onSuccess({ menu });
     } catch (error) {
       callback.onError(error);
     }
@@ -27,12 +22,7 @@ class MenuHandler {
 
   async getMenus(req, callback) {
     try {
-      let menus = this._memCache.get('menus');
-
-      if (!menus) {
-        menus = await MenuModel.find({}).lean().exec();
-        this._memCache.set('menus', menus, 86400);
-      }
+      const menus = await MenuModel.find({}).lean().exec();
 
       callback.onSuccess({ menus });
     } catch (error) {
@@ -70,7 +60,6 @@ class MenuHandler {
         throw new InvalidRequestError('Invalid query parameters');
       }
 
-      this._memCache.del('menus');
       return await this.getMenus(req, callback);
     } catch (error) {
       callback.onError(error);
@@ -98,7 +87,6 @@ class MenuHandler {
         throw new InvalidRequestError('Invalid query parameters');
       }
 
-      this._memCache.del('menus');
       return await this.getMenus(req, callback);
     } catch (error) {
       callback.onError(error);

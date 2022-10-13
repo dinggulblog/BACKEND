@@ -1,23 +1,23 @@
 import { checkSchema, query } from 'express-validator';
 import MenuSchema from './schema/menu.js';
 
-const createMenuRoles = () => [
+const createMenuRules = [
   checkSchema(MenuSchema.MENU_VALIDATION_SCHEMA(), ['body'])
 ];
 
-const updateMenuRoles = () => [
+const updateMenuRules = [
   query('id').optional({ options: { nullable: true } }).isMongoId(),
   query('title').optional({ options: { nullable: true } }).toString(),
   checkSchema(MenuSchema.MENU_VALIDATION_SCHEMA(), ['body'])
 ];
 
-const deleteMenuRoles = () => [
+const deleteMenuRules = [
   query('id').optional({ options: { nullable: true } }).isMongoId(),
   query('title').optional({ options: { nullable: true } }).toString()
 ];
 
 export default {
-  createMenuRoles,
-  updateMenuRoles,
-  deleteMenuRoles
+  createMenuRules,
+  updateMenuRules,
+  deleteMenuRules
 };

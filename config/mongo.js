@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { RoleModel } from '../app/model/role.js';
 import { MenuModel } from '../app/model/menu.js';
 
-const connect = async (url) => {
+export const connectMongoDB = async (url) => {
   if (process.env.NODE_ENV !== 'production') {
     mongoose.set('debug', true);
   }
@@ -13,9 +13,9 @@ const connect = async (url) => {
   } catch (error) {
     console.error('MongoDB connection ERROR: ' + error.message);
   }
-};
+}
 
-const createDefaultDoc = async () => {
+export const createDefaultDocuments = async () => {
   try {
     if (!await RoleModel.estimatedDocumentCount()) {
       await Promise.all([
@@ -35,5 +35,3 @@ const createDefaultDoc = async () => {
     console.error('MongoDB initiation ERROR: ' + error);
   }
 }
-
-export default { connect, createDefaultDoc };

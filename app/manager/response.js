@@ -1,16 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
+import { cookieOption } from '../../config/cookie-options.js';
 
 const BasicResponse = {
   success: false,
   message: '',
   data: {}
-};
-
-const CookieOption = {
-  httpOnly: true,
-  signed: process.env.NODE_ENV !== 'develop',
-  secure: process.env.NODE_ENV !== 'develop',
-  secret: process.env.COOKIE_SECRET
 };
 
 class ResponseManager {
@@ -69,7 +63,7 @@ class ResponseManager {
   static getCookieResponseHandler(res) {
     return {
       onSuccess: (cookies, data, message, code) => {
-        this.respondWithSuccessCookies(res, code || this.HTTP_STATUS.OK, cookies, data, message);
+        this.respondWithCookies(res, code || this.HTTP_STATUS.OK, cookies, data, message);
       },
       onError: (error) => {
         this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
@@ -80,7 +74,7 @@ class ResponseManager {
   static getCookieResponseHandlerReset(res) {
     return {
       onSuccess: (cookies, data, message, code) => {
-        this.respondWithResetCookies(res, code || this.HTTP_STATUS.OK, cookies, data, message);
+        this.respondWithClearCookies(res, code || this.HTTP_STATUS.OK, cookies, data, message);
       },
       onError: (error) => {
         this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
@@ -88,62 +82,49 @@ class ResponseManager {
     }
   }
 
-  static respondWithSuccess(res, code, data, message = '', links) {
+  static respondWithSuccess(res, code, data = {}, message = '') {
     const response = Object.assign({}, BasicResponse);
     response.success = true;
     response.message = message;
     response.data = data;
-    response.links = links;
     res.status(code).json(response);
   }
 
-  static respondWithSuccessCookies(res, code, cookies, data, message = '', links) {
+  static respondWithCookies(res, code, cookies, data = {}, message = '') {
     const response = Object.assign({}, BasicResponse);
     const cookieNames = Object.keys(cookies);
     response.success = true;
     response.message = message;
     response.data = data;
-    response.links = links;
     
-    cookieNames.forEach(name => res.cookie(name, cookies[name], CookieOption));
+    cookieNames.forEach(name => res.cookie(name, cookies[name], cookieOption(14 * 24 * 60 * 60 * 1000)));
     res.status(code).json(response);
   }
 
-  static respondWithResetCookies(res, code, cookies, data, message = '', links) {
+  static respondWithClearCookies(res, code, cookies, data = {}, message = '') {
     const response = Object.assign({}, BasicResponse);
     const cookieNames = Object.keys(cookies);
     response.success = true;
     response.message = message;
     response.data = data;
-    response.links = links;
 
-    cookieNames.forEach(name => res.clearCookie(name, CookieOption));
+    cookieNames.forEach(name => res.clearCookie(name, cookieOption(14 * 24 * 60 * 60 * 1000)));
     res.status(code).json(response);
   }
 
-  static respondWithError(res, errorCode, message = '', links = []) {
+  static respondWithError(res, errorCode, message = '') {
     const response = Object.assign({}, BasicResponse);
     response.success = false;
     response.message = message;
-    response.links = links;
     res.status(errorCode).json(response);
   }
 
-  static respondWithErrorData(res, errorCode, message = '', data = '', links) {
+  static respondWithErrorData(res, errorCode, data = {}, message = '') {
     const response = Object.assign({}, BasicResponse);
     response.success = false;
     response.message = message;
     response.data = data;
-    response.links = links;
     res.status(errorCode).json(response);
-  }
-
-  static generateHATEOASLink(link, method, rel) {
-    return {
-      link: link,
-      method: method,
-      rel: rel
-    }
   }
 }
 

@@ -1,11 +1,14 @@
+import ForbiddenError from '../error/forbidden.js';
+
 /**
- * Add a rule to req to check if the rule exists in the token during JWT validation.
- * @param {String} role Check if a user has privileges: 'ADMIN' or 'USER'
- * @returns next()
+ * Middleware function to verify an authority included in payload
+ * @param {Array} roles Payload array containing roles
+ * @param {String} authority A Permission want to check 
+ * @param {Function} done Callback function
+ * @returns execute callback with null or error params
  */
-export const verifyRole = (role) => {
-  return (req, res, next) => {
-    req.role = role;
-    next();
-  };
-};
+export const verify = (roles = [], authority, done) => {
+  return roles.includes(authority)
+    ? done(null)
+    : done(new ForbiddenError('해당 요청에 대한 권한이 없습니다.'));
+}

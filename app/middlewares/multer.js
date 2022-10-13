@@ -18,7 +18,7 @@ export const upload = multer({
     fileSize: 5 * 1024 * 1024
   },
   fileFilter: (req, file, done) => {
-    return availableMimetype.includes(file.mimetype)
+    availableMimetype.includes(file.mimetype)
       ? done(null, true)
       : done(new ForbiddenError('지원하지 않는 파일 형식입니다.\n지원 파일 포맷: [jpg, jpeg, png, webp]'), false);
   }

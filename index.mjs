@@ -1,25 +1,27 @@
-import { readdirSync, mkdirSync, accessSync, unlinkSync, constants } from 'fs';
+import { readdirSync, mkdirSync } from 'fs';
 import { resolve, join } from 'path';
 import { config } from 'dotenv';
 import { exit } from 'process';
 import cors from 'cors';
-import csurf from 'csurf';
 import helmet from 'helmet';
 import csp from 'helmet-csp';
 import hpp from 'hpp';
+import csurf from 'csurf';
 import morgan from 'morgan';
 import express from 'express';
-import useragent from 'express-useragent';
+import session from 'express-session';
 import cookieParser from 'cookie-parser';
+import useragent from 'express-useragent';
+import MongoStore from 'connect-mongo';
 
-import db from './config/db.js';
+import { connectMongoDB, createDefaultDocuments } from './config/mongo.js';
+import { sessionOptions } from './config/session-options.js';
 import routes from './app/routes/index.js';
 import authManager from './app/manager/auth.js';
 import responseManager from './app/manager/response.js';
 
-
 // Global variables
-global.__dirname = resolve();
+globalThis.__dirname = resolve();
 
 // Set config variables in .env
 if (process.env.NODE_ENV === 'production') {
@@ -33,15 +35,6 @@ else {
   exit(1);
 }
 
-// Connect to DB
-try {
-  await db.connect(process.env.MONGO_CONNECT_URL);
-  await db.createDefaultDoc();
-} catch (error) {
-  console.error(error);
-  exit(1);
-}
-
 // Create an upload directory
 try {
   readdirSync('uploads');
@@ -50,12 +43,13 @@ try {
   mkdirSync('uploads');
 }
 
+// Connect to MongoDB server
+connectMongoDB(process.env.MONGO_CONNECT_URL).then(createDefaultDocuments);
+
 // Create an express app
 const app = express();
 
 // Cors, Loging and Securities
-app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
-
 if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'));
   app.use(helmet());
@@ -71,6 +65,7 @@ if (process.env.NODE_ENV === 'production') {
   }))
   app.use(hpp());
 } else {
+  app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
   app.use(morgan('dev'));
 }
 
@@ -80,6 +75,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(join(__dirname, 'public')));
 app.use('/uploads', express.static(join(__dirname, 'uploads')));
 app.use(cookieParser(process.env.COOKIE_SECRET));
+app.use(session({ ...sessionOptions, secret: process.env.COOKIE_SECRET, store: MongoStore.create({ mongoUrl: process.env.MONGO_CONNECT_URL, dbName: 'nodejs' }) }));
 app.use(useragent.express());
 
 // Setup auth manager
@@ -97,25 +93,9 @@ app.use((req, res, next) => {
 
 // Error handling
 app.use((err, req, res, next) => {
-  console.log(err)
   res.locals.message = err.message;
   res.locals.error = process.env.NODE_ENV === 'production' ? {} : err;
-
-  // Deleting files when an error occurs after file uploaded
-  if (req.file) {
-    const filePath = join(__dirname, 'uploads', req.file.filename);
-    accessSync(filePath, constants.F_OK);
-    unlinkSync(filePath);
-  }
-  else if (req.files && req.files.length) {
-    req.files.forEach(file => {
-      const filePath = join(__dirname, 'uploads', file.filename);
-      accessSync(filePath, constants.F_OK);
-      unlinkSync(filePath);
-    })
-  }
-
-  responseManager.respondWithError(res, res.locals.error.status || 500, res.locals.message || '')
+  responseManager.respondWithError(res, res.locals.error.status ?? 500, res.locals.message)
 });
 
 export default app;
