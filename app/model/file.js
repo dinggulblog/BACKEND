@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
-import { join } from 'path';
 import { accessSync, constants, unlinkSync } from 'fs';
+import { join } from 'path';
 
 const FileSchema = new mongoose.Schema({
   uploader: {
@@ -11,12 +11,11 @@ const FileSchema = new mongoose.Schema({
   },
   belonging: {
     type: mongoose.Schema.Types.ObjectId,
-    refPath: 'belongingModel',
-    required: true
+    refPath: 'belongingModel'
   },
   belongingModel: {
     type: String,
-    enum: ['user', 'post', 'draft', 'comment']
+    enum: ['User', 'Post', 'Draft', 'Comment']
   },
   originalFileName: {
     type: String,
@@ -60,7 +59,7 @@ const fileModel = mongoose.model('File', FileSchema);
  * @param {mongoose.Types.ObjectId} belonging 
  * @param {String} belongingModel 
  * @param {Object} file 
- * @returns 
+ * @returns File object
  */
 fileModel.createNewInstance = async function (uploader, belonging, belongingModel, file) {
   return await FileModel.create({

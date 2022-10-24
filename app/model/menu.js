@@ -1,23 +1,21 @@
 import mongoose from 'mongoose';
 
 const MenuSchema = new mongoose.Schema({
-  title: {
+  main: {
     type: String,
-    required: [true, 'Menu title is required!'],
+    required: [true, 'Main menu is required!'],
     trim: true
   },
-  subject: {
+  sub: {
     type: String,
     default: 'default',
     trim: true
   },
-  categories: [{
-    type: String,
-    default: '기타',
+  categories: {
+    type: [String],
+    default: ['전체', '기타'],
     trim: true
-  }]
-}, { toObject: { virtuals: true } });
-
-MenuSchema.index({ title: 1, subject: 1 }, { unique: true });
+  }
+});
 
 export const MenuModel = mongoose.model('Menu', MenuSchema);

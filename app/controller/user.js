@@ -10,6 +10,19 @@ class UserController extends BaseController {
     this._userHandler = new UserHandler();
     this._upload = upload;
   }
+  
+  create(req, res, next) {
+    this._passport.authenticate('secret-key-auth', {
+      onVerified: () => {
+        this.validate(rules.createAccountRules, req, res, () => {
+          this._userHandler.createUserAccount(req, this._responseManager.getDefaultResponseHandler(res));
+        });
+      },
+      onFailure: (error) => {
+        this._responseManager.respondWithError(res, error.status ?? 400, error.message);
+      }
+    })(req, res, next);
+  }
 
   get(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
@@ -21,18 +34,7 @@ class UserController extends BaseController {
     this._userHandler.getUserProfile(req, this._responseManager.getDefaultResponseHandler(res));
   }
 
-  create(req, res, next) {
-    this._passport.authenticate('secret-key-auth', {
-      onVerified: () => {
-        this.validate(rules.createAccountRules, req, res, () => {
-          this._userHandler.createUserAccount(req, this._responseManager.getDefaultResponseHandler(res));
-        });
-      },
-      onFailure: (error) => {
-        this._responseManager.respondWithError(res, error.status || 401, error.message);
-      }
-    })(req, res, next);
-  }
+  
 
   update(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
@@ -44,10 +46,16 @@ class UserController extends BaseController {
 
   updateProfile(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
+      this.validate(rules.updateProfileRules, req, res, () => {
+        this._userHandler.updateUserProfile(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      });
+    });
+  }
+
+  updateProfileAvatar(req, res, next) {
+    this.authenticate(req, res, next, (token, payload) => {
       this.#upload(req, res, () => {
-        this.validate(rules.updateProfileRules, req, res, () => {
-          this._userHandler.updateUserProfile(req, payload, this._responseManager.getDefaultResponseHandler(res));
-        });
+        this._userHandler.updateUserProfileAvatar(req, payload, this._responseManager.getDefaultResponseHandler(res));
       });
     });
   }
@@ -55,6 +63,12 @@ class UserController extends BaseController {
   delete(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this._userHandler.deleteUserAccount(req, payload, this._responseManager.getDefaultResponseHandler(res));
+    });
+  }
+
+  deleteProfileAvatar(req, res, next) {
+    this.authenticate(req, res, next, (token, payload) => {
+      this._userHandler.deleteUserProfileAvatar(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 

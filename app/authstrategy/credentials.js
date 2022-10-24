@@ -12,6 +12,10 @@ class CredentialsAuthStrategy extends LocalAuthStrategy {
     return 'credentials-auth';
   }
 
+  _initStrategy() {
+
+  }
+
   // Do not use Model 'lean' option!
   static async handleUserAuth(req, username, password, done) {
     try {

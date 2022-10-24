@@ -11,7 +11,7 @@ const PostSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  subject: {
+  menu: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Menu',
     required: true
@@ -60,18 +60,19 @@ const PostSchema = new mongoose.Schema({
   versionKey: false
 });
 
-PostSchema.index({ subject: 1, createdAt: -1 });
+PostSchema.index({ menu: 1, createdAt: -1 });
 
 PostSchema.pre('save', async function (next) {
   try {
     if (this.isNew) {
-      let counter = await CounterModel.findOne({ subject: this.subject, name: 'posts' }).exec();
-      if (!counter) counter = await CounterModel.create({ subject: this.subject, name: 'posts' });
-      counter.count++;
+      const counter = await CounterModel.findOneAndUpdate(
+        { menu: this.menu },
+        { $set: { name: 'Posts' }, $inc: { count: 1 } },
+        { new: true, upsert: true, lean: true }
+      ).exec();
 
-      await counter.save();
       await MenuModel.updateOne(
-        { _id: this.subject },
+        { _id: this.menu },
         { $addToSet: { categories: this.category } },
         { lean: true }
       ).exec();
@@ -87,11 +88,9 @@ PostSchema.pre('save', async function (next) {
 
 PostSchema.post('save', async function (doc, next) {
   try {
-    const draft = await DraftModel.findOneAndUpdate(
-      { author: doc.author._id, isActive: true },
-      { $set: { isActive: false, images: [] } },
-      { lean: true,
-        projection: { isActive: 1 } }
+    const draft = await DraftModel.findOneAndDelete(
+      { author: doc.author._id },
+      { returnDocument: true, lean: true }
     ).exec();
 
     if (draft) {

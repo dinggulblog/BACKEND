@@ -21,13 +21,13 @@ class BaseAuthStrategy extends BasePassport {
     throw new Error('Not Implemented');
   }
 
-  provideOptions() {
-    throw new Error('Not Implemented');
-  }
-
   provideSecretKey() {
     throw new Error('Not Implemented');
   }
+
+  provideOptions() {
+    throw new Error('Not Implemented');
+  }  
 }
 
 export default BaseAuthStrategy;

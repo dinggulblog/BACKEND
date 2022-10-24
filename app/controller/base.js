@@ -15,11 +15,12 @@ class BaseController extends BaseAutoBindedClass {
     this._verify = verify;
   }
 
-  get(req, res) {
+  /***** CRUD methods *****/
+  create(req, res) {
 
   }
 
-  create(req, res) {
+  get(req, res) {
 
   }
 
@@ -31,6 +32,14 @@ class BaseController extends BaseAutoBindedClass {
 
   }
 
+  /**
+   * Base: JWT authentication  
+   * If you need to use a different passport authentication(ex-credentials-auth), override it in your controller
+   * @param {Request} req 
+   * @param {Response} res 
+   * @param {Function} next 
+   * @param {Function} callback 
+   */
   authenticate(req, res, next, callback) {
     this._passport.authenticate('jwt-auth', {
       onVerified: callback,
@@ -38,6 +47,12 @@ class BaseController extends BaseAutoBindedClass {
     })(req, res, next);
   }
   
+  /**
+   * A method that verifies permission to access the database in the JWT payload
+   * @param {Array} roles An array with roles in JWT payload
+   * @param {Response} res 
+   * @param {Function} callback 
+   */
   verify(roles, res, callback) {
     this._verify(roles, 'ADMIN', (error) => {
       return error
@@ -46,6 +61,13 @@ class BaseController extends BaseAutoBindedClass {
     });
   }
 
+  /**
+   * A method that validate the request format using Express-validator
+   * @param {Array} rules An array with schemas
+   * @param {Request} req 
+   * @param {Response} res 
+   * @param {Function} callback 
+   */
   validate(rules, req, res, callback) {
     this._validate(rules, req, (error) => {
       return error

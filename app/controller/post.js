@@ -11,6 +11,16 @@ class PostController extends BaseController {
     this._upload = upload;
   }
 
+  create(req, res, next) {
+    this.authenticate(req, res, next, (token, payload) => {
+      this.verify(payload.roles, res, () => {
+        this.validate(rules.createPostRules, req, res, () => {
+          this._postHandler.createPost(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        });
+      });
+    });
+  }
+
   get(req, res, next) {
     this.validate(rules.getPostRules, req, res, () => {
       this._postHandler.getPost(req, this._responseManager.getDefaultResponseHandler(res));
@@ -20,16 +30,6 @@ class PostController extends BaseController {
   getAll(req, res, next) {
     this.validate(rules.getPostsRules, req, res, () => {
       this._postHandler.getPosts(req, this._responseManager.getDefaultResponseHandler(res));
-    });
-  }
-
-  create(req, res, next) {
-    this.authenticate(req, res, next, (token, payload) => {
-      this.verify(payload.roles, res, () => {
-        this.validate(rules.createPostRules, req, res, () => {
-          this._postHandler.createPost(req, payload, this._responseManager.getDefaultResponseHandler(res));
-        });
-      });
     });
   }
 

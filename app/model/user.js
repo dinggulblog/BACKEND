@@ -1,6 +1,7 @@
 import { genSaltSync, hashSync, compareSync } from 'bcrypt';
 import mongoose from 'mongoose';
 
+import { RoleModel } from './role.js';
 import { PostModel } from './post.js';
 import { FileModel } from './file.js';
 import ForbiddenError from '../error/forbidden.js';
@@ -122,6 +123,17 @@ UserSchema.pre('save', function (next) {
     this.salt = salt;
     this.password = hashed;
     next();
+  }
+});
+
+UserSchema.post('save', async function (doc, next) {
+  try {
+    const defaultRole = await RoleModel.findOne({ name: 'USER' }, { _id: 1 }, { lean: true }).exec();
+    doc.roles.push(defaultRole._id);
+    await doc.save();
+    next();
+  } catch (error) {
+    next(error);
   }
 });
 

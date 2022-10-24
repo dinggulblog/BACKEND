@@ -11,6 +11,14 @@ class CommentController extends BaseController {
     this._upload = upload;
   }
 
+  create(req, res, next) {
+    this.authenticate(req, res, next, (token, payload) => {
+      this.validate(rules.createCommentRules, req, res, next, () => {
+        this._commentHandler.createComment(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      });
+    });
+  }
+
   get(req, res, next) {
     next(new Error('Not yet implemented.'));
   }
@@ -21,22 +29,10 @@ class CommentController extends BaseController {
     });
   }
 
-  create(req, res, next) {
-    this.authenticate(req, res, next, (token, payload) => {
-      this.#upload(req, res, next, () => {
-        this.validate(rules.createCommentRules, req, res, next, () => {
-          this._commentHandler.createComment(req, payload, this._responseManager.getDefaultResponseHandler(res));
-        });
-      });
-    });
-  }
-
   update(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this.#upload(req, res, next, () => {
-        this.validate(rules.updateCommentRules, req, res, next, () => {
-          this._commentHandler.updateComment(req, payload, this._responseManager.getDefaultResponseHandler(res));
-        });
+      this.validate(rules.updateCommentRules, req, res, next, () => {
+        this._commentHandler.updateComment(req, payload, this._responseManager.getDefaultResponseHandler(res));
       });
     });
   }

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const CounterSchema = new mongoose.Schema({
-  subject: {
+  menu: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Menu'
   },

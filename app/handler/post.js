@@ -14,7 +14,7 @@ class PostHandler {
     try {
       const post = await new PostModel({
         author: payload.sub,
-        subject: req.body.subject,
+        menu: req.body.menu,
         category: req.body.category,
         title: req.body.title,
         content: req.body.content,

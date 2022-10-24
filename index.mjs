@@ -78,7 +78,7 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(session({ ...sessionOptions, secret: process.env.COOKIE_SECRET, store: MongoStore.create({ mongoUrl: process.env.MONGO_CONNECT_URL, dbName: 'nodejs' }) }));
 app.use(useragent.express());
 
-// Setup auth manager
+// Middleware passport initialize
 app.use(authManager.providePassport().initialize());
 
 // Setup routes

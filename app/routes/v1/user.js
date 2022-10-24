@@ -14,4 +14,8 @@ router.route('/profile/:nickname')
   .get(userController.getProfile)
   .put(userController.updateProfile);
 
+router.route('/profile/:nickname/avatar')
+  .put(userController.updateProfileAvatar)
+  .delete(userController.deleteProfileAvatar);
+
 export { router as userRouter };

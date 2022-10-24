@@ -14,7 +14,10 @@ const USER_ACCOUNT_VALIDATION_SCHEMA = () => {
       }
     },
     'passwordConfirmation': {
-      trim: true
+      trim: true,
+      custom: {
+        options: (value, { req }) => value !== req.body.password ? Promise.reject('Password confirmation does not match password') : true
+      }
     },
     'nickname': {
       matches: {
@@ -38,7 +41,10 @@ const USER_ACCOUNT_UPDATE_VALIDATION_SCHEMA = () => {
       }
     },
     'passwordConfirmation': {
-      trim: true
+      trim: true,
+      custom: {
+        options: (value, { req }) => value !== req.body.newPassword ? Promise.reject('Password confirmation does not match password') : true
+      }
     },
     'nickname': {
       matches: {
@@ -51,16 +57,15 @@ const USER_ACCOUNT_UPDATE_VALIDATION_SCHEMA = () => {
 
 const USER_PROFILE_UPDATE_VALIDATION_SCHEMA = () => {
   return {
-    'avatar': {
-      optional: { options: { nullable: true } }
-    },
     'greetings': {
+      escape: true,
       isLength: { 
         options: [{ max: 1000 }],
         errorMessage: 'Greetings must be under 1000 chars long'
       }
     },
     'introduce': {
+      escape: true,
       isLength: { 
         options: [{ max: 10000 }],
         errorMessage: 'Introduce must be under 10000 chars long'

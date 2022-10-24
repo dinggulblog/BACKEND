@@ -51,3 +51,8 @@ export const deleteMissingFiles = (fileObject) => {
     })
   }
 }
+
+export const getSecuredIPString = (ip = '') => {
+  const IP = ip.split();
+  return IP.shift() + '.' + IP.shift() + '.' + '***.***';
+}

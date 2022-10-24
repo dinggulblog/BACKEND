@@ -1,6 +1,6 @@
 const MENU_VALIDATION_SCHEMA = () => {
   return {
-    'title': {
+    'main': {
       trim: true,
       toString: true,
       isLength: { 
@@ -8,7 +8,7 @@ const MENU_VALIDATION_SCHEMA = () => {
         errorMessage: 'Menu title must be between 1 and 30 chars long'
       },
     },
-    'subject': {
+    'sub': {
       optional: { options: { nullable: true } },
       trim: true,
       toString: true,

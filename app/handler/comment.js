@@ -34,11 +34,7 @@ class CommentHandler {
         null,
         { lean: true,
           sort: { createdAt: -1 },
-          populate: [
-            { path: 'commenter', select: { _id: 0, nickname: 1, isActive: 1 } },
-            { path: 'image', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } }
-          ]
-        }
+          populate: { path: 'commenter', select: { _id: 0, nickname: 1, isActive: 1 } } }
       ).exec();
 
       callback.onSuccess({ comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments') });
