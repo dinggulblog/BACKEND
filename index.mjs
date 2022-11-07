@@ -10,9 +10,10 @@ import csurf from 'csurf';
 import morgan from 'morgan';
 import express from 'express';
 import session from 'express-session';
-import cookieParser from 'cookie-parser';
 import useragent from 'express-useragent';
+import cookieParser from 'cookie-parser';
 import MongoStore from 'connect-mongo';
+import history from 'connect-history-api-fallback';
 
 import { connectMongoDB, createDefaultDocuments } from './config/mongo.js';
 import { sessionOptions } from './config/session-options.js';
@@ -61,6 +62,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Express Middlewares
+app.use(history());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(join(__dirname, 'public')));
