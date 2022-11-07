@@ -57,7 +57,6 @@ if (process.env.NODE_ENV === 'production') {
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        cspOptions
       }
     }
   }));
