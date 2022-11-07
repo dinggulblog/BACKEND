@@ -92,7 +92,7 @@ class PostHandler {
           populate: [
             { path: 'author', select: { nickname: 1, isActive: 1 }, match: { isActive: true } },
             { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } },
-            { path: 'likes', model: 'User', select: { nickname: 1 }, match: { isActive: true } }
+            { path: 'likes', model: 'User', select: { nickname: 1 }, match: { isActive: true }, perDocumentLimit: 10 }
           ] }
         ).exec();
 

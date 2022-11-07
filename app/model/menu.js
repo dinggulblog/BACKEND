@@ -11,6 +11,12 @@ const MenuSchema = new mongoose.Schema({
     default: 'default',
     trim: true
   },
+  type: {
+    type: String,
+    defalut: 'list',
+    enum: ['list', 'album', 'slide'],
+    trim: true
+  },
   categories: {
     type: [String],
     default: ['기타'],
