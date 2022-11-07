@@ -13,7 +13,7 @@ const MenuSchema = new mongoose.Schema({
   },
   categories: {
     type: [String],
-    default: ['전체', '기타'],
+    default: ['기타'],
     trim: true
   }
 });
