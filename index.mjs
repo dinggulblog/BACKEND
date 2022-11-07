@@ -16,6 +16,7 @@ import MongoStore from 'connect-mongo';
 
 import { connectMongoDB, createDefaultDocuments } from './config/mongo.js';
 import { sessionOptions } from './config/session-options.js';
+import { cspOptions } from './config/csp-options.js';
 import routes from './app/routes/index.js';
 import authManager from './app/manager/auth.js';
 import responseManager from './app/manager/response.js';
@@ -53,16 +54,7 @@ const app = express();
 if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'));
   app.use(helmet());
-  app.use(csp({
-    directives: {
-      baseUri: ["'self'"],
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", '*.fonts.googleapis.com'],
-      fontSrc: ["'self'", '*.googleapis.com'],
-      imgSrc: ["'self'"]
-    }
-  }))
+  app.use(csp(cspOptions))
   app.use(hpp());
 } else {
   app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
