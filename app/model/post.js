@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import { CounterModel } from './counter.js';
 import { MenuModel } from './menu.js';
 import { FileModel } from './file.js';
-import { DraftModel } from './draft.js';
 import ForbiddenError from '../error/forbidden.js';
 
 const PostSchema = new mongoose.Schema({
@@ -129,7 +128,12 @@ PostSchema.post(['findOne', 'findOneAndUpdate'], function (doc, next) {
 
 PostSchema.post('findOneAndDelete', async function (doc, next) {
   try {
-    doc.images.forEach(async (image) => await FileModel.findOneAndDelete({ _id: image }, { lean: true }).exec());
+    doc.images.forEach(async (image) => 
+      await FileModel.findOneAndDelete(
+        { _id: image },
+        { lean: true }
+      ).exec()
+    );
     
     next();
   } catch (error) {

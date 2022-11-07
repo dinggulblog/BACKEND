@@ -1,8 +1,7 @@
-import { upload } from '../middlewares/multer.js';
-import rules from '../middlewares/validation/user.js';
-
 import BaseController from './base.js';
 import UserHandler from '../handler/user.js';
+import rules from '../middlewares/validation/user.js';
+import { upload } from '../middlewares/multer.js';
 
 class UserController extends BaseController {
   constructor() {

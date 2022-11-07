@@ -1,7 +1,6 @@
 import { convertFlatToTree } from '../util/util.js';
 import { UserModel } from '../model/user.js';
 import { PostModel } from '../model/post.js';
-import { FileModel } from '../model/file.js';
 import { CommentModel } from '../model/comment.js';
 
 class PostHandler {

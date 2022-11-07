@@ -1,7 +1,6 @@
-import { upload } from '../middlewares/multer.js';
-
 import BaseController from './base.js';
 import DraftHandler from '../handler/draft.js';
+import { upload } from '../middlewares/multer.js';
 
 class DraftController extends BaseController {
   constructor() {

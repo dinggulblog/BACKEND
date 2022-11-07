@@ -1,8 +1,7 @@
-import { upload } from '../middlewares/multer.js';
-import rules from '../middlewares/validation/comment.js';
-
 import BaseController from './base.js';
 import CommentHandler from '../handler/comment.js';
+import rules from '../middlewares/validation/comment.js';
+import { upload } from '../middlewares/multer.js';
 
 class CommentController extends BaseController {
   constructor() {

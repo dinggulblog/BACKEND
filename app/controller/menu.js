@@ -1,7 +1,6 @@
-import rules from '../middlewares/validation/menu.js';
-
 import BaseController from './base.js';
 import MenuHandler from '../handler/menu.js';
+import rules from '../middlewares/validation/menu.js';
 
 class MenuController extends BaseController {
   constructor() {
