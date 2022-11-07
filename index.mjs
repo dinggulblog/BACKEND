@@ -53,8 +53,14 @@ const app = express();
 // Cors, Loging and Securities
 if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'));
-  app.use(helmet());
-  app.use(csp(cspOptions))
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        cspOptions
+      }
+    }
+  }));
   app.use(hpp());
 } else {
   app.use(cors({ origin: 'http://localhost:8080', credentials: true }));

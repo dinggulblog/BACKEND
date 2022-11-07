@@ -1,10 +1,8 @@
 export const cspOptions = {
-  directives: {
-    baseUri: ["'self'"],
-    defaultSrc: ["'self'", "'http://localhost:8080'"],
-    scriptSrc: ["'self'", '*.googleapis.com', "'unsafe-inline'"],
-    styleSrc: ["'self'", '*.googleapis.com', '*.fonts.googleapis.com'],
-    fontSrc: ["'self'", '*.googleapis.com', '*.fonts.googleapis.com'],
-    imgSrc: ["'self'"]
-  }
+  'base-uri': ["'self'"],
+  'default-src': ["'self'", "'http://localhost:8080'"],
+  'script-src': ["'self'", '*.googleapis.com', "'unsafe-inline'"],
+  'style-src': ["'self'", '*.googleapis.com', '*.fonts.googleapis.com'],
+  'font-src': ["'self'", '*.googleapis.com', '*.fonts.googleapis.com'],
+  'img-src': ["'self'", process.env.AWS_S3_IMAGE_URL]
 };
