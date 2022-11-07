@@ -26,9 +26,9 @@ export const createDefaultDocuments = async () => {
     }
     if (!await MenuModel.estimatedDocumentCount()) {
       await Promise.all([
-        new MenuModel({ title: 'sol' }).save(),
-        new MenuModel({ title: 'ming' }).save(),
-        new MenuModel({ title: 'guest' }).save()
+        new MenuModel({ main: 'sol' }).save(),
+        new MenuModel({ main: 'ming' }).save(),
+        new MenuModel({ main: 'guest' }).save()
       ])
     }
   } catch (error) {

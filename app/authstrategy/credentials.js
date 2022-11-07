@@ -1,7 +1,7 @@
 import { Strategy as LocalAuthStrategy } from 'passport-local';
 
 import { UserModel } from '../model/user.js';
-import UnauthorizedError from '../error/unauthorized.js';
+import ForbiddenError from '../error/forbidden.js';
 
 class CredentialsAuthStrategy extends LocalAuthStrategy {
   constructor() {
@@ -29,7 +29,7 @@ class CredentialsAuthStrategy extends LocalAuthStrategy {
         ).exec();
       
       return !user.comparePassword(password)
-        ? done(new UnauthorizedError('아이디와 비밀번호가 일치하지 않습니다.'), false)
+        ? done(new ForbiddenError('아이디와 비밀번호가 일치하지 않습니다.'), false)
         : done(null, user);
     } catch (error) {
       return done(error);

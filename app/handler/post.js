@@ -1,5 +1,3 @@
-import mongoose from 'mongoose';
-
 import { convertFlatToTree } from '../util/util.js';
 import { UserModel } from '../model/user.js';
 import { PostModel } from '../model/post.js';
@@ -12,7 +10,7 @@ class PostHandler {
 
   async createPost(req, payload, callback) {
     try {
-      const post = await new PostModel({
+      let post = await new PostModel({
         author: payload.sub,
         menu: req.body.menu,
         category: req.body.category,
@@ -23,6 +21,8 @@ class PostHandler {
         images: req.body?.images
       }).save();
 
+      post = await post.populate({ path: 'menu', select: { _id: 1, main: 1, sub: 1 } });
+
       callback.onSuccess({ post });
     } catch (error) {
       callback.onError(error);
@@ -31,10 +31,9 @@ class PostHandler {
 
   async getPosts(req, callback) {
     try {
-      const limit = req.query.limit;
-      const skip = (req.query.page - 1) * limit;
+      const { skip, limit } = req.query;
+      const searchQuery = await this.#getSearchQuery(req.query);
 
-      const searchQuery = await this.#getSearchQuery(req.query, skip, limit);
       const maxPage = Math.ceil(await PostModel.countDocuments(searchQuery) / limit);
       const posts = await PostModel.aggregate([
         { $match: searchQuery },
@@ -62,12 +61,12 @@ class PostHandler {
         } },
         { $project: {
           postNum: 1,
-          author: { nickname: 1 },
-          subject: 1,
+          author: { _id: 1, nickname: 1 },
+          menu: 1,
           category: 1,
           title: 1,
           content: { $substrCP: ['$content', 0, 200] },
-          thumbnail: { serverFileName: 1 },
+          thumbnail: { _id: 1, serverFileName: 1 },
           isPublic: 1,
           createdAt: 1,
           updatedAt: 1,
@@ -91,24 +90,27 @@ class PostHandler {
         { $inc: { viewCount: 1 } },
         { new: true,
           lean: true,
-          timestamps: false,
           populate: [
-            { path: 'author', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: true } },
-            { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } }
+            { path: 'author', select: { nickname: 1, isActive: 1 }, match: { isActive: true } },
+            { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } },
+            { path: 'likes', model: 'User', select: { nickname: 1 }, match: { isActive: true } }
           ] }
         ).exec();
-
-      post.likeCount = post.likes.length
 
       const comments = await CommentModel.find(
         { post: post._id },
         null,
         { lean: true,
           sort: { createdAt: -1 },
-          populate: { path: 'commenter', select: { _id: 0, nickname: 1, isActive: 1 }, match: { isActive: true } } }
+          populate: { path: 'commenter', select: { _id: 1, nickname: 1, isActive: 1 }, match: { isActive: true } } }
         ).exec();
 
-      callback.onSuccess({ post, comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments') });
+      callback.onSuccess({ 
+        post,
+        likes: post.likes,
+        likeCount: post.likes.length,
+        comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments')
+      });
     } catch (error) {
       callback.onError(error);
     }
@@ -116,17 +118,12 @@ class PostHandler {
 
   async updatePost(req, payload, callback) {
     try {
-      const images = req.files?.length
-        ? await Promise.all(req.files.map(async (file) => await FileModel.createNewInstance(payload.sub, req.params.id, 'post', file)))
-        : [];
-
+      const { menu, category, title, content, isPublic, thumbnail, images } = req.body;
       const post = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub },
-        { $set: req.body, $addToSet: { images: { $each: images.map(image => image._id) } } },
-        { new: true,
-          lean: true,
-          projection: { _id: 1, isActive: 1, thumbnail: 1, images: 1 },
-          populate: { path: 'images', select: { serverFileName: 1 }, match: { isActive: true } } }
+        { $set: { menu, category, title, content, isPublic, thumbnail },
+          $addToSet: { images } },
+        { lean: true }
       ).exec();
 
       callback.onSuccess({ post });
@@ -143,10 +140,12 @@ class PostHandler {
         { new: true,
           lean: true,
           timestamps: false,
-          projection: { likes: 1, likeCount: { $size: '$likes' } } }
+          projection: { likes: 1, likeCount: { $size: '$likes' } },
+          populate: { path: 'likes', model: 'User', select: { nickname: 1 }, match: { isActive: true }, perDocumentLimit: 10 }
+        }
       ).exec();
 
-      callback.onSuccess({ post });
+      callback.onSuccess({ likes: post.likes, likeCount: post.likeCount });
     } catch (error) {
       callback.onError(error);
     }
@@ -174,10 +173,12 @@ class PostHandler {
         { new: true,
           lean: true,
           timestamps: false,
-          projection: { likes: 1, likeCount: { $size: '$likes' } } }
+          projection: { likes: 1, likeCount: { $size: '$likes' } },
+          populate: { path: 'likes', model: 'User', select: { nickname: 1 }, match: { isActive: true }, perDocumentLimit: 10 }
+        }
       ).exec();
 
-      callback.onSuccess({ post });
+      callback.onSuccess({ likes: post.likes, likeCount: post.likeCount });
     } catch (error) {
       callback.onError(error);
     }
@@ -197,39 +198,31 @@ class PostHandler {
     }
   }
 
-  async #getSearchQuery(queries, skip, limit) {
+  async #getSearchQuery(queries) {
     const searchQuery = { isActive: true };
 
-    if (queries.subjects.length) {
-      searchQuery.subject = queries.subjects.length === 1 ? mongoose.Types.ObjectId(queries.subjects[0]) : { $in: queries.subjects };
+    if (queries.menu.length) {
+      searchQuery.menu = { $in: queries.menu };
     }
-    if (queries.category) {
-      searchQuery.category = queries.category === 'all' ? null : queries.category;
+    if (queries.category && queries.category !== '전체') {
+      searchQuery.category = queries.category;
     }
-    if (queries.filter === 'like' && queries.nickname) {
-      searchQuery.likes = queries.nickname;
+    if (queries.likes) {
+      searchQuery.likes = queries.likes;
     }
-    else if (queries.filter === 'comment' && queries.nickname) {
-      const comments = await CommentModel.find({ commenter: queries.nickname }, { post: 1, isActive: 1 })
-        .sort('-createdAt')
-        .skip(skip)
-        .limit(limit)
-        .lean()
-        .exec();
-
-      searchQuery._id = { $in: comments.map(comment => comment.post._id) } 
+    if (queries._id) {
+      searchQuery._id = queries._id;
     }
 
-    // Search Query filtering
-    if (queries.searchType && queries?.searchText.length >= 3) {
+    if (queries.searchType && queries?.searchText.length >= 2) {
       const searchTypes = queries.searchType.toLowerCase().split('+').map(elem => elem.trim());
       const searchQuries = [];
 
       if (searchTypes.indexOf('title') >= 0) {
         searchQuries.push({ title: { $regex: new RegExp(queries.searchText, 'i') } });
       }
-      if (searchTypes.indexOf('body') >= 0) {
-        searchQuries.push({ body: { $regex: new RegExp(queries.searchText, 'i') } });
+      if (searchTypes.indexOf('content') >= 0) {
+        searchQuries.push({ content: { $regex: new RegExp(queries.searchText, 'i') } });
       }
       if (searchTypes.indexOf('author!') >= 0) {
         const user = await UserModel.findOne({ nickname: queries.searchText }).lean().exec();

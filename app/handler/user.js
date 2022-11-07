@@ -24,7 +24,7 @@ class UserHandler {
         .lean()
         .exec();
 
-      user.lastLoginIP = getSecuredIPString(user.lastLoginIP);
+      // user.lastLoginIP = getSecuredIPString(user.lastLoginIP);
       
       callback.onSuccess({ user });
     } catch (error) {
@@ -35,9 +35,8 @@ class UserHandler {
   async getUserProfile(req, callback) {
     try {
       const user = await UserModel.findOne({ nickname: req.params.nickname })
-        .select({ _id: 0, updatedAt: 0, lastLoginIP: 0 })
+        .select({ roles: 0, updatedAt: 0, expiredAt: 0, lastLoginIp: 0 })
         .populate({ path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } })
-        .populate({ path: 'roles', select: 'name' })
         .lean()
         .exec();
 

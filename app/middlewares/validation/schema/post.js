@@ -1,18 +1,13 @@
 import mongoose from 'mongoose';
-import { MenuModel } from '../../../model/menu.js';
-import { UserModel } from '../../../model/user.js';
+import { CommentModel } from '../../../model/comment.js';
 
 const POST_VALIDATION_SCHEMA = () => {
   return {
-    'subject': {
-      custom: {
-        options: async (value) => await MenuModel.findById(value).select('_id').lean().exec() === null ? Promise.reject('Invalid Subject ID') : true
-      }
+    'menu': {
+      isMongoId: { bail: true }
     },
     'category': {
-      customSanitizer: { 
-        options: value => value ? String(value) : undefined
-      }
+      toString: true
     },
     'isPublic': {
       customSanitizer: { 
@@ -32,44 +27,30 @@ const POST_VALIDATION_SCHEMA = () => {
       }
     },
     'thumbnail': {
-      optional: { options: { nullable: true } }
+      optional: { options: { nullable: true } },
+      isMongoId: true
     }
   };
 };
 
 const POSTS_PAGINATION_SCHEMA = () => {
   return {
-    'subjects': {
-      toArray: true
-    },
-    'subjects.*': {
-      customSanitizer: { 
-        options: value => mongoose.Types.ObjectId(value)
-      },
-    },
-    'category': {
-      optional: { options: { nullable: true } }
-    },
-    'filter': {
-      optional: { options: { nullable: true } },
-      matches: {
-        options: [/\b(?:like|comment)\b/],
-        errorMessage: 'Available filtering words: like, comment'
+    'menu': {
+      toArray: true,
+      customSanitizer: {
+        options: (menus) => menus.map(menu => mongoose.Types.ObjectId(menu))
       }
     },
-    'nickname': {
-      optional: { options: { nullable: true } },
+    'category': {
+      toString: true,
       customSanitizer: {
-        options: async (nickname) => {
-          const user = await UserModel.findOne({ nickname }, { isActive: 1 }, { lean: true }).exec();
-          return user?._id;
-        }
+        options: (category) => decodeURI(category)
       }
     },
     'page': {
       toInt: true,
       isInt: { 
-        options: [{ min: 1, max: Number.MAX_SAFE_INTEGER }],
+        options: [{ min: 1 }],
         errorMessage: 'Page must be an integer greater than 1'
       }
     },
@@ -80,14 +61,48 @@ const POSTS_PAGINATION_SCHEMA = () => {
         errorMessage: 'Limit must be an integer between 1 and 10'
       }
     },
+    'skip': {
+      customSanitizer: {
+        options: (v, { req }) => (req.query.page - 1) * req.query.limit
+      }
+    },
+    'filter': {
+      optional: { options: { nullable: true } },
+      matches: {
+        options: [/\b(?:like|comment)\b/],
+        errorMessage: 'Available filtering words: like, comment'
+      }
+    },
+    'userId': {
+      customSanitizer: {
+        options: (userId, { req }) => {
+          if (!userId) return;
+          else if (req.query.filter === 'like') {
+            req.query.likes = userId;
+          }
+          else if (req.query.filter === 'comment') {
+            CommentModel.find(
+              { commenter: userId },
+              { post: 1, isActive: 1 },
+              { skip: req.query.skip, limit: req.query.limit, lean: true }
+            ).exec().then(comments => { req.query._id = { $in: comments.map(comment => comment.post) } });
+          }
+        }
+      }
+    }
+  };
+};
+
+const POSTS_SEARCH_SCHEMA = () => {
+  return {
     'searchType': {
       optional: { options: { nullable: true } }
     },
     'searchText': {
       optional: { options: { nullable: true } },
       isString: { 
-        options: [{ min: 2, max: 100 }],
-        errorMessage: 'Search text must be between 2 and 100 chars long'
+        options: [{ min: 2, max: 30 }],
+        errorMessage: 'Search text must be between 2 and 30 chars long'
       }
     }
   };
@@ -95,5 +110,6 @@ const POSTS_PAGINATION_SCHEMA = () => {
 
 export default { 
   POST_VALIDATION_SCHEMA,
-  POSTS_PAGINATION_SCHEMA
+  POSTS_PAGINATION_SCHEMA,
+  POSTS_SEARCH_SCHEMA
 };

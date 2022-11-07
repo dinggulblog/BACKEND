@@ -4,6 +4,7 @@ import { CounterModel } from './counter.js';
 import { MenuModel } from './menu.js';
 import { FileModel } from './file.js';
 import { DraftModel } from './draft.js';
+import ForbiddenError from '../error/forbidden.js';
 
 const PostSchema = new mongoose.Schema({
   author: {
@@ -71,36 +72,34 @@ PostSchema.pre('save', async function (next) {
         { new: true, upsert: true, lean: true }
       ).exec();
 
-      await MenuModel.updateOne(
-        { _id: this.menu },
-        { $addToSet: { categories: this.category } },
-        { lean: true }
-      ).exec();
-      
       this.postNum = counter.count;
-
-      next();
     }
+    next();
   } catch (error) {
     next(error);
   }
 });
 
-PostSchema.post('save', async function (doc, next) {
+PostSchema.post(['save', 'findOneAndUpdate'], async function (doc, next) {
   try {
-    const draft = await DraftModel.findOneAndDelete(
-      { author: doc.author._id },
-      { returnDocument: true, lean: true }
-    ).exec();
+    if (this._update.$addToSet) {
+      doc.images.forEach(async (image) =>
+        await FileModel.updateOne(
+          { _id: image },
+          { $set: { belonging: doc._id, belongingModel: 'Post' } },
+          { lean: true }
+        ).exec()
+      )
+    }
 
-    if (draft) {
-      await FileModel.updateMany(
-        { belonging: draft._id },
-        { $set: { belonging: this._id, belongingModel: 'post' } },
+    if (this._update.$set?.category) {
+      await MenuModel.updateOne(
+        { _id: this.menu },
+        { $addToSet: { categories: this.category } },
         { lean: true }
       ).exec();
     }
-
+    
     next();
   } catch (error) {
     next(error);
@@ -121,6 +120,11 @@ PostSchema.post('updateOne', async function (doc, next) {
   } catch (error) {
     next(error);
   }
+});
+
+PostSchema.post(['findOne', 'findOneAndUpdate'], function (doc, next) {
+  if (!doc.isActive) next(new ForbiddenError('본 게시물은 삭제되었거나 비활성화 상태입니다.'));
+  next();
 });
 
 PostSchema.post('findOneAndDelete', async function (doc, next) {

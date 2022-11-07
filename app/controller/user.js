@@ -34,8 +34,6 @@ class UserController extends BaseController {
     this._userHandler.getUserProfile(req, this._responseManager.getDefaultResponseHandler(res));
   }
 
-  
-
   update(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this.validate(rules.updateAccountRules, req, res, () => {
