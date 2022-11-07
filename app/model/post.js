@@ -81,7 +81,7 @@ PostSchema.pre('save', async function (next) {
 
 PostSchema.post(['save', 'findOneAndUpdate'], async function (doc, next) {
   try {
-    if (this._update.$addToSet) {
+    if (this._update?.$addToSet) {
       doc.images.forEach(async (image) =>
         await FileModel.updateOne(
           { _id: image },
@@ -91,7 +91,7 @@ PostSchema.post(['save', 'findOneAndUpdate'], async function (doc, next) {
       )
     }
 
-    if (this._update.$set?.category) {
+    if (this._update?.$set?.category) {
       await MenuModel.updateOne(
         { _id: this.menu },
         { $addToSet: { categories: this.category } },
