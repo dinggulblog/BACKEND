@@ -41,7 +41,7 @@ export const createDefaultDocuments = async () => {
     }
     if (!await MenuModel.estimatedDocumentCount()) {
       await Promise.all(
-        Object.keys(menus).map(main => menus[main].map(async ({ sub, categories }) => await new MenuModel({ main, sub, categories }).save())).flat()
+        Object.keys(menus).map(main => menus[main].map(async ({ sub, type, categories }) => await new MenuModel({ main, sub, type, categories }).save())).flat()
       );
     }
   } catch (error) {
