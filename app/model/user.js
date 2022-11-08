@@ -87,6 +87,7 @@ UserSchema.methods.comparePassword = function (password) {
 
 const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d!@#$%^&*]{4,30}$/;
 UserSchema.path('password').validate(function (value) {
+  console.log(this.isNew)
   if (this.isNew) {
     if (!this.passwordConfirmation) {
       this.invalidate('passwordConfirmation', 'Password confirmation is required!');

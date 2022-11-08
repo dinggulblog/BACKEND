@@ -23,7 +23,10 @@ class PostController extends BaseController {
 
   get(req, res, next) {
     this.validate(rules.getPostRules, req, res, () => {
-      this._postHandler.getPost(req, this._responseManager.getDefaultResponseHandler(res));
+      this._postHandler.getPost(req, this._responseManager.getDefaultResponseHandlerError(res, ((data, message, code) => {
+        const hateoasLinks = [this._responseManager.generateHATEOASLink(req.baseUrl + '/:id', 'GET', 'next')];
+        this._responseManager.respondWithSuccess(res, code || this._responseManager.HTTP_STATUS.OK, data, message, hateoasLinks);
+      })));
     });
   }
 

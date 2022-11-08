@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { CommentModel } from '../../../model/comment.js';
 
+const { ObjectId } = mongoose.Types
+
 const POST_VALIDATION_SCHEMA = () => {
   return {
     'menu': {
@@ -38,7 +40,7 @@ const POSTS_PAGINATION_SCHEMA = () => {
     'menu': {
       toArray: true,
       customSanitizer: {
-        options: (menus) => menus.map(menu => mongoose.Types.ObjectId(menu))
+        options: (menus) => menus.map(menu => ObjectId.isValid(menu) ? ObjectId(menu) : null)
       }
     },
     'category': {

@@ -82,49 +82,65 @@ class ResponseManager {
     }
   }
 
-  static respondWithSuccess(res, code, data = {}, message = '') {
+  static respondWithSuccess(res, code, data = {}, message = '', links = []) {
     const response = Object.assign({}, BasicResponse);
     response.success = true;
-    response.message = message;
     response.data = data;
+    response.message = message;
+    
+    response.links = links;
     res.status(code).json(response);
   }
 
-  static respondWithCookies(res, code, cookies, data = {}, message = '') {
+  static respondWithCookies(res, code, cookies, data = {}, message = '', links = []) {
     const response = Object.assign({}, BasicResponse);
     const cookieNames = Object.keys(cookies);
     response.success = true;
-    response.message = message;
     response.data = data;
+    response.message = message;
+    response.links = links;
     
     cookieNames.forEach(name => res.cookie(name, cookies[name], cookieOption(14 * 24 * 60 * 60 * 1000)));
     res.status(code).json(response);
   }
 
-  static respondWithClearCookies(res, code, cookies, data = {}, message = '') {
+  static respondWithClearCookies(res, code, cookies, data = {}, message = '', links = []) {
     const response = Object.assign({}, BasicResponse);
     const cookieNames = Object.keys(cookies);
     response.success = true;
-    response.message = message;
     response.data = data;
+    response.message = message;
+    response.links = links;
 
     cookieNames.forEach(name => res.clearCookie(name, cookieOption(14 * 24 * 60 * 60 * 1000)));
     res.status(code).json(response);
   }
 
-  static respondWithError(res, errorCode, message = '') {
+  static respondWithError(res, errorCode, message = '', links = []) {
     const response = Object.assign({}, BasicResponse);
     response.success = false;
     response.message = message;
+    response.links = links;
+
     res.status(errorCode).json(response);
   }
 
-  static respondWithErrorData(res, errorCode, data = {}, message = '') {
+  static respondWithErrorData(res, errorCode, data = {}, message = '', links = []) {
     const response = Object.assign({}, BasicResponse);
     response.success = false;
-    response.message = message;
     response.data = data;
+    response.message = message;
+    response.links = links;
+
     res.status(errorCode).json(response);
+  }
+
+  static generateHATEOASLink(link, method, rel) {
+    return {
+      link: link,
+      method: method,
+      rel: rel
+    }
   }
 }
 
