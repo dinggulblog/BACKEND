@@ -8,7 +8,14 @@ class UserHandler {
 
   async createUserAccount(req, callback) {
     try {
-      await UserModel.create(req.body);
+      await new UserModel({
+        email: req.body.email,
+        password: req.body.password,
+        passwordConfirmation: req.body.passwordConfirmation,
+        nickname: req.body.nickname
+      }).save(
+        { validateBeforeSave: true }
+      );
 
       callback.onSuccess({});
     } catch (error) {

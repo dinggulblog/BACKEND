@@ -87,7 +87,6 @@ UserSchema.methods.comparePassword = function (password) {
 
 const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d!@#$%^&*]{4,30}$/;
 UserSchema.path('password').validate(function (value) {
-  
   if (this.isNew) {
     if (!this.passwordConfirmation) {
       this.invalidate('passwordConfirmation', 'Password confirmation is required!');
@@ -116,7 +115,11 @@ UserSchema.path('password').validate(function (value) {
   }
 });
 
-UserSchema.pre('save', function (next) {
+UserSchema.pre('save', async function (next) {
+  if (this.isNew) {
+    const userRole = await RoleModel.findOne({ name: 'USER' }, { _id: 1 }, { lean: true }).exec();
+    this.roles.push(userRole._id) ;
+  }
   if (!this.isModified('password')) next();
   else {
     const salt = genSaltSync(12);
@@ -124,17 +127,6 @@ UserSchema.pre('save', function (next) {
     this.salt = salt;
     this.password = hashed;
     next();
-  }
-});
-
-UserSchema.post('save', async function (doc, next) {
-  try {
-    const defaultRole = await RoleModel.findOne({ name: 'USER' }, { _id: 1 }, { lean: true }).exec();
-    doc.roles.push(defaultRole._id);
-    await doc.save();
-    next();
-  } catch (error) {
-    next(error);
   }
 });
 
