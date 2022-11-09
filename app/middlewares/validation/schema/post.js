@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
+import escapeHtml from 'escape-html';
 import { CommentModel } from '../../../model/comment.js';
 
-const { ObjectId } = mongoose.Types
+const { ObjectId } = mongoose.Types;
 
 const POST_VALIDATION_SCHEMA = () => {
   return {
@@ -9,7 +10,9 @@ const POST_VALIDATION_SCHEMA = () => {
       isMongoId: { bail: true }
     },
     'category': {
-      toString: true
+      customSanitizer: {
+        options: category => category ? String(category) : undefined
+      }
     },
     'isPublic': {
       customSanitizer: { 
@@ -17,12 +20,18 @@ const POST_VALIDATION_SCHEMA = () => {
       }
     },
     'title': {
+      customSanitizer: {
+        options: title => escapeHtml(title)
+      },
       isLength: { 
         options: [{ min: 1, max: 150 }],
         errorMessage: 'Post title must be between 1 and 150 chars long'
       }
     },
     'content': {
+      customSanitizer: {
+        options: content => escapeHtml(content)
+      },
       isLength: { 
         options: [{ max: 10000 }],
         errorMessage: 'Post content must be under 10000 chars long'
@@ -46,7 +55,7 @@ const POSTS_PAGINATION_SCHEMA = () => {
     'category': {
       toString: true,
       customSanitizer: {
-        options: (category) => decodeURI(category)
+        options: (category) => category ? decodeURI(category) : '전체'
       }
     },
     'page': {

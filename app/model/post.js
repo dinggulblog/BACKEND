@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
+import unescape from 'unescape';
 
 import { CounterModel } from './counter.js';
-import { MenuModel } from './menu.js';
 import { FileModel } from './file.js';
 import ForbiddenError from '../error/forbidden.js';
 
@@ -70,7 +70,7 @@ PostSchema.pre('save', async function (next) {
         { $set: { name: 'Posts' }, $inc: { count: 1 } },
         { new: true, upsert: true, lean: true }
       ).exec();
-
+      
       this.postNum = counter.count;
     }
     next();
@@ -79,15 +79,9 @@ PostSchema.pre('save', async function (next) {
   }
 });
 
-PostSchema.post(['save', 'findOne', 'findOneAndUpdate'], async function (doc, next) {
+PostSchema.post('save', async function (doc, next) {
   try {
-    if (!doc) {
-      next(new ForbiddenError('존재하지 않는 게시물입니다.'))
-    }
-    else if (!doc.isActive || !doc.author.isActive) {
-      next(new ForbiddenError('본 게시물은 삭제되었거나 비활성화 상태입니다.'))
-    }
-    if (this.isNew || this._update?.$addToSet?.images) {
+    if (this.isNew && doc.images.length) {
       for await (const image of doc.images) {
         FileModel.updateOne(
           { _id: image },
@@ -95,6 +89,40 @@ PostSchema.post(['save', 'findOne', 'findOneAndUpdate'], async function (doc, ne
           { lean: true }
         ).exec()
       }
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+PostSchema.post('findOneAndUpdate', async function (doc, next) {
+  try {
+    if (!doc) {
+      next(new ForbiddenError('존재하지 않는 게시물입니다.'))
+    }
+    else if (!doc.isActive) {
+      next(new ForbiddenError('본 게시물은 삭제되었거나 비활성화 상태입니다.'))
+    }
+    else if (this.getPopulatedPaths().includes('author') && !doc.author.isActive) {
+      next(new ForbiddenError('비활성화 유저의 게시물입니다.'));
+    }
+
+    if (this._update?.$addToSet?.images) {
+      for await (const image of doc.images) {
+        FileModel.updateOne(
+          { _id: image },
+          { $set: { belonging: doc._id, belongingModel: 'Post' } },
+          { lean: true }
+        ).exec()
+      }
+    }
+
+    if (doc.title) {
+      doc.title = unescape(doc.title, 'all')
+    }
+    if (doc.content) {
+      doc.content = unescape(doc.content, 'all')
     }
     next();
   } catch (error) {

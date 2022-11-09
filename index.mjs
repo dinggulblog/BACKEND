@@ -4,13 +4,11 @@ import { config } from 'dotenv';
 import { exit } from 'process';
 import cors from 'cors';
 import helmet from 'helmet';
-import csp from 'helmet-csp';
 import hpp from 'hpp';
 import csurf from 'csurf';
 import morgan from 'morgan';
 import express from 'express';
 import session from 'express-session';
-import useragent from 'express-useragent';
 import cookieParser from 'cookie-parser';
 import MongoStore from 'connect-mongo';
 import history from 'connect-history-api-fallback';
@@ -68,7 +66,6 @@ app.use(express.static(join(__dirname, 'public')));
 app.use('/uploads', express.static(join(__dirname, 'uploads')));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(session({ ...sessionOptions, secret: process.env.COOKIE_SECRET, store: MongoStore.create({ mongoUrl: process.env.MONGO_CONNECT_URL, dbName: 'nodejs' }) }));
-app.use(useragent.express());
 
 // Middleware passport initialize
 app.use(authManager.providePassport().initialize());

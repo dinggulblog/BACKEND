@@ -7,18 +7,17 @@ class PostHandler {
 
   async createPost(req, payload, callback) {
     try {
-      let post = await new PostModel({
+      const { menu, category, title, content, isPublic, thumbnail, images } = req.body;
+      const post = await new PostModel({
         author: payload.sub,
-        menu: req.body.menu,
-        category: req.body.category,
-        title: req.body.title,
-        content: req.body.content,
-        isPublic: req.body.isPublic,
-        thumbnail: req.body?.thumbnail,
-        images: req.body?.images
+        menu,
+        category,
+        title,
+        content,
+        isPublic,
+        thumbnail,
+        images
       }).save();
-
-      post = await post.populate({ path: 'menu', select: { _id: 1, main: 1, sub: 1 } });
 
       callback.onSuccess({ post });
     } catch (error) {
@@ -88,7 +87,7 @@ class PostHandler {
         { new: true,
           lean: true,
           populate: [
-            { path: 'author', select: { nickname: 1 } },
+            { path: 'author', select: { nickname: 1, isActive: 1 } },
             { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } },
             { path: 'likes', select: { nickname: 1 }, perDocumentLimit: 10 }
           ] }
@@ -113,7 +112,7 @@ class PostHandler {
           $set: { menu, category, title, content, isPublic, thumbnail },
           $addToSet: { images: { $each: images } }
         },
-        { new: true, lean: true }
+        { new: true, lean: true, projection: { _id: 1 } }
       ).exec();
 
       callback.onSuccess({ post });
@@ -131,7 +130,7 @@ class PostHandler {
           lean: true,
           timestamps: false,
           projection: { likes: 1, likeCount: { $size: '$likes' } },
-          populate: { path: 'likes', model: 'User', select: { nickname: 1 }, perDocumentLimit: 10 }
+          populate: { path: 'likes', select: { nickname: 1 }, perDocumentLimit: 10 }
         }
       ).exec();
 
