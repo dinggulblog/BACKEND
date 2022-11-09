@@ -25,7 +25,7 @@ class DraftHandler {
         { author: payload.sub, isActive: true },
         null,
         { lean: true,
-          populate: { path: 'images', select: { serverFileName: 1 } } }
+          populate: { path: 'images', select: { _id: 1, serverFileName: 1 }, match: { isActive: true } } }
       ).exec();
 
       callback.onSuccess({ draft });
@@ -36,13 +36,12 @@ class DraftHandler {
 
   async updateDraft(req, payload, callback) {
     try {
-      const images = req.files?.length
-        ? await Promise.all(req.files.map(async (file) => await FileModel.createNewInstance(payload.sub, req.params.id, 'Draft', file)))
-        : [];
-
+      const { menu, category, title, content, isPublic, thumbnail } = req.body
+      const images = await FileModel.createManyInstances(payload.sub, req.params.id, 'Draft', req.files)
       const draft = await DraftModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub },
-        { $set: req.body, $addToSet: { images: { $each: images.map(image => image._id) } } },
+        { $set: { menu, category, title, content, isPublic, thumbnail },
+          $addToSet: { images: { $each: images.map(image => image._id) } } },
         { new: true,
           lean: true,
           populate: { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } } }

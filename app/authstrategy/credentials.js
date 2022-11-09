@@ -28,7 +28,7 @@ class CredentialsAuthStrategy extends LocalAuthStrategy {
           populate: { path: 'roles', select: { name: 1 } } }
         ).exec();
       
-      return !user && !user.comparePassword(password)
+      return !user || !user.comparePassword(password)
         ? done(new ForbiddenError('아이디와 비밀번호가 일치하지 않습니다.'), false)
         : done(null, user);
     } catch (error) {

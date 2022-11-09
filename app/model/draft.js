@@ -8,7 +8,7 @@ const DraftSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  subject: {
+  menu: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Menu'
   },

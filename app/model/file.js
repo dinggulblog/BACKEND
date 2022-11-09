@@ -61,7 +61,7 @@ const fileModel = mongoose.model('File', FileSchema);
  * @param {Object} file 
  * @returns File object
  */
-fileModel.createNewInstance = async function (uploader, belonging, belongingModel, file) {
+fileModel.createSingleInstance = async function (uploader, belonging, belongingModel, file = {}) {
   return await FileModel.create({
     uploader,
     belonging,
@@ -70,6 +70,18 @@ fileModel.createNewInstance = async function (uploader, belonging, belongingMode
     serverFileName: file.filename,
     size: file.size
   });
+};
+
+fileModel.createManyInstances = async function (uploader, belonging, belongingModel, files = []) {
+  return await FileModel.insertMany(files.map(file => ({ 
+      uploader,
+      belonging,
+      belongingModel,
+      originalFileName: file.originalname,
+      serverFileName: file.filename,
+      size: file.size
+    })
+  ));
 };
 
 export const FileModel = fileModel;

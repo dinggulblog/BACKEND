@@ -62,7 +62,6 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Express Middlewares
-app.use(history());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(join(__dirname, 'public')));
@@ -76,6 +75,7 @@ app.use(authManager.providePassport().initialize());
 
 // Setup routes
 app.use('/', routes);
+app.use(history());
 
 // Handling a non-existent route
 app.use((req, res, next) => {
