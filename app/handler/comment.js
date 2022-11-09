@@ -34,10 +34,10 @@ class CommentHandler {
         null,
         { lean: true,
           sort: { createdAt: -1 },
-          populate: { path: 'commenter', select: { _id: 0, nickname: 1, isActive: 1 } } }
+          populate: { path: 'commenter', select: { _id: 1, nickname: 1, isActive: 1 }, match: { isActive: true } } }
       ).exec();
 
-      callback.onSuccess({ comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments') });
+      callback.onSuccess({ comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments'), commentCount: comments.length });
     } catch (error) {
       callback.onError(error);
     }

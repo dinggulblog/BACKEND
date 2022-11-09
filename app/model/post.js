@@ -121,7 +121,12 @@ PostSchema.post('updateOne', async function (doc, next) {
   }
 });
 
-PostSchema.post(['findOne', 'findOneAndUpdate'], function (doc, next) {
+PostSchema.post('findOne', function (doc, next) {
+  if (!doc.isActive || !doc.author.isActive) next(new ForbiddenError('본 게시물은 삭제되었거나 비활성화 상태입니다.'));
+  next();
+})
+
+PostSchema.post('findOneAndUpdate', function (doc, next) {
   if (!doc.isActive) next(new ForbiddenError('본 게시물은 삭제되었거나 비활성화 상태입니다.'));
   next();
 });

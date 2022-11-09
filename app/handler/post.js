@@ -1,7 +1,5 @@
-import { convertFlatToTree } from '../util/util.js';
 import { UserModel } from '../model/user.js';
 import { PostModel } from '../model/post.js';
-import { CommentModel } from '../model/comment.js';
 
 class PostHandler {
   constructor() {
@@ -96,19 +94,10 @@ class PostHandler {
           ] }
         ).exec();
 
-      const comments = await CommentModel.find(
-        { post: post._id },
-        null,
-        { lean: true,
-          sort: { createdAt: -1 },
-          populate: { path: 'commenter', select: { _id: 1, nickname: 1, isActive: 1 }, match: { isActive: true } } }
-        ).exec();
-
       callback.onSuccess({ 
         post,
         likes: post.likes,
-        likeCount: post.likes.length,
-        comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments')
+        likeCount: post.likes.length
       });
     } catch (error) {
       callback.onError(error);
