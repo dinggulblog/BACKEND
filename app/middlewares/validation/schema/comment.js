@@ -5,8 +5,8 @@ const POSTID_VALIDATION_SCHEMA = () => {
   return {
     'postId': {
       custom: {
-        options: async (value) => {
-          const post = await PostModel.findById(value, { isActive: 1 }, { lean: true }).exec();
+        options: async (id) => {
+          const post = await PostModel.findById(id, { isActive: 1 }, { lean: true }).exec();
           return !post || !post.isActive ? Promise.reject('존재하지 않는 게시글입니다.') : true;
         }
       }
@@ -20,8 +20,10 @@ const PARENTID_VALIDATION_SCHEMA = () => {
       custom: {
         options: async (value) => {
           if (!value) return true;
-          const comment = await CommentModel.findById(value, { isActive: 1 }, { lean: true }).exec();
-          return !comment || !comment.isActive ? Promise.reject('존재하지 않거나 비활성화된 댓글입니다.') : true;
+          else {
+            const comment = await CommentModel.findById(value, { isActive: 1 }, { lean: true }).exec();
+            return !comment || !comment.isActive ? Promise.reject('존재하지 않거나 비활성화된 댓글입니다.') : true;
+          }
         }
       }
     }
