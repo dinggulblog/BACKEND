@@ -21,12 +21,12 @@ export const createDefaultDocuments = async () => {
     'sol': [
       { sub: 'dev', type: 'list', categories: ['기타', 'Javascript', 'Vue.js', 'CSS'] },
       { sub: 'daily', type: 'list', categories: ['기타', '일상', '햄찌', '게임'] },
-      { sub: 'album', type: 'album', categories: ['기타', '햄찌', '맛집', '여행'] }
+      { sub: 'album', type: 'card', categories: ['기타', '햄찌', '맛집', '여행'] }
     ],
     'ming': [
       { sub: 'dev', type: 'list', categories: ['기타', 'Javascript', 'Node.js', 'MongoDB'] },
       { sub: 'daily', type: 'list', categories: ['기타', '일상', '햄찌', '게임'] },
-      { sub: 'album', type: 'album', categories: ['기타', '햄찌', '게임', '여행'] }
+      { sub: 'album', type: 'card', categories: ['기타', '햄찌', '게임', '여행'] }
     ],
     'guest': [
       { sub: 'guest book' }

@@ -16,11 +16,6 @@ class CommentHandler {
         isPublic: req.body.isPublic
       });
 
-      if (req.file) {
-        const file = await FileModel.createNewInstance(payload.sub, comment._id, 'comment', req.file);
-        await comment.updateOne({ $set: { image: file._id } }, { lean: true }).exec();
-      }
-
       callback.onSuccess({ comment });
     } catch (error) {
       callback.onError(error);
@@ -34,7 +29,7 @@ class CommentHandler {
         null,
         { lean: true,
           sort: { createdAt: -1 },
-          populate: { path: 'commenter', select: { _id: 1, nickname: 1, isActive: 1 }, match: { isActive: true } } }
+          populate: { path: 'commenter', select: { nickname: 1 } } }
       ).exec();
 
       callback.onSuccess({ comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments'), commentCount: comments.length });
@@ -45,16 +40,10 @@ class CommentHandler {
 
   async updateComment(req, payload, callback) {
     try {
-      if (req.file) {
-        const image = await FileModel.createNewInstance(payload.sub, req.params.id, 'comment', req.file);
-        req.body.image = image._id;
-      }
-
       await CommentModel.updateOne(
         { _id: req.params.id, commenter: payload.sub },
         { $set: req.body },
-        { new: false,
-          lean: true }
+        { new: true, lean: true }
       ).exec();
 
       callback.onSuccess({});
@@ -68,7 +57,7 @@ class CommentHandler {
       await CommentModel.updateOne(
         { _id: req.params.id, commenter: payload.sub },
         { $set: { isActive: false } },
-        { lean: true }
+        { new: true, lean: true }
       ).exec();
 
       callback.onSuccess({});

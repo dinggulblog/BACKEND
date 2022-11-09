@@ -79,37 +79,35 @@ PostSchema.pre('save', async function (next) {
   }
 });
 
-PostSchema.post(['save', 'findOneAndUpdate'], async function (doc, next) {
+PostSchema.post(['save', 'findOne', 'findOneAndUpdate'], async function (doc, next) {
   try {
-    if (this._update?.$addToSet) {
-      doc.images.forEach(async (image) =>
-        await FileModel.updateOne(
+    if (!doc) {
+      next(new ForbiddenError('존재하지 않는 게시물입니다.'))
+    }
+    else if (!doc.isActive || !doc.author.isActive) {
+      next(new ForbiddenError('본 게시물은 삭제되었거나 비활성화 상태입니다.'))
+    }
+    if (this.isNew || this._update?.$addToSet?.images) {
+      for await (const image of doc.images) {
+        FileModel.updateOne(
           { _id: image },
           { $set: { belonging: doc._id, belongingModel: 'Post' } },
           { lean: true }
         ).exec()
-      )
+      }
     }
-
-    if (this._update?.$set?.category) {
-      await MenuModel.updateOne(
-        { _id: this.menu },
-        { $addToSet: { categories: this.category } },
-        { lean: true }
-      ).exec();
-    }
-    
     next();
   } catch (error) {
     next(error);
   }
-})
+});
 
+// 게시물이 비활성화 된 경우 이미지 비활성화 CASCADE
 PostSchema.post('updateOne', async function (doc, next) {
   try {
     if (!doc.isActive) {
       await FileModel.updateMany(
-        { belonging: this._id },
+        { belonging: doc._id },
         { $set: { isActive: false } },
         { lean: true }
       ).exec();
@@ -121,24 +119,13 @@ PostSchema.post('updateOne', async function (doc, next) {
   }
 });
 
-PostSchema.post('findOne', function (doc, next) {
-  if (!doc.isActive || !doc.author.isActive) next(new ForbiddenError('본 게시물은 삭제되었거나 비활성화 상태입니다.'));
-  next();
-})
-
-PostSchema.post('findOneAndUpdate', function (doc, next) {
-  if (!doc.isActive) next(new ForbiddenError('본 게시물은 삭제되었거나 비활성화 상태입니다.'));
-  next();
-});
-
+// 게시물이 삭제된 경우 이미지 삭제 CASCADE
 PostSchema.post('findOneAndDelete', async function (doc, next) {
   try {
-    doc.images.forEach(async (image) => 
-      await FileModel.findOneAndDelete(
-        { _id: image },
-        { lean: true }
-      ).exec()
-    );
+    await FileModel.deleteMany(
+      { belonging: doc._id },
+      { lean: true }
+    ).exec();
     
     next();
   } catch (error) {

@@ -54,12 +54,12 @@ FileSchema.post(['deleteOne', 'findOneAndDelete'], async function (doc, next) {
 const fileModel = mongoose.model('File', FileSchema);
 
 /**
- * Built-in model function to create file model instance with params
+ * Built-in model method to create single file instance
  * @param {mongoose.Types.ObjectId} uploader 
  * @param {mongoose.Types.ObjectId} belonging 
  * @param {String} belongingModel 
  * @param {Object} file 
- * @returns File object
+ * @returns Single Document
  */
 fileModel.createSingleInstance = async function (uploader, belonging, belongingModel, file = {}) {
   return await FileModel.create({
@@ -72,6 +72,14 @@ fileModel.createSingleInstance = async function (uploader, belonging, belongingM
   });
 };
 
+/**
+ * Built-in model method to create array of file instances
+ * @param {mongoose.Types.ObjectId} uploader 
+ * @param {mongoose.Types.ObjectId} belonging 
+ * @param {String} belongingModel 
+ * @param {Object} file 
+ * @returns Array of Documents
+ */
 fileModel.createManyInstances = async function (uploader, belonging, belongingModel, files = []) {
   return await FileModel.insertMany(files.map(file => ({ 
       uploader,

@@ -7,11 +7,7 @@ class DraftHandler {
 
   async createDraft(req, payload, callback) {
     try {
-      const draft = await new DraftModel(
-        { author: payload.sub }
-      ).save(
-        { validateBeforeSave: false }
-      );
+      const draft = await new DraftModel({ author: payload.sub }).save({ validateBeforeSave: false });
 
       callback.onSuccess({ draft });
     } catch (error) {
@@ -25,7 +21,7 @@ class DraftHandler {
         { author: payload.sub, isActive: true },
         null,
         { lean: true,
-          populate: { path: 'images', select: { _id: 1, serverFileName: 1 }, match: { isActive: true } } }
+          populate: { path: 'images', select: { serverFileName: 1 }, match: { isActive: true } } }
       ).exec();
 
       callback.onSuccess({ draft });
@@ -36,12 +32,15 @@ class DraftHandler {
 
   async updateDraft(req, payload, callback) {
     try {
-      const { menu, category, title, content, isPublic, thumbnail } = req.body
+      const { menu, category, title, content, isPublic, thumbnail } = req.body;
+      
       const images = await FileModel.createManyInstances(payload.sub, req.params.id, 'Draft', req.files)
       const draft = await DraftModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub },
-        { $set: { menu, category, title, content, isPublic, thumbnail },
-          $addToSet: { images: { $each: images.map(image => image._id) } } },
+        { 
+          $set: { menu, category, title, content, isPublic, thumbnail },
+          $addToSet: { images: { $each: images.map(image => image._id) } }
+        },
         { new: true,
           lean: true,
           populate: { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } } }

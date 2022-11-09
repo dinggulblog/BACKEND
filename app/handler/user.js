@@ -42,7 +42,7 @@ class UserHandler {
   async getUserProfile(req, callback) {
     try {
       const user = await UserModel.findOne({ nickname: req.params.nickname })
-        .select({ roles: 0, updatedAt: 0, expiredAt: 0, lastLoginIp: 0 })
+        .select({ email: 1, nickname: 1, avatar: 1, isActive: 1, greetings: 1, introduce: 1 })
         .populate({ path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } })
         .lean()
         .exec();
@@ -74,10 +74,11 @@ class UserHandler {
 
   async updateUserProfile(req, payload, callback) {
     try {
+      const { greetings, introduce } = req.body;
       const user = await UserModel.findOneAndUpdate(
         { _id: payload.sub },
-        { $set: { greetings: req.body?.greetings, introduce: req.body?.introduce } },
-        { new: true, lean: true, projection: { _id: 0,  greetings: 1, introduce: 1, isActive: 1 } }
+        { $set: { greetings, introduce } },
+        { new: true, lean: true, projection: { greetings: 1, introduce: 1, isActive: 1 } }
       ).exec();
 
       callback.onSuccess({ user });
@@ -89,16 +90,20 @@ class UserHandler {
   async updateUserProfileAvatar(req, payload, callback) {
     try {
       const avatar = await FileModel.createNewInstance(payload.sub, payload.sub, 'User', req.file);
-      const user = await UserModel.findOneAndUpdate(
-        { _id: payload.sub },
-        { $set: { avatar: avatar._id } },
-        { new: true,
-          lean: true,
-          projection: { _id: 0, avatar: 1, isActive: 1 },
-          populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
-      ).exec();
+      if (avatar._id) {
+        const user = await UserModel.findOneAndUpdate(
+          { _id: payload.sub },
+          { $set: { avatar: avatar._id } },
+          { new: true,
+            lean: true,
+            projection: { _id: 0, avatar: 1, isActive: 1 },
+            populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
+        ).exec();
 
-      callback.onSuccess({ user });
+        callback.onSuccess({ user });
+      }
+      
+      throw new Error('업로드에 실패하였습니다.');
     } catch (error) {
       callback.onError(error);
     }

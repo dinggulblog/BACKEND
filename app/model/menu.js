@@ -14,7 +14,7 @@ const MenuSchema = new mongoose.Schema({
   type: {
     type: String,
     defalut: 'list',
-    enum: ['list', 'album', 'slide'],
+    enum: ['list', 'card', 'slide'],
     trim: true
   },
   categories: {
