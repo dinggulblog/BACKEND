@@ -40,14 +40,12 @@ const COMMENT_VALIDATION_SCHEMA = () => {
       }
     },
     'isPublic': {
-      customSanitizer: { 
-        options: value => value ? Boolean(value) : true
-      }
+      toBoolean: true
     }
   };
 };
 
-export default { 
+export default {
   POSTID_VALIDATION_SCHEMA,
   PARENTID_VALIDATION_SCHEMA,
   COMMENT_VALIDATION_SCHEMA

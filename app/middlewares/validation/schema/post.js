@@ -11,19 +11,17 @@ const POST_VALIDATION_SCHEMA = () => {
     },
     'category': {
       customSanitizer: {
-        options: category => category ? String(category) : undefined
+        options: category => !!category ? String(category) : '기타'
       }
     },
     'isPublic': {
-      customSanitizer: { 
-        options: value => value ? Boolean(value) : true
-      }
+      toBoolean: true
     },
     'title': {
       customSanitizer: {
         options: title => escapeHtml(title)
       },
-      isLength: { 
+      isLength: {
         options: [{ min: 1, max: 150 }],
         errorMessage: 'Post title must be between 1 and 150 chars long'
       }
@@ -32,14 +30,14 @@ const POST_VALIDATION_SCHEMA = () => {
       customSanitizer: {
         options: content => escapeHtml(content)
       },
-      isLength: { 
+      isLength: {
         options: [{ max: 10000 }],
         errorMessage: 'Post content must be under 10000 chars long'
       }
     },
     'thumbnail': {
-      optional: { options: { nullable: true } },
-      isMongoId: true
+      isMongoId: true,
+      optional: { options: { nullable: true } }
     }
   };
 };
@@ -55,19 +53,19 @@ const POSTS_PAGINATION_SCHEMA = () => {
     'category': {
       toString: true,
       customSanitizer: {
-        options: (category) => category ? decodeURI(category) : '전체'
+        options: (category) => !!category ? decodeURI(category).trim() : '전체'
       }
     },
     'page': {
       toInt: true,
-      isInt: { 
+      isInt: {
         options: [{ min: 1 }],
         errorMessage: 'Page must be an integer greater than 1'
       }
     },
     'limit': {
       toInt: true,
-      isInt: { 
+      isInt: {
         options: [{ min: 1, max: 10 }],
         errorMessage: 'Limit must be an integer between 1 and 10'
       }
@@ -111,7 +109,7 @@ const POSTS_SEARCH_SCHEMA = () => {
     },
     'searchText': {
       optional: { options: { nullable: true } },
-      isString: { 
+      isString: {
         options: [{ min: 2, max: 30 }],
         errorMessage: 'Search text must be between 2 and 30 chars long'
       }
@@ -119,7 +117,7 @@ const POSTS_SEARCH_SCHEMA = () => {
   };
 };
 
-export default { 
+export default {
   POST_VALIDATION_SCHEMA,
   POSTS_PAGINATION_SCHEMA,
   POSTS_SEARCH_SCHEMA

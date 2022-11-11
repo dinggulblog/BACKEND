@@ -3,30 +3,30 @@ const MENU_VALIDATION_SCHEMA = () => {
     'main': {
       trim: true,
       toString: true,
-      isLength: { 
+      isLength: {
         options: [{ min: 1, max: 30 }],
         errorMessage: 'Menu title must be between 1 and 30 chars long'
       },
     },
     'sub': {
-      optional: { options: { nullable: true } },
       trim: true,
       toString: true,
-      isLength: { 
+      isLength: {
         options: [{ min: 1, max: 30 }],
         errorMessage: 'Menu subject must be between 1 and 30 chars long'
       },
+      optional: { options: { nullable: true } }
     },
     'categories': {
       toArray: true
     },
     'categories.*': {
-      optional: { options: { nullable: true } },
       toString: true,
-      isLength: { 
+      isLength: {
         options: [{ min: 1, max: 30 }],
         errorMessage: 'Menu category must be between 1 and 30 chars long'
-      }
+      },
+      optional: { options: { nullable: true } }
     }
   };
 };

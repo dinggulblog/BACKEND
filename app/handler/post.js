@@ -93,7 +93,7 @@ class PostHandler {
           ] }
         ).exec();
 
-      callback.onSuccess({ 
+      callback.onSuccess({
         post,
         likes: post.likes,
         likeCount: post.likes.length
@@ -108,7 +108,7 @@ class PostHandler {
       const { menu, category, title, content, isPublic, thumbnail, images } = req.body;
       const post = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub },
-        { 
+        {
           $set: { menu, category, title, content, isPublic, thumbnail },
           $addToSet: { images: { $each: images } }
         },
@@ -227,7 +227,7 @@ class PostHandler {
       }
     }
 
-    return searchQuery;    
+    return searchQuery;
   }
 }
 
