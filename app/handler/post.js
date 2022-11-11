@@ -87,7 +87,7 @@ class PostHandler {
         { new: true,
           lean: true,
           populate: [
-            { path: 'author', select: { nickname: 1, isActive: 1 } },
+            { path: 'author', select: { avatar: 1, nickname: 1, greetings: 1, isActive: 1 }, populate: { path: 'avatar', select: 'serverFileName', match: { isActive: true } } },
             { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } },
             { path: 'likes', select: { nickname: 1 }, perDocumentLimit: 10 }
           ] }

@@ -26,10 +26,18 @@ class CommentHandler {
       const comments = await CommentModel.find(
         { post: req.params.postId },
         null,
-        { lean: true,
+        { 
+          lean: true,
           timestamps: false,
-          sort: { createdAt: 1 },
-          populate: { path: 'commenter', select: { nickname: 1 } } }
+          sort: { 
+            createdAt: 1
+          },
+          populate: { 
+            path: 'commenter',
+            select: { avatar: 1, nickname: 1, isActive: 1 },
+            populate: { path: 'avatar', select: 'serverFileName', match: { isActive: true } }
+          }
+        }
       ).exec();
 
       callback.onSuccess({ comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments'), commentCount: comments.length });
