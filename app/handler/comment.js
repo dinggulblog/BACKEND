@@ -1,6 +1,5 @@
 import { convertFlatToTree } from '../util/util.js';
 import { CommentModel } from '../model/comment.js';
-import { FileModel } from '../model/file.js';
 
 class CommentHandler {
   constructor() {
@@ -28,7 +27,8 @@ class CommentHandler {
         { post: req.params.postId },
         null,
         { lean: true,
-          sort: { createdAt: -1 },
+          timestamps: false,
+          sort: { createdAt: 1 },
           populate: { path: 'commenter', select: { nickname: 1 } } }
       ).exec();
 
