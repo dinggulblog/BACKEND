@@ -1,3 +1,4 @@
+import escapeHtml from 'escape-html';
 import { PostModel } from '../../../model/post.js';
 import { CommentModel } from '../../../model/comment.js';
 
@@ -33,10 +34,12 @@ const PARENTID_VALIDATION_SCHEMA = () => {
 const COMMENT_VALIDATION_SCHEMA = () => {
   return {
     'content': {
-      escape: true,
       isLength: {
         options: [{ min: 1, max: 1000 }],
         errorMessage: 'Comment content must be between 1 and 1000 chars long'
+      },
+      customSanitizer: {
+        options: content => escapeHtml(content)
       }
     },
     'isPublic': {

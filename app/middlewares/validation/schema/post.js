@@ -18,21 +18,21 @@ const POST_VALIDATION_SCHEMA = () => {
       toBoolean: true
     },
     'title': {
-      customSanitizer: {
-        options: title => escapeHtml(title)
-      },
       isLength: {
         options: [{ min: 1, max: 150 }],
         errorMessage: 'Post title must be between 1 and 150 chars long'
+      },
+      customSanitizer: {
+        options: title => escapeHtml(title)
       }
     },
     'content': {
-      customSanitizer: {
-        options: content => escapeHtml(content)
-      },
       isLength: {
         options: [{ max: 10000 }],
         errorMessage: 'Post content must be under 10000 chars long'
+      },
+      customSanitizer: {
+        options: content => escapeHtml(content)
       }
     },
     'thumbnail': {
