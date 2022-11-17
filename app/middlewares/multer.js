@@ -2,7 +2,7 @@ import multer from 'multer';
 import { join, extname, basename } from 'path';
 import ForbiddenError from '../error/forbidden.js';
 
-const availableMimetype = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const availableMimetype = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 
 export const upload = multer({
   storage: multer.diskStorage({

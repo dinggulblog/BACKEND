@@ -1,4 +1,4 @@
-import { checkSchema, param } from 'express-validator';
+import { checkSchema, param, query } from 'express-validator';
 import PostSchema from './schema/post.js';
 
 const createPostRules = [

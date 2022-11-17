@@ -1,5 +1,6 @@
 import { UserModel } from '../model/user.js';
 import { PostModel } from '../model/post.js';
+import mongoose from 'mongoose';
 
 class PostHandler {
   constructor() {
@@ -27,12 +28,122 @@ class PostHandler {
 
   async getPosts(req, callback) {
     try {
-      const { skip, limit } = req.query;
-      const searchQuery = await this.#getSearchQuery(req.query);
+      const { query: { skip, limit }, paginationQuery } = req;
 
-      const maxPage = Math.ceil(await PostModel.countDocuments(searchQuery) / limit);
+      const maxPage = Math.ceil(await PostModel.countDocuments(paginationQuery) / limit);
       const posts = await PostModel.aggregate([
-        { $match: searchQuery },
+        { $match: { isActive: true, isPublic: true, ...paginationQuery } },
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        { $lookup: {
+          from: 'users',
+          localField: 'author',
+          foreignField: '_id',
+          as: 'author'
+        } },
+        { $unwind: '$author' },
+        { $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'post',
+          as: 'comments'
+        } },
+        { $lookup: {
+          from: 'files',
+          localField: 'thumbnail',
+          foreignField: '_id',
+          as: 'thumbnail'
+        } },
+        { $project: {
+          postNum: 1,
+          author: { _id: 1, nickname: 1 },
+          menu: 1,
+          category: 1,
+          title: 1,
+          content: { $substrCP: ['$content', 0, 200] },
+          thumbnail: { _id: 1, serverFileName: 1 },
+          isPublic: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          likes: 1,
+          viewCount: 1,
+          likeCount: { $size: '$likes' },
+          commentCount: { $size: '$comments' }
+        } }
+      ]).exec();
+
+      callback.onSuccess({ posts, maxPage });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async getPostsAsUser (req, payload, callback) {
+    try {
+      const { query : { skip, limit }, paginationQuery } = req;
+
+      const maxPage = Math.ceil(await PostModel.countDocuments(paginationQuery) / limit);
+      const posts = await PostModel.aggregate([
+        { $match: {
+            $or: [
+              { isPublic: true, isActive: true, ...paginationQuery },
+              { isPublic: false, isActive: true, author: mongoose.Types.ObjectId(payload.sub), ...paginationQuery }
+            ]
+        } },
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        { $lookup: {
+          from: 'users',
+          localField: 'author',
+          foreignField: '_id',
+          as: 'author'
+        } },
+        { $unwind: '$author' },
+        { $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'post',
+          as: 'comments'
+        } },
+        { $lookup: {
+          from: 'files',
+          localField: 'thumbnail',
+          foreignField: '_id',
+          as: 'thumbnail'
+        } },
+        { $project: {
+          postNum: 1,
+          author: { _id: 1, nickname: 1 },
+          menu: 1,
+          category: 1,
+          title: 1,
+          content: { $substrCP: ['$content', 0, 200] },
+          thumbnail: { _id: 1, serverFileName: 1 },
+          isPublic: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          likes: 1,
+          viewCount: 1,
+          likeCount: { $size: '$likes' },
+          commentCount: { $size: '$comments' }
+        } }
+      ]).exec();
+
+      callback.onSuccess({ posts, maxPage });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async getPostsAsAdmin (req, payload, callback) {
+    try {
+      const { query: { skip, limit }, paginationQuery } = req;
+
+      const maxPage = Math.ceil(await PostModel.countDocuments(paginationQuery) / limit);
+      const posts = await PostModel.aggregate([
+        { $match: paginationQuery },
         { $sort: { createdAt: -1 } },
         { $skip: skip },
         { $limit: limit },
@@ -87,9 +198,15 @@ class PostHandler {
         { new: true,
           lean: true,
           populate: [
-            { path: 'author', select: { avatar: 1, nickname: 1, greetings: 1, isActive: 1 }, populate: { path: 'avatar', select: 'serverFileName', match: { isActive: true } } },
-            { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } },
-            { path: 'likes', select: { nickname: 1 }, perDocumentLimit: 10 }
+            { path: 'author',
+              select: { avatar: 1, nickname: 1, greetings: 1, isActive: 1 },
+              populate: { path: 'avatar', select: 'serverFileName', match: { isActive: true } } },
+            { path: 'images',
+              select: { serverFileName: 1, isActive: 1 },
+              match: { isActive: true } },
+            { path: 'likes',
+              select: { nickname: 1 },
+              perDocumentLimit: 10 }
           ] }
         ).exec();
 
@@ -188,20 +305,7 @@ class PostHandler {
   }
 
   async #getSearchQuery(queries) {
-    const searchQuery = { isActive: true };
-
-    if (queries.menu.length) {
-      searchQuery.menu = { $in: queries.menu };
-    }
-    if (queries.category && queries.category !== '전체') {
-      searchQuery.category = queries.category;
-    }
-    if (queries.likes) {
-      searchQuery.likes = queries.likes;
-    }
-    if (queries._id) {
-      searchQuery._id = queries._id;
-    }
+    const searchQuery = {};
 
     if (queries.searchType && queries?.searchText.length >= 2) {
       const searchTypes = queries.searchType.toLowerCase().split('+').map(elem => elem.trim());

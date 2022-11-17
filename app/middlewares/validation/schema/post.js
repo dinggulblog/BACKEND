@@ -11,7 +11,7 @@ const POST_VALIDATION_SCHEMA = () => {
     },
     'category': {
       customSanitizer: {
-        options: category => !!category ? String(category) : '기타'
+        options: category => !!category ? String(category).trim() : '기타'
       }
     },
     'isPublic': {
@@ -44,16 +44,53 @@ const POST_VALIDATION_SCHEMA = () => {
 
 const POSTS_PAGINATION_SCHEMA = () => {
   return {
+    'paginationQuery' : {
+      customSanitizer: {
+        options: (v, { req }) => (req.paginationQuery = {})
+      }
+    },
     'menu': {
       toArray: true,
-      customSanitizer: {
-        options: (menus) => menus.map(menu => ObjectId.isValid(menu) ? ObjectId(menu) : null)
+      custom: {
+        options: (menu, { req }) => {
+          const menus = [...menu].map(menuId => ObjectId.isValid(menuId) ? ObjectId(menuId) : null).filter(Boolean);
+          if (menus.length) req.paginationQuery.menu = { $in: menus };
+          return true;
+        }
       }
     },
     'category': {
       toString: true,
-      customSanitizer: {
-        options: (category) => !!category ? decodeURI(category).trim() : '전체'
+      custom: {
+        options: (category, { req }) => {
+          if (!!category) req.paginationQuery.category = decodeURI(category).trim();
+          return true;
+        }
+      }
+    },
+    'filter': {
+      matches: {
+        options: [/\b(?:like|comment)\b/],
+        errorMessage: 'Available filtering words: like, comment'
+      },
+      optional: { options: { nullable: true } },
+    },
+    'userId': {
+      custom: {
+        options: (userId, { req }) => {
+          if (!userId) return true;
+          else if (req.query.filter === 'like') req.paginationQuery.likes = userId;
+          else if (req.query.filter === 'comment') {
+            CommentModel.find(
+              { commenter: userId },
+              { post: 1 },
+              { skip: req.query.skip, limit: req.query.limit, lean: true }
+            ).exec().then(comments =>
+              { req.paginationQuery._id = { $in: comments.map(comment => comment.post) } }
+            );
+          }
+          return true
+        }
       }
     },
     'page': {
@@ -73,30 +110,6 @@ const POSTS_PAGINATION_SCHEMA = () => {
     'skip': {
       customSanitizer: {
         options: (v, { req }) => (req.query.page - 1) * req.query.limit
-      }
-    },
-    'filter': {
-      optional: { options: { nullable: true } },
-      matches: {
-        options: [/\b(?:like|comment)\b/],
-        errorMessage: 'Available filtering words: like, comment'
-      }
-    },
-    'userId': {
-      customSanitizer: {
-        options: (userId, { req }) => {
-          if (!userId) return;
-          else if (req.query.filter === 'like') {
-            req.query.likes = userId;
-          }
-          else if (req.query.filter === 'comment') {
-            CommentModel.find(
-              { commenter: userId },
-              { post: 1, isActive: 1 },
-              { skip: req.query.skip, limit: req.query.limit, lean: true }
-            ).exec().then(comments => { req.query._id = { $in: comments.map(comment => comment.post) } });
-          }
-        }
       }
     }
   };

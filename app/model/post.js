@@ -43,7 +43,8 @@ const PostSchema = new mongoose.Schema({
   },
   thumbnail: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'File'
+    ref: 'File',
+    default: null
   },
   images: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -53,7 +54,7 @@ const PostSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }]
-}, { 
+}, {
   timestamps: {
     currentTime: (time = Date.now()) => new Date(time).getTime() - new Date(time).getTimezoneOffset() * 60 * 1000
   },
@@ -70,7 +71,7 @@ PostSchema.pre('save', async function (next) {
         { $set: { name: 'Posts' }, $inc: { count: 1 } },
         { new: true, upsert: true, lean: true }
       ).exec();
-      
+
       this.postNum = counter.count;
     }
     next();
@@ -154,7 +155,7 @@ PostSchema.post('findOneAndDelete', async function (doc, next) {
       { belonging: doc._id },
       { lean: true }
     ).exec();
-    
+
     next();
   } catch (error) {
     next(error);
