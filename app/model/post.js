@@ -134,7 +134,7 @@ PostSchema.post('findOneAndUpdate', async function (doc, next) {
 // 게시물이 비활성화 된 경우 이미지 비활성화 CASCADE
 PostSchema.post('updateOne', async function (doc, next) {
   try {
-    if (!doc.isActive) {
+    if (this._update?.$set?.isActive === false) {
       await FileModel.updateMany(
         { belonging: doc._id },
         { $set: { isActive: false } },
@@ -151,10 +151,14 @@ PostSchema.post('updateOne', async function (doc, next) {
 // 게시물이 삭제된 경우 이미지 삭제 CASCADE
 PostSchema.post('findOneAndDelete', async function (doc, next) {
   try {
-    await FileModel.deleteMany(
-      { belonging: doc._id },
-      { lean: true }
-    ).exec();
+    for await (const image of doc.images) {
+      if (image) {
+        FileModel.findOneAndDelete(
+          { _id: image },
+          { lean: true }
+        ).exec();
+      }
+    }
 
     next();
   } catch (error) {

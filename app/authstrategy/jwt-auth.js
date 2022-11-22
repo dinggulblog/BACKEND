@@ -78,10 +78,10 @@ class JwtAuthStrategy extends BaseAuthStrategy {
         const { payload } = await jwtVerify(refreshToken, ecPublicKey, this._jwtOptions);
         return callback.onVerified(refreshToken, payload);
       } catch (error) {
-        return callback.onFailure(new JwtError('토큰이 만료되어 다시 로그인이 필요합니다.'));
+        return callback.onFailure(new JwtError('토큰이 만료되어 재 로그인이 필요합니다.'));
       }
     }
-    
+
     try {
       const { payload } = await jwtVerify(accessToken, ecPublicKey, this._jwtOptions);
       return callback.onVerified(accessToken, payload);

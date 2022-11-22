@@ -52,11 +52,11 @@ const UserSchema = new mongoose.Schema({
     default: undefined,
     expires: 0
   }
-}, { 
-  toObject: { 
+}, {
+  toObject: {
     virtuals: true
   },
-  timestamps: { 
+  timestamps: {
     currentTime: (time = Date.now()) => new Date(time).getTime() - new Date(time).getTimezoneOffset() * 60 * 1000
   },
   versionKey: false
@@ -120,6 +120,7 @@ UserSchema.pre('save', async function (next) {
     const userRole = await RoleModel.findOne({ name: 'USER' }, { _id: 1 }, { lean: true }).exec();
     this.roles.push(userRole._id) ;
   }
+
   if (!this.isModified('password')) next();
   else {
     const salt = genSaltSync(12);
@@ -162,7 +163,7 @@ UserSchema.post('findOneAndUpate', async function (doc, next) {
           { $set: { isActive: false } },
           { lean: true }
         ).exec();
-  
+
         await FileModel.updateMany(
           { uploader: doc._id },
           { $set: { isActive: false } },

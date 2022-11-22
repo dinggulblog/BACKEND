@@ -29,10 +29,11 @@ class PostHandler {
   async getPosts(req, callback) {
     try {
       const { query: { skip, limit }, paginationQuery } = req;
+      const matchQuery = { isActive: true, isPublic: true, ...paginationQuery };
 
-      const maxPage = Math.ceil(await PostModel.countDocuments(paginationQuery) / limit);
+      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit);
       const posts = await PostModel.aggregate([
-        { $match: { isActive: true, isPublic: true, ...paginationQuery } },
+        { $match: matchQuery },
         { $sort: { createdAt: -1 } },
         { $skip: skip },
         { $limit: limit },
@@ -82,15 +83,16 @@ class PostHandler {
   async getPostsAsUser (req, payload, callback) {
     try {
       const { query : { skip, limit }, paginationQuery } = req;
+      const matchQuery = {
+        $or: [
+          { isPublic: true, isActive: true, ...paginationQuery },
+          { isPublic: false, isActive: true, author: mongoose.Types.ObjectId(payload.sub), ...paginationQuery }
+        ]
+      }
 
-      const maxPage = Math.ceil(await PostModel.countDocuments(paginationQuery) / limit);
+      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit);
       const posts = await PostModel.aggregate([
-        { $match: {
-            $or: [
-              { isPublic: true, isActive: true, ...paginationQuery },
-              { isPublic: false, isActive: true, author: mongoose.Types.ObjectId(payload.sub), ...paginationQuery }
-            ]
-        } },
+        { $match: matchQuery },
         { $sort: { createdAt: -1 } },
         { $skip: skip },
         { $limit: limit },

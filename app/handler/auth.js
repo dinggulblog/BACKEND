@@ -2,7 +2,6 @@ import { UserModel } from '../model/user.js';
 import { jwtOptions } from '../../config/jwt-options.js';
 import AuthManager from '../manager/auth.js';
 import JwtError from '../error/jwt-error.js';
-import ServerError from '../error/server-error.js';
 import ForbiddenError from '../error/forbidden.js';
 
 class AuthHandler {
@@ -21,7 +20,7 @@ class AuthHandler {
 
         callback.onSuccess({ accessToken });
       } catch (error) {
-        callback.onError(new ServerError('Internal server error: Cannot sign with JWT'));
+        callback.onError(error);
       }
     } else {
       callback.onError(new ForbiddenError('유저를 찾을 수 없습니다.'));
@@ -37,6 +36,10 @@ class AuthHandler {
           populate: { path: 'roles', select: { name: 1 } } }
       ).exec();
 
+      if (!user) {
+        throw new JwtError('세션 정보가 삭제되었거나 찾을 수 없습니다. 다시 로그인 해 주세요.');
+      }
+
       const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user));
       const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload());
 
@@ -44,7 +47,7 @@ class AuthHandler {
 
       callback.onSuccess({ accessToken });
     } catch (error) {
-      callback.onError(new JwtError('세션 정보가 삭제되거나 만료되어 정보를 갱신할 수 없습니다. 다시 로그인 해 주세요.'));
+      callback.onError(error);
     }
   }
 

@@ -33,10 +33,6 @@ const DraftSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  viewCount: {
-    type: Number,
-    default: 0
-  },
   thumbnail: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'File'
@@ -49,10 +45,8 @@ const DraftSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }]
-}, { 
-  timestamps: {
-    currentTime: (time = Date.now()) => new Date(time).getTime() - new Date(time).getTimezoneOffset() * 60 * 1000
-  },
+}, {
+  timestamps: false,
   versionKey: false
 });
 
@@ -81,7 +75,7 @@ DraftSchema.pre('save', async function (next) {
 
 DraftSchema.post('updateOne', async function (doc, next) {
   try {
-    if (!doc.isActive) {
+    if (this._update?.$set?.isActive === false) {
       await FileModel.updateMany(
         { belonging: this._id },
         { $set: { isActive: false } },
@@ -97,7 +91,14 @@ DraftSchema.post('updateOne', async function (doc, next) {
 
 DraftSchema.post('findOneAndDelete', async function (doc, next) {
   try {
-    doc.images.forEach(async (image) => await FileModel.findOneAndDelete({ _id: image }, { lean: true }).exec());
+    for await (const image of doc.images) {
+      if (image) {
+        FileModel.findOneAndDelete(
+          { _id: image },
+          { lean: true }
+        ).exec();
+      }
+    }
 
     next();
   } catch (error) {

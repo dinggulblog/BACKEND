@@ -20,10 +20,10 @@ app.set('port', port);
 if (process.env.NODE_ENV === 'production') {
   // Get TSL certificate credentials.
   const options = {
-    key: readFileSync('/etc/letsencrypt/live/dinggul.me/privkey.pem', 'utf8'),
-    cert: readFileSync('/etc/letsencrypt/live/dinggul.me/fullchain.pem', 'utf8')
+    key: readFileSync(process.env.LETSENCRYPT_PRIVKEY_DIR, 'utf8'),
+    cert: readFileSync(process.env.LETSENCRYPT_FULLCHAIN_DIR, 'utf8')
   }
-  
+
   spdy.createServer(options, app)
     .listen(port, '0.0.0.0', () => console.log('\x1b[33m%s\x1b[0m', app.get('port') + '(SSL) Port is listening!'))
     .on('error', onError);

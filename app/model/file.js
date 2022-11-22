@@ -32,14 +32,14 @@ const FileSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   }
-}, { 
+}, {
   timestamps: {
     currentTime: (time = Date.now()) => new Date(time).getTime() - new Date(time).getTimezoneOffset() * 60 * 1000
   },
   versionKey: false
 });
 
-FileSchema.post(['deleteOne', 'findOneAndDelete'], async function (doc, next) {
+FileSchema.post('findOneAndDelete', async function (doc, next) {
   try {
     const filePath = join(__dirname, 'uploads', doc.serverFileName);
     accessSync(filePath, constants.F_OK);
@@ -55,10 +55,10 @@ const fileModel = mongoose.model('File', FileSchema);
 
 /**
  * Built-in model method to create single file instance
- * @param {mongoose.Types.ObjectId} uploader 
- * @param {mongoose.Types.ObjectId} belonging 
- * @param {String} belongingModel 
- * @param {Object} file 
+ * @param {mongoose.Types.ObjectId} uploader
+ * @param {mongoose.Types.ObjectId} belonging
+ * @param {String} belongingModel
+ * @param {Object} file
  * @returns Single Document
  */
 fileModel.createSingleInstance = async function (uploader, belonging, belongingModel, file = {}) {
@@ -74,14 +74,14 @@ fileModel.createSingleInstance = async function (uploader, belonging, belongingM
 
 /**
  * Built-in model method to create array of file instances
- * @param {mongoose.Types.ObjectId} uploader 
- * @param {mongoose.Types.ObjectId} belonging 
- * @param {String} belongingModel 
- * @param {Object} file 
+ * @param {mongoose.Types.ObjectId} uploader
+ * @param {mongoose.Types.ObjectId} belonging
+ * @param {String} belongingModel
+ * @param {Object} file
  * @returns Array of Documents
  */
 fileModel.createManyInstances = async function (uploader, belonging, belongingModel, files = []) {
-  return await FileModel.insertMany(files.map(file => ({ 
+  return await FileModel.insertMany(files.map(file => ({
       uploader,
       belonging,
       belongingModel,

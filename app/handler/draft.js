@@ -21,7 +21,7 @@ class DraftHandler {
         { author: payload.sub, isActive: true },
         null,
         { lean: true,
-          populate: { path: 'images', select: { serverFileName: 1 }, match: { isActive: true } } }
+          populate: { path: 'images', select: { serverFileName: 1 } } }
       ).exec();
 
       callback.onSuccess({ draft });
@@ -49,17 +49,15 @@ class DraftHandler {
 
       callback.onSuccess({ draft });
     } catch (error) {
-      console.log(error)
       callback.onError(error);
     }
   }
 
   async deleteDraft(req, payload, callback) {
     try {
-      await DraftModel.updateOne(
+      await DraftModel.findOneAndDelete(
         { _id: req.params.id, author: payload.sub },
-        { $set: { isActive: false } },
-        { new: true, lean: true }
+        { lean: true }
       ).exec();
 
       callback.onSuccess({});
@@ -77,7 +75,10 @@ class DraftHandler {
       ).exec();
 
       if (modifiedCount) {
-        await FileModel.findOneAndDelete({ _id: req.body.image }, { lean: true }).exec();
+        await FileModel.findOneAndDelete(
+          { _id: req.body.image },
+          { lean: true }
+        ).exec();
       }
 
       callback.onSuccess({});

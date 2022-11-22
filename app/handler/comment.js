@@ -26,13 +26,13 @@ class CommentHandler {
       const comments = await CommentModel.find(
         { post: req.params.postId },
         null,
-        { 
+        {
           lean: true,
           timestamps: false,
-          sort: { 
+          sort: {
             createdAt: 1
           },
-          populate: { 
+          populate: {
             path: 'commenter',
             select: { avatar: 1, nickname: 1, isActive: 1 },
             populate: { path: 'avatar', select: 'serverFileName', match: { isActive: true } }
@@ -48,10 +48,13 @@ class CommentHandler {
 
   async updateComment(req, payload, callback) {
     try {
+      const { content, isPublic, isActive } = req.body;
       await CommentModel.updateOne(
         { _id: req.params.id, commenter: payload.sub },
-        { $set: req.body },
-        { new: true, lean: true }
+        { $set: {
+          content, isPublic, isActive
+        } },
+        { lean: true }
       ).exec();
 
       callback.onSuccess({});
@@ -62,10 +65,9 @@ class CommentHandler {
 
   async deleteComment(req, payload, callback) {
     try {
-      await CommentModel.updateOne(
+      await CommentModel.deleteOne(
         { _id: req.params.id, commenter: payload.sub },
-        { $set: { isActive: false } },
-        { new: true, lean: true }
+        { lean: true }
       ).exec();
 
       callback.onSuccess({});
