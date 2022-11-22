@@ -116,11 +116,13 @@ UserSchema.path('password').validate(function (value) {
 });
 
 UserSchema.pre('save', async function (next) {
+  // 신규 가입 -> 'USER' role 추가
   if (this.isNew) {
     const userRole = await RoleModel.findOne({ name: 'USER' }, { _id: 1 }, { lean: true }).exec();
     this.roles.push(userRole._id) ;
   }
 
+  // 패스워드 수정 시 salt 및 해시 재생성
   if (!this.isModified('password')) next();
   else {
     const salt = genSaltSync(12);
@@ -131,6 +133,7 @@ UserSchema.pre('save', async function (next) {
   }
 });
 
+// 유저 정보 조회 시 훅
 UserSchema.post('findOne', function (doc, next) {
   if (!doc) {
     next(new ForbiddenError('존재하지 않는 유저입니다.'));
@@ -156,7 +159,7 @@ UserSchema.post('findOneAndUpate', async function (doc, next) {
       // 계정이 비활성화 상태이고 활성화를 변경하는 것이 아닌 경우
       if (!query.$set || !Object.keys(query.$set).includes('isActive')) next(new ForbiddenError('본 계정은 비활성화 상태입니다. 관리자에게 문의하세요.'));
 
-      // 계정이 비활성화 되는 경우
+      // 계정이 비활성화 되는 경우 -> 계정 명의로 된 게시물 및 파일 모두 비활성화
       else if (query.$set?.isActive === false) {
         await PostModel.updateMany(
           { author: doc._id },

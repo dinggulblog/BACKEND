@@ -63,6 +63,7 @@ const PostSchema = new mongoose.Schema({
 
 PostSchema.index({ menu: 1, createdAt: -1 });
 
+// 게시물 저장 전 게시물 넘버링(카운터)을 위한 훅
 PostSchema.pre('save', async function (next) {
   try {
     if (this.isNew) {
@@ -80,6 +81,7 @@ PostSchema.pre('save', async function (next) {
   }
 });
 
+// 게시물이 정상적으로 저장되면, 게시물에 포함될 File Documents의 belonging field를 게시물 ID로 수정하는 훅
 PostSchema.post('save', async function (doc, next) {
   try {
     if (this.isNew && doc.images.length) {
@@ -97,6 +99,7 @@ PostSchema.post('save', async function (doc, next) {
   }
 });
 
+// findOneAndUpdate -> 게시물 받기/수정, 좋아요 받기/삭제
 PostSchema.post('findOneAndUpdate', async function (doc, next) {
   try {
     if (!doc) {
@@ -109,6 +112,7 @@ PostSchema.post('findOneAndUpdate', async function (doc, next) {
       next(new ForbiddenError('비활성화 유저의 게시물입니다.'));
     }
 
+    // 게시물에 포함될 File Documents의 belonging field를 게시물 ID로 수정
     if (this._update?.$addToSet?.images) {
       for await (const image of doc.images) {
         FileModel.updateOne(
@@ -119,12 +123,14 @@ PostSchema.post('findOneAndUpdate', async function (doc, next) {
       }
     }
 
+    // 게시물 보내기 전에 HTML 이스케이프 되돌리기
     if (doc.title) {
       doc.title = unescape(doc.title, 'all')
     }
     if (doc.content) {
       doc.content = unescape(doc.content, 'all')
     }
+
     next();
   } catch (error) {
     next(error);
@@ -134,9 +140,9 @@ PostSchema.post('findOneAndUpdate', async function (doc, next) {
 // 게시물이 비활성화 된 경우 이미지 비활성화 CASCADE
 PostSchema.post('updateOne', async function (doc, next) {
   try {
-    if (this._update?.$set?.isActive === false) {
+    if (doc.modifiedCount && this._update?.$set?.isActive === false) {
       await FileModel.updateMany(
-        { belonging: doc._id },
+        { belonging: this._conditions._id },
         { $set: { isActive: false } },
         { lean: true }
       ).exec();

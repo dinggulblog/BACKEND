@@ -75,9 +75,9 @@ DraftSchema.pre('save', async function (next) {
 
 DraftSchema.post('updateOne', async function (doc, next) {
   try {
-    if (this._update?.$set?.isActive === false) {
+    if (doc.modifiedCount && this._update?.$set?.isActive === false) {
       await FileModel.updateMany(
-        { belonging: this._id },
+        { belonging: this._conditions._id },
         { $set: { isActive: false } },
         { lean: true }
       ).exec();

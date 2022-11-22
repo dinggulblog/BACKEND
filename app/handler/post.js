@@ -1,5 +1,6 @@
 import { UserModel } from '../model/user.js';
 import { PostModel } from '../model/post.js';
+import { FileModel } from '../model/file.js';
 import mongoose from 'mongoose';
 
 class PostHandler {
@@ -224,14 +225,18 @@ class PostHandler {
 
   async updatePost(req, payload, callback) {
     try {
-      const { menu, category, title, content, isPublic, thumbnail, images } = req.body;
+      const { menu, category, title, content, isPublic, thumbnail } = req.body;
+
+      const images = await FileModel.createManyInstances(payload.sub, req.params.id, 'Draft', req.files)
       const post = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub },
         {
           $set: { menu, category, title, content, isPublic, thumbnail },
-          $addToSet: { images: { $each: images } }
+          $addToSet: { images: { $each: images.map(image => image._id) } }
         },
-        { new: true, lean: true, projection: { _id: 1 } }
+        { new: true,
+          lean: true,
+          populate: { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } } }
       ).exec();
 
       callback.onSuccess({ post });
@@ -294,11 +299,18 @@ class PostHandler {
 
   async deletePostFile(req, payload, callback) {
     try {
-      await PostModel.updateOne(
+      const { modifiedCount } = await PostModel.updateOne(
         { _id: req.params.id, author: payload.sub },
         { $pull: { images: req.body.image } },
-        { new: true, lean: true }
+        { lean: true }
       ).exec();
+
+      if (modifiedCount) {
+        await FileModel.findOneAndDelete(
+          { _id: req.body.image },
+          { lean: true }
+        ).exec();
+      }
 
       callback.onSuccess({});
     } catch (error) {
