@@ -7,7 +7,10 @@ const { ObjectId } = mongoose.Types;
 const POST_VALIDATION_SCHEMA = () => {
   return {
     'menu': {
-      isMongoId: { bail: true }
+      isMongoId: {
+        bail: true,
+        errorMessage: 'Invalide menu ID!'
+      }
     },
     'category': {
       customSanitizer: {
@@ -36,8 +39,9 @@ const POST_VALIDATION_SCHEMA = () => {
       }
     },
     'thumbnail': {
-      isMongoId: true,
-      optional: { options: { nullable: true } }
+      customSanitizer: {
+        options: (value) => ObjectId.isValid(value) ? ObjectId(value) : undefined
+      },
     }
   };
 };
