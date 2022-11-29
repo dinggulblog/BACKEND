@@ -62,8 +62,6 @@ if (process.env.NODE_ENV === 'production') {
 // Express Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(join(__dirname, 'public')));
-app.use('/uploads', express.static(join(__dirname, 'uploads')));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(session({ ...sessionOptions, secret: process.env.COOKIE_SECRET, store: MongoStore.create({ mongoUrl: process.env.MONGO_CONNECT_URL, dbName: 'nodejs' }) }));
 
@@ -73,6 +71,10 @@ app.use(authManager.providePassport().initialize());
 // Setup routes
 app.use('/', routes);
 app.use(history());
+
+// Static route
+app.use(express.static(join(__dirname, 'public')));
+app.use('/uploads', express.static(join(__dirname, 'uploads')));
 
 // Handling a non-existent route
 app.use((req, res, next) => {
