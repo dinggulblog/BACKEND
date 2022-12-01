@@ -99,7 +99,7 @@ PostSchema.post('save', async function (doc, next) {
   }
 });
 
-// findOneAndUpdate -> 게시물 받기/수정, 좋아요 받기/삭제
+// findOneAndUpdate -> 게시물 받기
 PostSchema.post('findOneAndUpdate', async function (doc, next) {
   try {
     if (!doc) {

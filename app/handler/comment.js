@@ -35,7 +35,7 @@ class CommentHandler {
           populate: {
             path: 'commenter',
             select: { avatar: 1, nickname: 1, isActive: 1 },
-            populate: { path: 'avatar', select: 'serverFileName', match: { isActive: true } }
+            populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } }
           }
         }
       ).exec();

@@ -203,13 +203,15 @@ class PostHandler {
           populate: [
             { path: 'author',
               select: { avatar: 1, nickname: 1, greetings: 1, isActive: 1 },
-              populate: { path: 'avatar', select: 'serverFileName', match: { isActive: true } } },
+              populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } },
             { path: 'images',
               select: { serverFileName: 1, isActive: 1 },
               match: { isActive: true } },
             { path: 'likes',
-              select: { nickname: 1 },
-              perDocumentLimit: 10 }
+              model: 'User',
+              select: { avatar: 1, nickname: 1, isActive: 1 },
+              perDocumentLimit: 10,
+              populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
           ] }
         ).exec();
 
@@ -228,18 +230,16 @@ class PostHandler {
       const { menu, category, title, content, isPublic, thumbnail } = req.body;
 
       const images = await FileModel.createManyInstances(payload.sub, req.params.id, 'Draft', req.files)
-      const post = await PostModel.findOneAndUpdate(
+      const post = await PostModel.updateOne(
         { _id: req.params.id, author: payload.sub },
         {
           $set: { menu, category, title, content, isPublic, thumbnail },
           $addToSet: { images: { $each: images.map(image => image._id) } }
         },
-        { new: true,
-          lean: true,
-          populate: { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } } }
+        { lean: true }
       ).exec();
 
-      callback.onSuccess({ post });
+      callback.onSuccess({ post: { _id: req.params.id } });
     } catch (error) {
       callback.onError(error);
     }
@@ -247,18 +247,13 @@ class PostHandler {
 
   async updatePostLike(req, payload, callback) {
     try {
-      const post = await PostModel.findOneAndUpdate(
+      await PostModel.updateOne(
         { _id: req.params.id },
         { $addToSet: { likes: payload.sub } },
-        { new: true,
-          lean: true,
-          timestamps: false,
-          projection: { likes: 1, likeCount: { $size: '$likes' } },
-          populate: { path: 'likes', select: { nickname: 1 }, perDocumentLimit: 10 }
-        }
+        { lean: true, timestamps: false }
       ).exec();
 
-      callback.onSuccess({ likes: post.likes, likeCount: post.likeCount });
+      callback.onSuccess({});
     } catch (error) {
       callback.onError(error);
     }
@@ -272,7 +267,7 @@ class PostHandler {
         { new: true, lean: true }
       ).exec();
 
-      callback.onSuccess({ });
+      callback.onSuccess({});
     } catch (error) {
       callback.onError(error);
     }
@@ -280,18 +275,13 @@ class PostHandler {
 
   async deletePostLike(req, payload, callback) {
     try {
-      const post = await PostModel.findOneAndUpdate(
+      const post = await PostModel.updateOne(
         { _id: req.params.id },
         { $pull: { likes: payload.sub } },
-        { new: true,
-          lean: true,
-          timestamps: false,
-          projection: { likes: 1, likeCount: { $size: '$likes' } },
-          populate: { path: 'likes', select: { nickname: 1 }, perDocumentLimit: 10 }
-        }
+        { lean: true, timestamps: false }
       ).exec();
 
-      callback.onSuccess({ likes: post.likes, likeCount: post.likeCount });
+      callback.onSuccess({});
     } catch (error) {
       callback.onError(error);
     }

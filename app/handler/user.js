@@ -32,7 +32,7 @@ class UserHandler {
         .exec();
 
       // user.lastLoginIP = getSecuredIPString(user.lastLoginIP);
-      
+
       callback.onSuccess({ user });
     } catch (error) {
       callback.onError(error);
@@ -41,13 +41,13 @@ class UserHandler {
 
   async getUserProfile(req, callback) {
     try {
-      const user = await UserModel.findOne({ nickname: req.params.nickname })
+      const profile = await UserModel.findOne({ nickname: req.params.nickname })
         .select({ email: 1, nickname: 1, avatar: 1, isActive: 1, greetings: 1, introduce: 1 })
         .populate({ path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } })
         .lean()
         .exec();
 
-      callback.onSuccess({ user });
+      callback.onSuccess({ profile });
     } catch (error) {
       callback.onError(error);
     }
@@ -59,11 +59,11 @@ class UserHandler {
       const user = await UserModel.findOne({ _id: payload.sub })
         .select('password isActive')
         .exec();
-      
+
       user.originalPassword = user.password;
       user.password = req.body.newPassword ? req.body.newPassword : user.password;
       for (const key in req.body) user[key] = req.body[key];
-      
+
       await user.save();
 
       callback.onSuccess({});
@@ -75,13 +75,15 @@ class UserHandler {
   async updateUserProfile(req, payload, callback) {
     try {
       const { greetings, introduce } = req.body;
-      const user = await UserModel.findOneAndUpdate(
+      const profile = await UserModel.findOneAndUpdate(
         { _id: payload.sub },
         { $set: { greetings, introduce } },
-        { new: true, lean: true, projection: { greetings: 1, introduce: 1, isActive: 1 } }
+        { new: true,
+          lean: true,
+          projection: { greetings: 1, introduce: 1, isActive: 1 } }
       ).exec();
 
-      callback.onSuccess({ user });
+      callback.onSuccess({ profile });
     } catch (error) {
       callback.onError(error);
     }
@@ -89,20 +91,21 @@ class UserHandler {
 
   async updateUserProfileAvatar(req, payload, callback) {
     try {
-      const avatar = await FileModel.createNewInstance(payload.sub, payload.sub, 'User', req.file);
+      const avatar = await FileModel.createSingleInstance(payload.sub, payload.sub, 'User', req.file);
+
       if (avatar._id) {
-        const user = await UserModel.findOneAndUpdate(
+        const profile = await UserModel.findOneAndUpdate(
           { _id: payload.sub },
           { $set: { avatar: avatar._id } },
           { new: true,
             lean: true,
-            projection: { _id: 0, avatar: 1, isActive: 1 },
+            projection: { avatar: 1, isActive: 1 },
             populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
         ).exec();
 
-        callback.onSuccess({ user });
+        return callback.onSuccess({ profile });
       }
-      
+
       throw new Error('업로드에 실패하였습니다.');
     } catch (error) {
       callback.onError(error);
@@ -125,13 +128,13 @@ class UserHandler {
 
   async deleteUserProfileAvatar(req, payload, callback) {
     try {
-      const user = await UserModel.findOneAndUpdate(
+      const profile = await UserModel.findOneAndUpdate(
         { _id: payload.sub },
         { $set: { avatar: undefined } },
         { new: true, lean: true }
       ).exec();
 
-      callback.onSuccess({ user });
+      callback.onSuccess({ profile });
     } catch (error) {
       callback.onError(error);
     }
