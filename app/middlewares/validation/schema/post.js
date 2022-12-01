@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import escapeHtml from 'escape-html';
-import { CommentModel } from '../../../model/comment.js';
 
 const { ObjectId } = mongoose.Types;
 
@@ -48,28 +47,16 @@ const POST_VALIDATION_SCHEMA = () => {
 
 const POSTS_PAGINATION_SCHEMA = () => {
   return {
-    'paginationQuery' : {
-      customSanitizer: {
-        options: (v, { req }) => (req.paginationQuery = {})
-      }
-    },
     'menu': {
       toArray: true,
-      custom: {
-        options: (menu, { req }) => {
-          const menus = [...menu].map(menuId => ObjectId.isValid(menuId) ? ObjectId(menuId) : null).filter(Boolean);
-          if (menus.length) req.paginationQuery.menu = { $in: menus };
-          return true;
-        }
+      customSanitizer: {
+        options: (menu) => menu.map(menuId => ObjectId.isValid(menuId) ? ObjectId(menuId) : null).filter(Boolean)
       }
     },
     'category': {
       toString: true,
-      custom: {
-        options: (category, { req }) => {
-          if (!!category) req.paginationQuery.category = decodeURI(category).trim();
-          return true;
-        }
+      customSanitizer: {
+        options: (category) => !!category ? decodeURI(category).trim() : null
       }
     },
     'filter': {
@@ -80,22 +67,8 @@ const POSTS_PAGINATION_SCHEMA = () => {
       optional: { options: { nullable: true } },
     },
     'userId': {
-      custom: {
-        options: (userId, { req }) => {
-          if (!userId) return true;
-          else if (req.query.filter === 'like') req.paginationQuery.likes = userId;
-          else if (req.query.filter === 'comment') {
-            CommentModel.find(
-              { commenter: userId },
-              { post: 1 },
-              { skip: req.query.skip, limit: req.query.limit, lean: true }
-            ).exec().then(comments =>
-              { req.paginationQuery._id = { $in: comments.map(comment => comment.post) } }
-            );
-          }
-          return true
-        }
-      }
+      isMongoId: true,
+      optional: { options: { nullable: true } }
     },
     'page': {
       toInt: true,

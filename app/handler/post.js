@@ -1,10 +1,12 @@
 import { UserModel } from '../model/user.js';
 import { PostModel } from '../model/post.js';
 import { FileModel } from '../model/file.js';
+import { CommentModel } from '../model/comment.js';
 import mongoose from 'mongoose';
 
 class PostHandler {
   constructor() {
+    this.ObjectId = mongoose.Types.ObjectId;
   }
 
   async createPost(req, payload, callback) {
@@ -29,9 +31,9 @@ class PostHandler {
 
   async getPosts(req, callback) {
     try {
-      const { query: { skip, limit }, paginationQuery } = req;
-      const matchQuery = { isActive: true, isPublic: true, ...paginationQuery };
+      const { query: { skip, limit } } = req;
 
+      const matchQuery = await this.#getMatchQuery(req.query);
       const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit);
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
@@ -83,14 +85,9 @@ class PostHandler {
 
   async getPostsAsUser (req, payload, callback) {
     try {
-      const { query : { skip, limit }, paginationQuery } = req;
-      const matchQuery = {
-        $or: [
-          { isPublic: true, isActive: true, ...paginationQuery },
-          { isPublic: false, isActive: true, author: mongoose.Types.ObjectId(payload.sub), ...paginationQuery }
-        ]
-      }
+      const { query: { skip, limit } } = req;
 
+      const matchQuery = await this.#getMatchQuery(req.query, payload.sub);
       const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit);
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
@@ -142,11 +139,12 @@ class PostHandler {
 
   async getPostsAsAdmin (req, payload, callback) {
     try {
-      const { query: { skip, limit }, paginationQuery } = req;
+      const { query: { skip, limit } } = req;
 
-      const maxPage = Math.ceil(await PostModel.countDocuments(paginationQuery) / limit);
+      const matchQuery = await this.#getMatchQuery(req.query, payload.sub)
+      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit);
       const posts = await PostModel.aggregate([
-        { $match: paginationQuery },
+        { $match: matchQuery },
         { $sort: { createdAt: -1 } },
         { $skip: skip },
         { $limit: limit },
@@ -306,6 +304,43 @@ class PostHandler {
     } catch (error) {
       callback.onError(error);
     }
+  }
+
+  async #getMatchQuery(queries, loginUserId = null) {
+    const matchQuery = {};
+    const { menu, category, filter, userId, skip, limit } = queries;
+
+    if (Array.isArray(menu) && menu.length) {
+      matchQuery.menu = { $in: menu };
+    }
+    if (category) {
+      matchQuery.category = category;
+    }
+    if (filter === 'like') {
+      matchQuery.likes = this.ObjectId(userId);
+    }
+    else if (filter === 'comment') {
+      const comments = await CommentModel.find(
+        { commenter: userId },
+        { post: 1 },
+        { skip: skip, limit: limit, lean: true }
+      ).exec();
+
+      if (comments.length) matchQuery._id = { $in: comments.map(comment => comment.post) };
+    }
+
+    if (loginUserId) {
+      matchQuery.$or = [
+        { isPublic: true, isActive: true, ...matchQuery },
+        { isPublic: false, isActive: true, ...matchQuery, author: this.ObjectId(loginUserId) }
+      ];
+    }
+    else {
+      matchQuery.isPublic = true;
+      matchQuery.isActive = true;
+    }
+
+    return matchQuery;
   }
 
   async #getSearchQuery(queries) {
