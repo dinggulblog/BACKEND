@@ -68,6 +68,9 @@ const POSTS_PAGINATION_SCHEMA = () => {
     },
     'userId': {
       isMongoId: true,
+      customSanitizer: {
+        options: (id) => ObjectId(id)
+      },
       optional: { options: { nullable: true } }
     },
     'page': {

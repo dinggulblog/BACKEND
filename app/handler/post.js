@@ -2,11 +2,9 @@ import { UserModel } from '../model/user.js';
 import { PostModel } from '../model/post.js';
 import { FileModel } from '../model/file.js';
 import { CommentModel } from '../model/comment.js';
-import mongoose from 'mongoose';
 
 class PostHandler {
   constructor() {
-    this.ObjectId = mongoose.Types.ObjectId;
   }
 
   async createPost(req, payload, callback) {
@@ -59,6 +57,7 @@ class PostHandler {
           foreignField: '_id',
           as: 'thumbnail'
         } },
+        { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
         { $project: {
           postNum: 1,
           author: { _id: 1, nickname: 1 },
@@ -113,6 +112,7 @@ class PostHandler {
           foreignField: '_id',
           as: 'thumbnail'
         } },
+        { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
         { $project: {
           postNum: 1,
           author: { _id: 1, nickname: 1 },
@@ -130,6 +130,8 @@ class PostHandler {
           commentCount: { $size: '$comments' }
         } }
       ]).exec();
+
+      console.log(posts)
 
       callback.onSuccess({ posts, maxPage });
     } catch (error) {
@@ -167,6 +169,7 @@ class PostHandler {
           foreignField: '_id',
           as: 'thumbnail'
         } },
+        { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
         { $project: {
           postNum: 1,
           author: { _id: 1, nickname: 1 },
@@ -317,7 +320,7 @@ class PostHandler {
       matchQuery.category = category;
     }
     if (filter === 'like') {
-      matchQuery.likes = this.ObjectId(userId);
+      matchQuery.likes = userId;
     }
     else if (filter === 'comment') {
       const comments = await CommentModel.find(
@@ -332,7 +335,7 @@ class PostHandler {
     if (loginUserId) {
       matchQuery.$or = [
         { isPublic: true, isActive: true, ...matchQuery },
-        { isPublic: false, isActive: true, ...matchQuery, author: this.ObjectId(loginUserId) }
+        { isPublic: false, isActive: true, ...matchQuery, author: loginUserId }
       ];
     }
     else {
