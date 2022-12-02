@@ -27,7 +27,7 @@ class CredentialsAuthStrategy extends LocalAuthStrategy {
         { projection: { roles: 1, password: 1, isActive: 1 },
           populate: { path: 'roles', select: { name: 1 } } }
         ).exec();
-      
+
       return !user || !user.comparePassword(password)
         ? done(new ForbiddenError('아이디와 비밀번호가 일치하지 않습니다.'), false)
         : done(null, user);
@@ -35,7 +35,7 @@ class CredentialsAuthStrategy extends LocalAuthStrategy {
       return done(error);
     }
   }
-  
+
   provideSecretKey() {
     throw new Error('No key is required for this type of auth');
   }

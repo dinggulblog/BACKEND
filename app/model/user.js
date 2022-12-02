@@ -1,4 +1,4 @@
-import { genSaltSync, hashSync, compareSync } from 'bcrypt';
+import { genSalt, hash, compareSync } from 'bcrypt';
 import mongoose from 'mongoose';
 
 import { RoleModel } from './role.js';
@@ -125,8 +125,8 @@ UserSchema.pre('save', async function (next) {
   // 패스워드 수정 시 salt 및 해시 재생성
   if (!this.isModified('password')) next();
   else {
-    const salt = genSaltSync(12);
-    const hashed = hashSync(this.password, salt);
+    const salt = await genSalt(10);
+    const hashed = await hash(this.password, salt);
     this.salt = salt;
     this.password = hashed;
     next();

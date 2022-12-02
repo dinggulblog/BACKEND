@@ -41,13 +41,10 @@ class DraftHandler {
           $set: { menu, category, title, content, isPublic, thumbnail },
           $addToSet: { images: { $each: images.map(image => image._id) } }
         },
-        { new: true,
-          lean: true,
-          upsert: true,
-          populate: { path: 'images', select: { serverFileName: 1, isActive: 1 }, match: { isActive: true } } }
+        { lean: true }
       ).exec();
 
-      callback.onSuccess({ draft });
+      callback.onSuccess({ draft, images });
     } catch (error) {
       callback.onError(error);
     }

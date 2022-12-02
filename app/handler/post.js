@@ -231,7 +231,7 @@ class PostHandler {
       const { menu, category, title, content, isPublic, thumbnail } = req.body;
 
       const images = await FileModel.createManyInstances(payload.sub, req.params.id, 'Draft', req.files)
-      const post = await PostModel.updateOne(
+      const post = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.sub },
         {
           $set: { menu, category, title, content, isPublic, thumbnail },
@@ -240,7 +240,7 @@ class PostHandler {
         { lean: true }
       ).exec();
 
-      callback.onSuccess({ post: { _id: req.params.id } });
+      callback.onSuccess({ post, images });
     } catch (error) {
       callback.onError(error);
     }
@@ -276,7 +276,7 @@ class PostHandler {
 
   async deletePostLike(req, payload, callback) {
     try {
-      const post = await PostModel.updateOne(
+      await PostModel.updateOne(
         { _id: req.params.id },
         { $pull: { likes: payload.sub } },
         { lean: true, timestamps: false }
@@ -329,7 +329,7 @@ class PostHandler {
         { skip: skip, limit: limit, lean: true }
       ).exec();
 
-      if (comments.length) matchQuery._id = { $in: comments.map(comment => comment.post) };
+      matchQuery._id = { $in: comments.map(comment => comment.post) };
     }
 
     if (loginUserId) {
