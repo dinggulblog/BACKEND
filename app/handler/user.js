@@ -92,21 +92,16 @@ class UserHandler {
   async updateUserProfileAvatar(req, payload, callback) {
     try {
       const avatar = await FileModel.createSingleInstance(payload.sub, payload.sub, 'User', req.file);
+      const profile = await UserModel.findOneAndUpdate(
+        { _id: payload.sub },
+        { $set: { avatar: avatar._id } },
+        { new: true,
+          lean: true,
+          projection: { avatar: 1, isActive: 1 },
+          populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
+      ).exec();
 
-      if (avatar._id) {
-        const profile = await UserModel.findOneAndUpdate(
-          { _id: payload.sub },
-          { $set: { avatar: avatar._id } },
-          { new: true,
-            lean: true,
-            projection: { avatar: 1, isActive: 1 },
-            populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
-        ).exec();
-
-        return callback.onSuccess({ profile });
-      }
-
-      throw new Error('업로드에 실패하였습니다.');
+      callback.onSuccess({ profile });
     } catch (error) {
       callback.onError(error);
     }
@@ -130,8 +125,10 @@ class UserHandler {
     try {
       const profile = await UserModel.findOneAndUpdate(
         { _id: payload.sub },
-        { $set: { avatar: undefined } },
-        { new: true, lean: true }
+        { $set: { avatar: null } },
+        { new: true,
+          lean: true,
+          projection: { avatar: 1, isActive: 1 } }
       ).exec();
 
       callback.onSuccess({ profile });

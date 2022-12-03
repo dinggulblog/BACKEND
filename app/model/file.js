@@ -1,7 +1,7 @@
-import mongoose from 'mongoose';
-
 import { accessSync, constants, unlinkSync } from 'fs';
 import { join } from 'path';
+import mongoose from 'mongoose';
+import InvalidRequestError from '../error/invalid-request.js';
 
 const FileSchema = new mongoose.Schema({
   uploader: {
@@ -61,7 +61,8 @@ const fileModel = mongoose.model('File', FileSchema);
  * @param {Object} file
  * @returns Single Document
  */
-fileModel.createSingleInstance = async function (uploader, belonging, belongingModel, file = {}) {
+fileModel.createSingleInstance = async function (uploader, belonging, belongingModel, file) {
+  if (!file || !file?.originalname) throw new InvalidRequestError('파일이 전송되지 않았습니다.');
   return await FileModel.create({
     uploader,
     belonging,
@@ -80,7 +81,8 @@ fileModel.createSingleInstance = async function (uploader, belonging, belongingM
  * @param {Object} file
  * @returns Array of Documents
  */
-fileModel.createManyInstances = async function (uploader, belonging, belongingModel, files = []) {
+fileModel.createManyInstances = async function (uploader, belonging, belongingModel, files) {
+  if (!files || !Array.isArray(files)) throw new InvalidRequestError('파일이 전송되지 않았거나 형식이 올바르지 않습니다.')
   return await FileModel.insertMany(files.map(file => ({
       uploader,
       belonging,
