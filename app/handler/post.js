@@ -131,8 +131,6 @@ class PostHandler {
         } }
       ]).exec();
 
-      console.log(posts)
-
       callback.onSuccess({ posts, maxPage });
     } catch (error) {
       callback.onError(error);

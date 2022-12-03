@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import unescape from 'unescape';
 
 const CommentSchema = new mongoose.Schema({
   commenter: {
@@ -49,15 +48,5 @@ CommentSchema.virtual('id')
 CommentSchema.virtual('childComments')
   .get(function () { return this._childComments })
   .set(function (value) { this._childComments = value });
-
-CommentSchema.post('find', async function (docs, next) {
-  try {
-    docs?.forEach(doc => doc.content = unescape(doc.content));
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
 
 export const CommentModel = mongoose.model('Comment', CommentSchema);

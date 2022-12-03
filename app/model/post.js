@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import unescape from 'unescape';
 
 import { CounterModel } from './counter.js';
 import { FileModel } from './file.js';
@@ -121,14 +120,6 @@ PostSchema.post('findOneAndUpdate', async function (doc, next) {
           { lean: true }
         ).exec()
       }
-    }
-
-    // 게시물 보내기 전에 HTML 이스케이프 되돌리기
-    if (doc.title) {
-      doc.title = unescape(doc.title, 'all')
-    }
-    if (doc.content) {
-      doc.content = unescape(doc.content, 'all')
     }
 
     next();

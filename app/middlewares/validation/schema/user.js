@@ -1,3 +1,5 @@
+import sanitizeHtml from 'sanitize-html';
+
 const USER_ACCOUNT_VALIDATION_SCHEMA = () => {
   return {
     'email': {
@@ -59,14 +61,14 @@ const USER_PROFILE_UPDATE_VALIDATION_SCHEMA = () => {
   return {
     'greetings': {
       escape: true,
-      isLength: { 
+      isLength: {
         options: [{ max: 1000 }],
         errorMessage: 'Greetings must be under 1000 chars long'
       }
     },
     'introduce': {
       escape: true,
-      isLength: { 
+      isLength: {
         options: [{ max: 10000 }],
         errorMessage: 'Introduce must be under 10000 chars long'
       }
@@ -74,7 +76,7 @@ const USER_PROFILE_UPDATE_VALIDATION_SCHEMA = () => {
   };
 };
 
-export default { 
+export default {
   USER_ACCOUNT_VALIDATION_SCHEMA,
   USER_ACCOUNT_UPDATE_VALIDATION_SCHEMA,
   USER_PROFILE_UPDATE_VALIDATION_SCHEMA

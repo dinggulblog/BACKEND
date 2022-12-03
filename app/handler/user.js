@@ -1,6 +1,7 @@
 import { UserModel } from '../model/user.js';
 import { FileModel } from '../model/file.js';
 import { getSecuredIPString } from '../util/util.js';
+import InvalidRequestError from '../error/invalid-request.js';
 
 class UserHandler {
   constructor() {
@@ -92,6 +93,9 @@ class UserHandler {
   async updateUserProfileAvatar(req, payload, callback) {
     try {
       const avatar = await FileModel.createSingleInstance(payload.sub, payload.sub, 'User', req.file);
+
+      if (!avatar) throw new InvalidRequestError('아바타가 업로드되지 않았습니다.');
+
       const profile = await UserModel.findOneAndUpdate(
         { _id: payload.sub },
         { $set: { avatar: avatar._id } },

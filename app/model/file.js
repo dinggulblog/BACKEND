@@ -62,15 +62,17 @@ const fileModel = mongoose.model('File', FileSchema);
  * @returns Single Document
  */
 fileModel.createSingleInstance = async function (uploader, belonging, belongingModel, file) {
-  if (!file || !file?.originalname) throw new InvalidRequestError('파일이 전송되지 않았습니다.');
-  return await FileModel.create({
-    uploader,
-    belonging,
-    belongingModel,
-    originalFileName: file.originalname,
-    serverFileName: file.filename,
-    size: file.size
-  });
+  if (file && file?.originalname) {
+    return await FileModel.create({
+      uploader,
+      belonging,
+      belongingModel,
+      originalFileName: file.originalname,
+      serverFileName: file.filename,
+      size: file.size
+    });
+  };
+  return null;
 };
 
 /**
@@ -82,16 +84,19 @@ fileModel.createSingleInstance = async function (uploader, belonging, belongingM
  * @returns Array of Documents
  */
 fileModel.createManyInstances = async function (uploader, belonging, belongingModel, files) {
-  if (!files || !Array.isArray(files)) throw new InvalidRequestError('파일이 전송되지 않았거나 형식이 올바르지 않습니다.')
-  return await FileModel.insertMany(files.map(file => ({
-      uploader,
-      belonging,
-      belongingModel,
-      originalFileName: file.originalname,
-      serverFileName: file.filename,
-      size: file.size
-    })
-  ));
+  if (Array.isArray(files)) {
+    return await FileModel.insertMany(files.map(
+      file => ({
+        uploader,
+        belonging,
+        belongingModel,
+        originalFileName: file.originalname,
+        serverFileName: file.filename,
+        size: file.size
+      })
+    ));
+  }
+  return [];
 };
 
 export const FileModel = fileModel;

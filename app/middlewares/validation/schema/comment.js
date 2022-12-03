@@ -1,4 +1,4 @@
-import escapeHtml from 'escape-html';
+import sanitizeHtml from 'sanitize-html';
 import { PostModel } from '../../../model/post.js';
 import { CommentModel } from '../../../model/comment.js';
 
@@ -39,7 +39,9 @@ const COMMENT_VALIDATION_SCHEMA = () => {
         errorMessage: 'Comment content must be between 1 and 1000 chars long'
       },
       customSanitizer: {
-        options: content => escapeHtml(content)
+        options: content => sanitizeHtml(content, {
+          exclusiveFilter: (frame) => frame.tag === 'script'
+        })
       }
     },
     'isPublic': {

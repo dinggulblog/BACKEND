@@ -1,5 +1,5 @@
+import sanitizeHtml from 'sanitize-html';
 import mongoose from 'mongoose';
-import escapeHtml from 'escape-html';
 
 const { ObjectId } = mongoose.Types;
 
@@ -25,7 +25,10 @@ const POST_VALIDATION_SCHEMA = () => {
         errorMessage: 'Post title must be between 1 and 150 chars long'
       },
       customSanitizer: {
-        options: title => escapeHtml(title)
+        options: title => sanitizeHtml(title, {
+          exclusiveFilter: (frame) => frame.tag === 'script',
+          textFilter: (value) => value.replace(/\\n|\s\s/g, '').trim()
+        })
       }
     },
     'content': {
@@ -34,7 +37,9 @@ const POST_VALIDATION_SCHEMA = () => {
         errorMessage: 'Post content must be under 10000 chars long'
       },
       customSanitizer: {
-        options: content => escapeHtml(content)
+        options: content => sanitizeHtml(content, {
+          exclusiveFilter: (frame) => frame.tag === 'script'
+        })
       }
     },
     'thumbnail': {

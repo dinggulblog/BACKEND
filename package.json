@@ -31,7 +31,6 @@
     "cors": "^2.8.5",
     "csurf": "^1.11.0",
     "dotenv": "^16.0.1",
-    "escape-html": "^1.0.3",
     "express": "~4.16.1",
     "express-session": "^1.17.3",
     "express-useragent": "^1.0.15",
@@ -49,8 +48,8 @@
     "passport-local": "^1.0.0",
     "passport-strategy": "^1.0.0",
     "redis": "^4.3.1",
+    "sanitize-html": "^2.7.3",
     "spdy": "^4.0.2",
-    "unescape": "^1.0.1",
     "winston": "^3.7.2"
   },
   "devDependencies": {
