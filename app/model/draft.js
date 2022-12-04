@@ -54,17 +54,28 @@ DraftSchema.index({ author: 1 });
 
 DraftSchema.pre('save', async function (next) {
   try {
-    const { matchedCount } = await DraftModel.updateMany(
+    await DraftModel.findOneAndDelete(
       { author: this.author },
-      { $set: { isActive: false } },
       { lean: true }
     ).exec();
 
-    if (matchedCount > 2) {
-      await DraftModel.findOneAndDelete(
-        { author: this.author, isActive: false },
-        { lean: true, sort: { _id: 1 } }
-      ).exec();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+DraftSchema.post('findOneAndDelete', async function (doc, next) {
+  try {
+    if (!doc || !doc.images) next();
+
+    for await (const image of doc.images) {
+      if (image) {
+        FileModel.findOneAndDelete(
+          { _id: image },
+          { lean: true }
+        ).exec();
+      }
     }
 
     next();
@@ -75,29 +86,11 @@ DraftSchema.pre('save', async function (next) {
 
 DraftSchema.post('updateOne', async function (doc, next) {
   try {
-    if (doc.modifiedCount && this._update?.$set?.isActive === false) {
-      await FileModel.updateMany(
-        { belonging: this._conditions._id },
-        { $set: { isActive: false } },
+    if (this._update?.$pull?.images) {
+      await FileModel.findOneAndDelete(
+        { _id: this._update.$pull.images },
         { lean: true }
       ).exec();
-    }
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-DraftSchema.post('findOneAndDelete', async function (doc, next) {
-  try {
-    for await (const image of doc.images) {
-      if (image) {
-        FileModel.findOneAndDelete(
-          { _id: image },
-          { lean: true }
-        ).exec();
-      }
     }
 
     next();

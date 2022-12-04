@@ -1,7 +1,4 @@
 import sanitizeHtml from 'sanitize-html';
-import mongoose from 'mongoose';
-
-const { ObjectId } = mongoose.Types;
 
 const POST_VALIDATION_SCHEMA = () => {
   return {

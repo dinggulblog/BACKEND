@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import { RoleModel } from '../app/model/role.js';
 import { MenuModel } from '../app/model/menu.js';
 
+export const ObjectId = mongoose.Types.ObjectId;
+
 export const connectMongoDB = async (url) => {
   if (process.env.NODE_ENV !== 'production') {
     mongoose.set('debug', true);
@@ -17,7 +19,7 @@ export const connectMongoDB = async (url) => {
 
 export const createDefaultDocuments = async () => {
   const roles = ['USER', 'MODERATOR', 'ADMIN'];
-  const menus = { 
+  const menus = {
     'sol': [
       { sub: 'dev', type: 'list', categories: ['기타', 'Javascript', 'Vue.js', 'CSS'] },
       { sub: 'daily', type: 'list', categories: ['기타', '일상', '햄찌', '게임'] },

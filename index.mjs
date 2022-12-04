@@ -13,7 +13,7 @@ import cookieParser from 'cookie-parser';
 import MongoStore from 'connect-mongo';
 import history from 'connect-history-api-fallback';
 
-import { connectMongoDB, createDefaultDocuments } from './config/mongo.js';
+import { ObjectId, connectMongoDB, createDefaultDocuments } from './config/mongo.js';
 import { sessionOptions } from './config/session-options.js';
 import { cspOptions } from './config/csp-options.js';
 import routes from './app/routes/index.js';
@@ -22,6 +22,7 @@ import responseManager from './app/manager/response.js';
 
 // Global variables
 globalThis.__dirname = resolve();
+globalThis.ObjectId = ObjectId;
 
 // Set config variables in .env
 if (process.env.NODE_ENV === 'production') {

@@ -333,7 +333,7 @@ class PostHandler {
     if (loginUserId) {
       matchQuery.$or = [
         { isPublic: true, isActive: true, ...matchQuery },
-        { isPublic: false, isActive: true, ...matchQuery, author: loginUserId }
+        { isPublic: false, isActive: true, ...matchQuery, author: ObjectId(loginUserId) }
       ];
     }
     else {
