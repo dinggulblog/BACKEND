@@ -60,17 +60,25 @@ const USER_ACCOUNT_UPDATE_VALIDATION_SCHEMA = () => {
 const USER_PROFILE_UPDATE_VALIDATION_SCHEMA = () => {
   return {
     'greetings': {
-      escape: true,
       isLength: {
-        options: [{ max: 1000 }],
-        errorMessage: 'Greetings must be under 1000 chars long'
+        options: [{ max: 300 }],
+        errorMessage: 'Greetings must be under 300 chars long'
+      },
+      customSanitizer: {
+        options: value => sanitizeHtml(value, {
+          exclusiveFilter: (frame) => frame.tag === 'script'
+        })
       }
     },
     'introduce': {
-      escape: true,
       isLength: {
         options: [{ max: 10000 }],
         errorMessage: 'Introduce must be under 10000 chars long'
+      },
+      customSanitizer: {
+        options: value => sanitizeHtml(value, {
+          exclusiveFilter: (frame) => frame.tag === 'script'
+        })
       }
     }
   };

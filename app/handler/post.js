@@ -205,12 +205,7 @@ class PostHandler {
               populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } },
             { path: 'images',
               select: { serverFileName: 1, isActive: 1 },
-              match: { isActive: true } },
-            { path: 'likes',
-              model: 'User',
-              select: { avatar: 1, nickname: 1, isActive: 1 },
-              perDocumentLimit: 10,
-              populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
+              match: { isActive: true } }
           ] }
         ).exec();
 
