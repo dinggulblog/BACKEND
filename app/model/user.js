@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 
 import { RoleModel } from './role.js';
 import { PostModel } from './post.js';
-import { FileModel } from './file.js';
+import { CommentModel } from './comment.js';
 import ForbiddenError from '../error/forbidden.js';
 
 const UserSchema = new mongoose.Schema({
@@ -159,7 +159,7 @@ UserSchema.post('findOneAndUpate', async function (doc, next) {
       // 계정이 비활성화 상태이고 활성화를 변경하는 것이 아닌 경우
       if (!query.$set || !Object.keys(query.$set).includes('isActive')) next(new ForbiddenError('본 계정은 비활성화 상태입니다. 관리자에게 문의하세요.'));
 
-      // 계정이 비활성화 되는 경우 -> 계정 명의로 된 게시물 및 파일 모두 비활성화
+      // 계정이 비활성화 되는 경우 -> 계정 명의로 된 게시물 및 댓글 모두 비활성화
       else if (query.$set?.isActive === false) {
         await PostModel.updateMany(
           { author: doc._id },
@@ -167,8 +167,8 @@ UserSchema.post('findOneAndUpate', async function (doc, next) {
           { lean: true }
         ).exec();
 
-        await FileModel.updateMany(
-          { uploader: doc._id },
+        await CommentModel.updateMany(
+          { commenter: doc._id },
           { $set: { isActive: false } },
           { lean: true }
         ).exec();

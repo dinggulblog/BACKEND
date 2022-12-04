@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 import { CounterModel } from './counter.js';
+import { DraftModel } from './draft.js';
 import { FileModel } from './file.js';
 import ForbiddenError from '../error/forbidden.js';
 
@@ -80,18 +81,27 @@ PostSchema.pre('save', async function (next) {
   }
 });
 
-// 게시물이 정상적으로 저장되면, 게시물에 포함될 File Documents의 belonging field를 게시물 ID로 수정하는 훅
+// 게시물이 정상적으로 저장되면, 게시물에 포함될 File Documents의 belonging field를 게시물 ID로 수정 및
+// 임시저장된 글 삭제
 PostSchema.post('save', async function (doc, next) {
   try {
-    if (this.isNew && doc.images.length) {
-      for await (const image of doc.images) {
-        FileModel.updateOne(
-          { _id: image },
-          { $set: { belonging: doc._id, belongingModel: 'Post' } },
-          { lean: true }
-        ).exec()
+    if (this.isNew) {
+      if (doc.images.length) {
+        for await (const image of doc.images) {
+          FileModel.updateOne(
+            { _id: image },
+            { $set: { belonging: doc._id, belongingModel: 'Post' } },
+            { lean: true }
+          ).exec()
+        }
       }
+
+      await DraftModel.findOneAndDelete(
+        { author: doc.author },
+        { lean: true }
+      ).exec();
     }
+
     next();
   } catch (error) {
     next(error);
@@ -120,23 +130,6 @@ PostSchema.post('findOneAndUpdate', async function (doc, next) {
           { lean: true }
         ).exec()
       }
-    }
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-// 게시물이 비활성화 된 경우 이미지 비활성화 CASCADE
-PostSchema.post('updateOne', async function (doc, next) {
-  try {
-    if (doc.modifiedCount && this._update?.$set?.isActive === false) {
-      await FileModel.updateMany(
-        { belonging: this._conditions._id },
-        { $set: { isActive: false } },
-        { lean: true }
-      ).exec();
     }
 
     next();
