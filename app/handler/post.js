@@ -326,17 +326,14 @@ class PostHandler {
     }
 
     if (loginUserId) {
-      matchQuery.$or = [
+      return { $or: [
         { isPublic: true, isActive: true, ...matchQuery },
         { isPublic: false, isActive: true, ...matchQuery, author: ObjectId(loginUserId) }
-      ];
+      ] }
     }
     else {
-      matchQuery.isPublic = true;
-      matchQuery.isActive = true;
+      return { isPublic: true, isActive: true, ...matchQuery }
     }
-
-    return matchQuery;
   }
 
   async #getSearchQuery(queries) {
