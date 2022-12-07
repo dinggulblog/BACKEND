@@ -1,17 +1,14 @@
 import { MenuModel } from '../model/menu.js';
 
-import InvalidRequestError from '../error/invalid-request.js';
-import NotFoundError from '../error/not-found.js';
-
 class MenuHandler {
   constructor() {
   }
 
   async createMenu(req, callback) {
     try {
-      const { main, sub, categories } = req.body;
+      const { main, sub, type, categories } = req.body;
 
-      const menu = await MenuModel.create({ main, sub, categories });
+      const menu = await MenuModel.create({ main, sub, type, categories });
 
       callback.onSuccess({ menu });
     } catch (error) {
@@ -31,10 +28,10 @@ class MenuHandler {
 
   async updateMenu(req, payload, callback) {
     try {
-      const { main, sub, categories } = req.body;
+      const { main, sub, type, categories } = req.body;
       const menu = await MenuModel.findOneAndUpdate(
         { _id: req.params.id },
-        { $set: { main, sub }, $addToSet: { categories } },
+        { $set: { main, sub, type }, $addToSet: { categories } },
         { new: true, lean: true }
       ).exec();
 
@@ -55,20 +52,6 @@ class MenuHandler {
     } catch (error) {
       callback.onError(error);
     }
-  }
-
-  #getUpdateOptions(req) {
-    const option = { $set: {}, $addToSet: {} }
-    for (const [key, value] of Object.entries(req.body)) {
-      if (typeof value === 'string') {
-        option.$set[key] = value
-      }
-      else if (Array.isArray(value)) {
-        option.$addToSet[key] = { $each: value }
-      }
-    }
-    
-    return option
   }
 }
 

@@ -35,13 +35,8 @@ class JwtAuthStrategy extends BaseAuthStrategy {
       throw new TypeError('JwtAuthStrategy requires a public key');
     }
 
-    this._extractAccessToken = options.extractAccessToken;
-    if (!this._extractAccessToken) {
-      throw new TypeError('JwtAuthStrategy requires a function to parse jwt from request header');
-    }
-
-    this._extractRefreshToken = options.extractRefreshToken;
-    if (!this._extractRefreshToken) {
+    this._extractToken = options.extractToken;
+    if (!this._extractToken) {
       throw new TypeError('JwtAuthStrategy requires a function to parse jwt from request cookies');
     }
 
@@ -62,8 +57,8 @@ class JwtAuthStrategy extends BaseAuthStrategy {
 
   async authenticate(req, callback) {
     const ecPublicKey = await importSPKI(this._publicKey, 'EdDSA');
-    const refreshToken = this._extractRefreshToken(req);
-    const accessToken = this._extractAccessToken(req);
+    const refreshToken = this._extractToken('refreshToken', req);
+    const accessToken = this._extractToken('accessToken', req);
 
     if (!ecPublicKey) {
       return callback.onFailure(new ServerError('서버 에러: JWT 인증에 사용할 공개키가 존재하지 않음'))

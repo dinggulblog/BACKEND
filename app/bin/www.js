@@ -3,10 +3,12 @@
 /**
  * Module dependencies.
  */
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync, mkdirSync } from 'fs';
 import app from '../../index.mjs';
 import http from 'http';
 import spdy from 'spdy';
+
+import { connectMongoDB, createDefaultDocuments } from '../../config/mongo.js';
 
 /**
  * Get port from environment and store in Express.
@@ -32,6 +34,17 @@ else {
   http.createServer(app)
     .listen(port, '0.0.0.0', () => console.log('\x1b[33m%s\x1b[0m', app.get('port') + ' Port is listening!'))
     .on('error', onError);
+}
+
+// Connect to MongoDB server
+connectMongoDB(process.env.MONGO_CONNECT_URL).then(createDefaultDocuments);
+
+// Create an upload directory
+try {
+  readdirSync('uploads');
+} catch (error) {
+  console.error('Create missing directory: "uploads"');
+  mkdirSync('uploads');
 }
 
 /**

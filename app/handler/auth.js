@@ -13,12 +13,9 @@ class AuthHandler {
     if (user) {
       try {
         const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user));
-        const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload());
+        const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(user));
 
-        req.session.refreshToken = refreshToken;
-        req.session.uid = user._id;
-
-        callback.onSuccess({ accessToken });
+        callback.onSuccess({ accessToken, refreshToken })
       } catch (error) {
         callback.onError(error);
       }
@@ -29,46 +26,48 @@ class AuthHandler {
 
   async issueRenewedToken(req, payload, callback) {
     try {
+      if (!payload) throw new JwtError('토큰이 삭제되거나 기간이 만료되었습니다. 다시 로그인 해 주세요.');
+
       const user = await UserModel.findOne(
-        { _id: req.session.uid },
+        { _id: payload.userId },
         { roles: 1, isActive: 1 },
         { lean: true,
           populate: { path: 'roles', select: { name: 1 } } }
       ).exec();
 
-      if (!user) {
-        throw new JwtError('세션 정보가 삭제되었거나 찾을 수 없습니다. 다시 로그인 해 주세요.');
-      }
-
       const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user));
-      const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload());
+      const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(user));
 
-      req.session.refreshToken = refreshToken;
-
-      callback.onSuccess({ accessToken });
+      callback.onSuccess({ accessToken, refreshToken });
     } catch (error) {
       callback.onError(error);
     }
   }
 
   revokeToken(req, payload, callback) {
-    req.session.destroy();
-    callback.onSuccess({}, 'Token has been successfully revoked');
+    try {
+      callback.onSuccess({ accessToken: null, refreshToken: null }, {}, 'Token has been successfully revoked');
+    } catch (error) {
+      callback.onError(error);
+    }
   }
 
   _provideAccessTokenPayload(user) {
     return {
-      sub: user._id,
+      userId: user._id,
+      sub: 'accessToken',
       iss: jwtOptions.issuer,
       aud: jwtOptions.audience,
-      exp: Math.floor(Date.now() / 1000) + (60 * 60), // 60 min
+      exp: Math.floor(Date.now() / 1000) + (3600 * 2), // 2 hours
       nbf: Math.floor(Date.now() / 1000),
       roles: [...user.roles].map(role => role.name)
     };
   }
 
-  _provideRefreshTokenPayload() {
+  _provideRefreshTokenPayload(user) {
     return {
+      userId: user._id,
+      sub: 'refreshToken',
       iss: jwtOptions.issuer,
       aud: jwtOptions.audience,
       exp: Math.floor(Date.now() / 1000) + (86400 * 14), // 14 days

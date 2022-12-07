@@ -36,7 +36,7 @@ class ResponseManager {
         this.respondWithErrorData(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error', error.data);
       }
     };
-  }  
+  }
 
   static getDefaultResponseHandlerError(res, successCallback) {
     return {
@@ -71,7 +71,7 @@ class ResponseManager {
     }
   }
 
-  static getCookieResponseHandlerReset(res) {
+  static getCookieResponseHandlerClear(res) {
     return {
       onSuccess: (cookies, data, message, code) => {
         this.respondWithClearCookies(res, code || this.HTTP_STATUS.OK, cookies, data, message);
@@ -87,7 +87,7 @@ class ResponseManager {
     response.success = true;
     response.data = data;
     response.message = message;
-    
+
     response.links = links;
     res.status(code).json(response);
   }
@@ -95,24 +95,32 @@ class ResponseManager {
   static respondWithCookies(res, code, cookies, data = {}, message = '', links = []) {
     const response = Object.assign({}, BasicResponse);
     const cookieNames = Object.keys(cookies);
+
     response.success = true;
     response.data = data;
     response.message = message;
     response.links = links;
-    
-    cookieNames.forEach(name => res.cookie(name, cookies[name], cookieOption(14 * 24 * 60 * 60 * 1000)));
+    cookieNames.forEach(name => name === 'accessToken'
+      ? res.cookie(name, cookies[name], cookieOption(accessTokenMaxAge))
+      : res.cookie(name, cookies[name], cookieOption(refreshTokenMaxAge))
+    );
+
     res.status(code).json(response);
   }
 
   static respondWithClearCookies(res, code, cookies, data = {}, message = '', links = []) {
     const response = Object.assign({}, BasicResponse);
     const cookieNames = Object.keys(cookies);
+
     response.success = true;
     response.data = data;
     response.message = message;
     response.links = links;
+    cookieNames.forEach(name => name === 'accessToken'
+      ? res.clearCookie(name, cookieOption(accessTokenMaxAge))
+      : res.clearCookie(name, cookieOption(refreshTokenMaxAge))
+    );
 
-    cookieNames.forEach(name => res.clearCookie(name, cookieOption(14 * 24 * 60 * 60 * 1000)));
     res.status(code).json(response);
   }
 

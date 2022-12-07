@@ -64,11 +64,7 @@ const USER_PROFILE_UPDATE_VALIDATION_SCHEMA = () => {
         options: [{ max: 300 }],
         errorMessage: 'Greetings must be under 300 chars long'
       },
-      customSanitizer: {
-        options: value => sanitizeHtml(value, {
-          exclusiveFilter: (frame) => frame.tag === 'script'
-        })
-      }
+      optional: { options: { nullable: true } }
     },
     'introduce': {
       isLength: {
@@ -76,9 +72,9 @@ const USER_PROFILE_UPDATE_VALIDATION_SCHEMA = () => {
         errorMessage: 'Introduce must be under 10000 chars long'
       },
       customSanitizer: {
-        options: value => sanitizeHtml(value, {
-          exclusiveFilter: (frame) => frame.tag === 'script'
-        })
+        options: value => value !== undefined
+          ? sanitizeHtml(value, { exclusiveFilter: (frame) => frame.tag === 'script' })
+          : undefined
       }
     }
   };

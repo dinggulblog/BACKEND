@@ -7,7 +7,7 @@ class DraftHandler {
 
   async createDraft(req, payload, callback) {
     try {
-      const draft = await new DraftModel({ author: payload.sub }).save({ validateBeforeSave: false });
+      const draft = await new DraftModel({ author: payload.userId }).save({ validateBeforeSave: false });
 
       callback.onSuccess({ draft });
     } catch (error) {
@@ -18,7 +18,7 @@ class DraftHandler {
   async getDraft(req, payload, callback) {
     try {
       const draft = await DraftModel.findOne(
-        { author: payload.sub, isActive: true },
+        { author: payload.userId, isActive: true },
         null,
         { lean: true,
           populate: { path: 'images', select: { serverFileName: 1 } } }
@@ -34,9 +34,9 @@ class DraftHandler {
     try {
       const { menu, category, title, content, isPublic, thumbnail } = req.body;
 
-      const images = await FileModel.createManyInstances(payload.sub, req.params.id, 'Draft', req.files)
+      const images = await FileModel.createManyInstances(payload.userId, req.params.id, 'Draft', req.files)
       const draft = await DraftModel.findOneAndUpdate(
-        { _id: req.params.id, author: payload.sub },
+        { _id: req.params.id, author: payload.userId },
         {
           $set: { menu, category, title, content, isPublic, thumbnail },
           $addToSet: { images: { $each: images.map(image => image._id) } }
@@ -53,7 +53,7 @@ class DraftHandler {
   async deleteDraft(req, payload, callback) {
     try {
       await DraftModel.findOneAndDelete(
-        { _id: req.params.id, author: payload.sub },
+        { _id: req.params.id, author: payload.userId },
         { lean: true }
       ).exec();
 
@@ -66,7 +66,7 @@ class DraftHandler {
   async deleteDraftFile(req, payload, callback) {
     try {
       const { modifiedCount } = await DraftModel.updateOne(
-        { _id: req.params.id, author: payload.sub },
+        { _id: req.params.id, author: payload.userId },
         { $pull: { images: req.body.image } },
         { new: true, lean: true }
       ).exec();

@@ -11,7 +11,7 @@ class PostHandler {
     try {
       const { menu, category, title, content, isPublic, thumbnail, images } = req.body;
       const post = await new PostModel({
-        author: payload.sub,
+        author: payload.userId,
         menu,
         category,
         title,
@@ -60,16 +60,15 @@ class PostHandler {
         { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
         { $project: {
           postNum: 1,
-          author: { _id: 1, nickname: 1 },
+          author: { nickname: 1 },
           menu: 1,
           category: 1,
           title: 1,
           content: { $substrCP: ['$content', 0, 200] },
-          thumbnail: { _id: 1, serverFileName: 1 },
+          thumbnail: { serverFileName: 1 },
           isPublic: 1,
           createdAt: 1,
           updatedAt: 1,
-          likes: 1,
           viewCount: 1,
           likeCount: { $size: '$likes' },
           commentCount: { $size: '$comments' }
@@ -86,7 +85,7 @@ class PostHandler {
     try {
       const { query: { skip, limit } } = req;
 
-      const matchQuery = await this.#getMatchQuery(req.query, payload.sub);
+      const matchQuery = await this.#getMatchQuery(req.query, payload.userId);
       const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit);
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
@@ -141,7 +140,7 @@ class PostHandler {
     try {
       const { query: { skip, limit } } = req;
 
-      const matchQuery = await this.#getMatchQuery(req.query, payload.sub)
+      const matchQuery = await this.#getMatchQuery(req.query, payload.userId)
       const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit);
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
@@ -179,7 +178,6 @@ class PostHandler {
           isPublic: 1,
           createdAt: 1,
           updatedAt: 1,
-          likes: 1,
           viewCount: 1,
           likeCount: { $size: '$likes' },
           commentCount: { $size: '$comments' }
@@ -223,9 +221,9 @@ class PostHandler {
     try {
       const { menu, category, title, content, isPublic, thumbnail } = req.body;
 
-      const images = await FileModel.createManyInstances(payload.sub, req.params.id, 'Draft', req.files)
+      const images = await FileModel.createManyInstances(payload.userId, req.params.id, 'Draft', req.files)
       const post = await PostModel.findOneAndUpdate(
-        { _id: req.params.id, author: payload.sub },
+        { _id: req.params.id, author: payload.userId },
         {
           $set: { menu, category, title, content, isPublic, thumbnail },
           $addToSet: { images: { $each: images.map(image => image._id) } }
@@ -243,7 +241,7 @@ class PostHandler {
     try {
       await PostModel.updateOne(
         { _id: req.params.id },
-        { $addToSet: { likes: payload.sub } },
+        { $addToSet: { likes: payload.userId } },
         { lean: true, timestamps: false }
       ).exec();
 
@@ -256,7 +254,7 @@ class PostHandler {
   async deletePost(req, payload, callback) {
     try {
       await PostModel.updateOne(
-        { _id: req.params.id, author: payload.sub },
+        { _id: req.params.id, author: payload.userId },
         { $set: { isActive: false } },
         { new: true, lean: true }
       ).exec();
@@ -271,7 +269,7 @@ class PostHandler {
     try {
       await PostModel.updateOne(
         { _id: req.params.id },
-        { $pull: { likes: payload.sub } },
+        { $pull: { likes: payload.userId } },
         { lean: true, timestamps: false }
       ).exec();
 
@@ -284,7 +282,7 @@ class PostHandler {
   async deletePostFile(req, payload, callback) {
     try {
       const { modifiedCount } = await PostModel.updateOne(
-        { _id: req.params.id, author: payload.sub },
+        { _id: req.params.id, author: payload.userId },
         { $pull: { images: req.body.image } },
         { lean: true }
       ).exec();
@@ -304,10 +302,13 @@ class PostHandler {
 
   async #getMatchQuery(queries, loginUserId = null) {
     const matchQuery = {};
-    const { menu, category, filter, userId, skip, limit } = queries;
+    const { menu, categories, category, filter, userId, skip, limit } = queries;
 
     if (Array.isArray(menu) && menu.length) {
       matchQuery.menu = { $in: menu };
+    }
+    if (categories) {
+      matchQuery.categories = { $in: categories, }
     }
     if (category) {
       matchQuery.category = category;
@@ -328,7 +329,7 @@ class PostHandler {
     if (loginUserId) {
       return { $or: [
         { isPublic: true, isActive: true, ...matchQuery },
-        { isPublic: false, isActive: true, ...matchQuery, author: ObjectId(loginUserId) }
+        { author: ObjectId(loginUserId), isPublic: false, isActive: true, ...matchQuery }
       ] }
     }
     else {

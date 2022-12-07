@@ -1,5 +1,3 @@
-import sanitizeHtml from 'sanitize-html';
-
 const POST_VALIDATION_SCHEMA = () => {
   return {
     'menu': {
@@ -17,26 +15,17 @@ const POST_VALIDATION_SCHEMA = () => {
       toBoolean: true
     },
     'title': {
+      trim: true,
       isLength: {
         options: [{ min: 1, max: 150 }],
         errorMessage: 'Post title must be between 1 and 150 chars long'
-      },
-      customSanitizer: {
-        options: title => sanitizeHtml(title, {
-          exclusiveFilter: (frame) => frame.tag === 'script',
-          textFilter: (value) => value.replace(/\\n|\s\s/g, '').trim()
-        })
       }
     },
     'content': {
+      trim: true,
       isLength: {
         options: [{ max: 10000 }],
         errorMessage: 'Post content must be under 10000 chars long'
-      },
-      customSanitizer: {
-        options: content => sanitizeHtml(content, {
-          exclusiveFilter: (frame) => frame.tag === 'script'
-        })
       }
     },
     'thumbnail': {
@@ -100,14 +89,16 @@ const POSTS_PAGINATION_SCHEMA = () => {
 const POSTS_SEARCH_SCHEMA = () => {
   return {
     'searchType': {
+      trim: true,
       optional: { options: { nullable: true } }
     },
     'searchText': {
-      optional: { options: { nullable: true } },
+      trim: true,
       isString: {
         options: [{ min: 2, max: 30 }],
         errorMessage: 'Search text must be between 2 and 30 chars long'
-      }
+      },
+      optional: { options: { nullable: true } }
     }
   };
 };

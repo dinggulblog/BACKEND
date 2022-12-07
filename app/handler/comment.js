@@ -8,7 +8,7 @@ class CommentHandler {
   async createComment(req, payload, callback) {
     try {
       const comment = await CommentModel.create({
-        commenter: payload.sub,
+        commenter: payload.userId,
         post: req.params.postId,
         parentComment: req.params?.parentId,
         content: req.body.content,
@@ -29,9 +29,7 @@ class CommentHandler {
         {
           lean: true,
           timestamps: false,
-          sort: {
-            createdAt: 1
-          },
+          sort: { createdAt: 1 },
           populate: {
             path: 'commenter',
             select: { avatar: 1, nickname: 1, isActive: 1 },
@@ -50,10 +48,8 @@ class CommentHandler {
     try {
       const { content, isPublic, isActive } = req.body;
       await CommentModel.updateOne(
-        { _id: req.params.id, commenter: payload.sub },
-        { $set: {
-          content, isPublic, isActive
-        } },
+        { _id: req.params.id, commenter: payload.userId },
+        { $set: { content, isPublic, isActive } },
         { lean: true }
       ).exec();
 
@@ -66,7 +62,7 @@ class CommentHandler {
   async deleteComment(req, payload, callback) {
     try {
       await CommentModel.deleteOne(
-        { _id: req.params.id, commenter: payload.sub },
+        { _id: req.params.id, commenter: payload.userId },
         { lean: true }
       ).exec();
 

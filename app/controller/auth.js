@@ -10,7 +10,7 @@ class AuthController extends BaseController {
   // Request token by credentials
   create(req, res, next) {
     this.authenticate(req, res, next, (user) => {
-      this._authHandler.issueNewToken(req, user, this._responseManager.getDefaultResponseHandler(res));
+      this._authHandler.issueNewToken(req, user, this._responseManager.getCookieResponseHandler(res));
     });
   }
 
@@ -18,7 +18,7 @@ class AuthController extends BaseController {
   update(req, res, next) {
     this._passport.authenticate('jwt-auth', {
       onVerified: (token, payload) => {
-        this._authHandler.issueRenewedToken(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        this._authHandler.issueRenewedToken(req, payload, this._responseManager.getCookieResponseHandler(res));
       },
       onFailure: (error) => {
         this._responseManager.respondWithError(res, error.status ?? 419, error.message);
@@ -30,7 +30,7 @@ class AuthController extends BaseController {
   delete(req, res, next) {
     this._passport.authenticate('jwt-auth', {
       onVerified: (token, payload) => {
-        this._authHandler.revokeToken(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        this._authHandler.revokeToken(req, payload, this._responseManager.getCookieResponseHandlerClear(res));
       },
       onFailure: (error) => {
         this._responseManager.respondWithError(res, error.status ?? 419, error.message);

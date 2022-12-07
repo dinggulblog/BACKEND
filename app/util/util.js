@@ -4,14 +4,14 @@ import { join } from 'path';
 /**
  * Convert a flat array to tree structure array
  * @param {Array} array
- * @param {String} idFieldName 
- * @param {String} parentIdFieldName 
- * @param {String} childrenFieldName 
+ * @param {String} idFieldName
+ * @param {String} parentIdFieldName
+ * @param {String} childrenFieldName
  * @returns An array of tree structure
  */
 export const convertFlatToTree = (array = [], idFieldName, parentIdFieldName, childrenFieldName) => {
   const cloned = array.slice();
-  
+
     for (let i = cloned.length - 1; i > -1 ; i--) {
       const parentId = cloned[i][parentIdFieldName];
       if (parentId) {
@@ -53,6 +53,6 @@ export const deleteMissingFiles = (fileObject) => {
 }
 
 export const getSecuredIPString = (ip = '') => {
-  const IP = ip.split();
+  const IP = ip.split('.');
   return IP.shift() + '.' + IP.shift() + '.' + '***.***';
 }

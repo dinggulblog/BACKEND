@@ -6,7 +6,9 @@ const menuController = new MenuController();
 
 router.route('/')
   .get(menuController.getAll)
-  .post(menuController.create)
+  .post(menuController.create);
+
+router.route('/:id')
   .put(menuController.update)
   .delete(menuController.delete);
 

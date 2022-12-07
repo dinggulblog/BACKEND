@@ -1,6 +1,5 @@
 import passport from 'passport';
 import { SignJWT, importPKCS8 } from 'jose';
-import { ExtractJwt } from 'passport-jwt';
 import { readFileSync } from 'fs';
 
 import { RevokedTokenModel } from '../model/revoked-token.js';
@@ -40,18 +39,20 @@ class AuthManager extends BaseAutoBindedClass {
     }
   }
 
-  extractAccessToken(req) {
-    return ExtractJwt.fromAuthHeaderAsBearerToken()(req);
-  }
-
-  extractRefreshToken(req) {
-    return req.session?.refreshToken;
+  extractToken(name, req) {
+    let token = null;
+    if (req && req.signedCookies && req.signedCookies[name]) {
+      token = req.signedCookies[name];
+    }
+    else if (req && req.cookies && req.cookies[name]) {
+      token = req.cookies[name];
+    }
+    return token;
   }
 
   _provideJwtOptions() {
     const options = {};
-    options.extractAccessToken = this.extractAccessToken;
-    options.extractRefreshToken = this.extractRefreshToken;
+    options.extractToken = this.extractToken;
     options.privateKey = this._provideJwtPrivateKey();
     options.publicKey = this._provideJwtPublicKey();
     options.issuer = jwtOptions.issuer;

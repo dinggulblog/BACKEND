@@ -35,10 +35,12 @@ const UserSchema = new mongoose.Schema({
     unique: true
   },
   greetings: {
-    type: String
+    type: String,
+    trim: true
   },
   introduce: {
-    type: String
+    type: String,
+    trim: true
   },
   lastLoginIP: {
     type: String
@@ -61,6 +63,8 @@ const UserSchema = new mongoose.Schema({
   },
   versionKey: false
 });
+
+UserSchema.index( { expiredAt: 1 }, { expireAfterSeconds: 0 } );
 
 UserSchema.virtual('id')
   .get(function () { return this._id });
@@ -125,7 +129,7 @@ UserSchema.pre('save', async function (next) {
   // 패스워드 수정 시 salt 및 해시 재생성
   if (!this.isModified('password')) next();
   else {
-    const salt = await genSalt(10);
+    const salt = await genSalt(8);
     const hashed = await hash(this.password, salt);
     this.salt = salt;
     this.password = hashed;
@@ -146,7 +150,7 @@ UserSchema.post('findOne', function (doc, next) {
   }
 });
 
-UserSchema.post('findOneAndUpate', async function (doc, next) {
+UserSchema.post('findOneAndUpdate', async function (doc, next) {
   try {
     const query = this.getUpdate();
 
@@ -157,7 +161,7 @@ UserSchema.post('findOneAndUpate', async function (doc, next) {
     else {
 
       // 계정이 비활성화 상태이고 활성화를 변경하는 것이 아닌 경우
-      if (!query.$set || !Object.keys(query.$set).includes('isActive')) next(new ForbiddenError('본 계정은 비활성화 상태입니다. 관리자에게 문의하세요.'));
+      if (!query?.$set || !Object.keys(query.$set).includes('isActive')) next(new ForbiddenError('본 계정은 비활성화 상태입니다. 관리자에게 문의하세요.'));
 
       // 계정이 비활성화 되는 경우 -> 계정 명의로 된 게시물 및 댓글 모두 비활성화
       else if (query.$set?.isActive === false) {
@@ -172,13 +176,9 @@ UserSchema.post('findOneAndUpate', async function (doc, next) {
           { $set: { isActive: false } },
           { lean: true }
         ).exec();
-
-        next();
       }
 
-      else {
-        next();
-      }
+      next();
     }
   } catch (error) {
     next(error);

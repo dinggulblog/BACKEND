@@ -2,29 +2,34 @@ const MENU_VALIDATION_SCHEMA = () => {
   return {
     'main': {
       trim: true,
-      toString: true,
-      isLength: {
-        options: [{ min: 1, max: 30 }],
-        errorMessage: 'Menu title must be between 1 and 30 chars long'
-      },
+      matches: {
+        options: [/^[\.|\w|가-힣]{2,20}$/],
+        errorMessage: 'Main menu must consist of dots and characters between 2 and 20 in length'
+      }
     },
     'sub': {
       trim: true,
-      toString: true,
-      isLength: {
-        options: [{ min: 1, max: 30 }],
-        errorMessage: 'Menu subject must be between 1 and 30 chars long'
+      matches: {
+        options: [/^[\.|\w|가-힣]{2,20}$/],
+        errorMessage: 'Sub menu must consist of dots and characters between 2 and 20 in length'
+      }
+    },
+    'type': {
+      trim: true,
+      isIn: {
+        options: [['list', 'card', 'slide']],
+        errorMessage: 'Available type words: list, card, slide'
       },
-      optional: { options: { nullable: true } }
+      optional: { options: { nullable: true } },
     },
     'categories': {
       toArray: true
     },
     'categories.*': {
-      toString: true,
-      isLength: {
-        options: [{ min: 1, max: 30 }],
-        errorMessage: 'Menu category must be between 1 and 30 chars long'
+      trim: true,
+      matches: {
+        options: [/^[\.|\w|가-힣]{1,20}$/],
+        errorMessage: 'Category must consist of dots and characters between 2 and 20 in length'
       },
       optional: { options: { nullable: true } }
     }

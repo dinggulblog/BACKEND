@@ -1,4 +1,4 @@
-import { checkSchema, query } from 'express-validator';
+import { checkSchema, param } from 'express-validator';
 import MenuSchema from './schema/menu.js';
 
 const createMenuRules = [
@@ -6,14 +6,12 @@ const createMenuRules = [
 ];
 
 const updateMenuRules = [
-  query('id').optional({ options: { nullable: true } }).isMongoId(),
-  query('title').optional({ options: { nullable: true } }).toString(),
+  param('id').isMongoId(),
   checkSchema(MenuSchema.MENU_VALIDATION_SCHEMA(), ['body'])
 ];
 
 const deleteMenuRules = [
-  query('id').optional({ options: { nullable: true } }).isMongoId(),
-  query('title').optional({ options: { nullable: true } }).toString()
+  param('id').isMongoId(),
 ];
 
 export default {
