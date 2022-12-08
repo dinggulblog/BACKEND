@@ -139,6 +139,7 @@ PostSchema.post('findOneAndUpdate', async function (doc, next) {
 });
 
 // 게시물이 삭제된 경우 이미지 삭제 CASCADE
+/* 현재 사용 안함
 PostSchema.post('findOneAndDelete', async function (doc, next) {
   try {
     for await (const image of doc.images) {
@@ -155,5 +156,6 @@ PostSchema.post('findOneAndDelete', async function (doc, next) {
     next(error);
   }
 });
+*/
 
 export const PostModel = mongoose.model('Post', PostSchema);

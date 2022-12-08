@@ -42,7 +42,8 @@ class PostHandler {
           from: 'users',
           localField: 'author',
           foreignField: '_id',
-          as: 'author'
+          as: 'author',
+          pipeline: [{ $match: { isActive: true } }]
         } },
         { $unwind: '$author' },
         { $lookup: {
@@ -61,15 +62,17 @@ class PostHandler {
         { $project: {
           postNum: 1,
           author: { nickname: 1 },
+          thumbnail: { serverFileName: 1 },
           menu: 1,
           category: 1,
           title: 1,
           content: { $substrCP: ['$content', 0, 200] },
-          thumbnail: { serverFileName: 1 },
+          isActive: 1,
           isPublic: 1,
           createdAt: 1,
           updatedAt: 1,
           viewCount: 1,
+          liked: { $literal: false },
           likeCount: { $size: '$likes' },
           commentCount: { $size: '$comments' }
         } }
@@ -96,7 +99,8 @@ class PostHandler {
           from: 'users',
           localField: 'author',
           foreignField: '_id',
-          as: 'author'
+          as: 'author',
+          pipeline: [{ $match: { isActive: true } }]
         } },
         { $unwind: '$author' },
         { $lookup: {
@@ -114,17 +118,17 @@ class PostHandler {
         { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
         { $project: {
           postNum: 1,
-          author: { _id: 1, nickname: 1 },
+          author: { nickname: 1 },
+          thumbnail: { serverFileName: 1 },
           menu: 1,
           category: 1,
           title: 1,
           content: { $substrCP: ['$content', 0, 200] },
-          thumbnail: { _id: 1, serverFileName: 1 },
           isPublic: 1,
           createdAt: 1,
           updatedAt: 1,
-          likes: 1,
           viewCount: 1,
+          liked: { $in: [ObjectId(payload.userId), '$likes'] },
           likeCount: { $size: '$likes' },
           commentCount: { $size: '$comments' }
         } }
@@ -169,16 +173,17 @@ class PostHandler {
         { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
         { $project: {
           postNum: 1,
-          author: { _id: 1, nickname: 1 },
+          author: { nickname: 1 },
+          thumbnail: { serverFileName: 1 },
           menu: 1,
           category: 1,
           title: 1,
           content: { $substrCP: ['$content', 0, 200] },
-          thumbnail: { _id: 1, serverFileName: 1 },
           isPublic: 1,
           createdAt: 1,
           updatedAt: 1,
           viewCount: 1,
+          liked: { $in: [ObjectId(payload.userId), '$likes'] },
           likeCount: { $size: '$likes' },
           commentCount: { $size: '$comments' }
         } }
@@ -221,14 +226,14 @@ class PostHandler {
     try {
       const { menu, category, title, content, isPublic, thumbnail } = req.body;
 
-      const images = await FileModel.createManyInstances(payload.userId, req.params.id, 'Draft', req.files)
+      const images = await FileModel.createManyInstances(payload.userId, req.params.id, 'Post', req.files)
       const post = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.userId },
         {
           $set: { menu, category, title, content, isPublic, thumbnail },
           $addToSet: { images: { $each: images.map(image => image._id) } }
         },
-        { lean: true }
+        { new: true, lean: true }
       ).exec();
 
       callback.onSuccess({ post, images });
