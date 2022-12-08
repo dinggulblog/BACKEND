@@ -204,7 +204,7 @@ class PostHandler {
           lean: true,
           populate: [
             { path: 'author',
-              select: { avatar: 1, nickname: 1, greetings: 1, isActive: 1 },
+              select: { nickname: 1, avatar: 1, nickname: 1, greetings: 1, isActive: 1 },
               populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } },
             { path: 'images',
               select: { serverFileName: 1, isActive: 1 },

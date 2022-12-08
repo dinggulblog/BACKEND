@@ -54,8 +54,9 @@ DraftSchema.index({ author: 1 });
 
 DraftSchema.pre('save', async function (next) {
   try {
-    await DraftModel.findOneAndDelete(
-      { author: this.author },
+    await DraftModel.findOneAndUpdate(
+      { author: this.author, isActive: true },
+      { $set: { isActive: false } },
       { lean: true }
     ).exec();
 

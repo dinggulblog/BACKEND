@@ -24,7 +24,8 @@ const PostSchema = new mongoose.Schema({
     type: Number
   },
   title: {
-    type: String
+    type: String,
+    required: true,
   },
   content: {
     type: String
