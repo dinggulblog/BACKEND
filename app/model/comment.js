@@ -22,13 +22,17 @@ const CommentSchema = new mongoose.Schema({
   content: {
     type: String
   },
+  isPublic: {
+    type: Boolean,
+    default: true
+  },
   isActive: {
     type: Boolean,
     default: true
   },
-  isPublic: {
+  isDeleted: {
     type: Boolean,
-    default: true
+    default: false
   }
 }, {
   toObject: {

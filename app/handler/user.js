@@ -131,7 +131,7 @@ class UserHandler {
     try {
       await UserModel.findOneAndUpdate(
         { _id: payload.userId },
-        { $set: { isActive: false, expiredAt: Date.now() + 5000 } },
+        { $set: { isActive: false } },
         { new: true,
           lean: true,
           timestamps: false }

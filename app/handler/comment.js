@@ -38,7 +38,10 @@ class CommentHandler {
         }
       ).exec();
 
-      callback.onSuccess({ comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments'), commentCount: comments.length });
+      callback.onSuccess({
+        comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments'),
+        commentCount: comments.length
+      });
     } catch (error) {
       callback.onError(error);
     }
@@ -61,12 +64,17 @@ class CommentHandler {
 
   async deleteComment(req, payload, callback) {
     try {
-      await CommentModel.deleteOne(
-        { _id: req.params.id, commenter: payload.userId },
+      const childComment = await CommentModel.findOne(
+        { parentComment: req.params.id },
+        { _id: 1 },
         { lean: true }
       ).exec();
 
-      callback.onSuccess({});
+      const comment = childComment
+        ? await CommentModel.findOneAndUpdate({ _id: req.params.id }, { $set: { isActive: false } }, { new: true, lean: true }).exec()
+        : await CommentModel.findOneAndDelete({ _id: req.params.id }, { new: true, lean: true }).exec();
+
+      callback.onSuccess({ comment });
     } catch (error) {
       callback.onError(error);
     }
