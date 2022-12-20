@@ -21,14 +21,14 @@ export const createDefaultDocuments = async () => {
   const roles = ['USER', 'MODERATOR', 'ADMIN'];
   const menus = {
     'sol': [
-      { sub: 'dev', type: 'list', categories: ['기타', 'Javascript', 'Vue.js', 'CSS'] },
-      { sub: 'daily', type: 'list', categories: ['기타', '일상', '햄찌', '게임'] },
-      { sub: 'album', type: 'card', categories: ['기타', '햄찌', '맛집', '여행'] }
+      { sub: 'dev', type: 'List', categories: ['기타', 'Javascript', 'Vue.js', 'CSS'] },
+      { sub: 'daily', type: 'List', categories: ['기타', '일상', '햄찌', '게임'] },
+      { sub: 'album', type: 'Card', categories: ['기타', '햄찌', '맛집', '여행'] }
     ],
     'ming': [
-      { sub: 'dev', type: 'list', categories: ['기타', 'Javascript', 'Node.js', 'MongoDB'] },
-      { sub: 'daily', type: 'list', categories: ['기타', '일상', '햄찌', '게임'] },
-      { sub: 'album', type: 'card', categories: ['기타', '햄찌', '게임', '여행'] }
+      { sub: 'dev', type: 'List', categories: ['기타', 'Javascript', 'Node.js', 'MongoDB'] },
+      { sub: 'daily', type: 'List', categories: ['기타', '일상', '햄찌', '게임'] },
+      { sub: 'album', type: 'Card', categories: ['기타', '햄찌', '게임', '여행'] }
     ],
     'guest': [
       { sub: 'guest book' }

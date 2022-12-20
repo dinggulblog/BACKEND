@@ -10,6 +10,7 @@ export const upload = multer({
       done(null, join(__dirname, 'uploads'));
     },
     filename: (req, file, done) => {
+      file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8')
       const ext = extname(file.originalname);
       done(null, Date.now() + '-' + basename(file.originalname, ext) + ext);
     }

@@ -52,20 +52,6 @@ const DraftSchema = new mongoose.Schema({
 
 DraftSchema.index({ author: 1 });
 
-DraftSchema.pre('save', async function (next) {
-  try {
-    await DraftModel.findOneAndUpdate(
-      { author: this.author, isActive: true },
-      { $set: { isActive: false } },
-      { lean: true }
-    ).exec();
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
 DraftSchema.post('findOneAndDelete', async function (doc, next) {
   try {
     if (!doc || !doc.images) next();

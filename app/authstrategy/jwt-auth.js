@@ -64,10 +64,6 @@ class JwtAuthStrategy extends BaseAuthStrategy {
       return callback.onFailure(new ServerError('서버 에러: JWT 인증에 사용할 공개키가 존재하지 않음'))
     }
 
-    if (!refreshToken) {
-      return callback.onFailure(new JwtError('인증에 필요한 토큰이 존재하지 않습니다.'));
-    }
-
     if (req.originalUrl === '/v1/auth' && req.method === 'PUT') {
       try {
         const { payload } = await jwtVerify(refreshToken, ecPublicKey, this._jwtOptions);

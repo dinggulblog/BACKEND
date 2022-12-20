@@ -22,7 +22,9 @@ class DraftController extends BaseController {
   create(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this.verify(payload.roles, res, () => {
-        this._draftHandler.createDraft(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        this.#upload(req, res, () => {
+          this._draftHandler.createDraft(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        });
       });
     });
   }

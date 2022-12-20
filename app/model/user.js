@@ -2,7 +2,7 @@ import { genSalt, hash, compareSync } from 'bcrypt';
 import mongoose from 'mongoose';
 
 import { RoleModel } from './role.js';
-import { PostModel } from './post.js';
+// import { PostModel } from './post.js';
 import { CommentModel } from './comment.js';
 import ForbiddenError from '../error/forbidden.js';
 
@@ -164,11 +164,13 @@ UserSchema.post('findOneAndUpdate', async function (doc, next) {
 
       // 계정이 비활성화 되는 경우 -> 계정 명의로 된 게시물 및 댓글 모두 비활성화
       else if (query.$set?.isActive === false) {
+        /*
         await PostModel.updateMany(
           { author: doc._id },
           { $set: { isActive: false } },
           { lean: true }
         ).exec();
+        */
 
         await CommentModel.updateMany(
           { commenter: doc._id },

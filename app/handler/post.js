@@ -42,8 +42,7 @@ class PostHandler {
           from: 'users',
           localField: 'author',
           foreignField: '_id',
-          as: 'author',
-          pipeline: [{ $match: { isActive: true } }]
+          as: 'author'
         } },
         { $unwind: '$author' },
         { $lookup: {
@@ -99,8 +98,7 @@ class PostHandler {
           from: 'users',
           localField: 'author',
           foreignField: '_id',
-          as: 'author',
-          pipeline: [{ $match: { isActive: true } }]
+          as: 'author'
         } },
         { $unwind: '$author' },
         { $lookup: {
@@ -315,7 +313,7 @@ class PostHandler {
     if (categories) {
       matchQuery.categories = { $in: categories, }
     }
-    if (category) {
+    if (category && category !== '전체') {
       matchQuery.category = category;
     }
     if (filter === 'like') {

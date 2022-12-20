@@ -7,9 +7,27 @@ class DraftHandler {
 
   async createDraft(req, payload, callback) {
     try {
-      const draft = await new DraftModel({ author: payload.userId }).save({ validateBeforeSave: false });
+      const { menu, category, title, content, isPublic, thumbnail } = req.body;
 
-      callback.onSuccess({ draft });
+      const draft = await new DraftModel({
+        author: payload.userId,
+        menu,
+        category,
+        title,
+        content,
+        isPublic,
+        thumbnail
+      }).save({ validateBeforeSave: false });
+
+      if (req.files) {
+        const images = await FileModel.createManyInstances(payload.userId, draft._id, 'Draft', req.files)
+        draft.images = images.map(image => image._id)
+        await draft.save({ validateBeforeSave: false })
+
+        return callback.onSuccess({ draft, images })
+      }
+
+      callback.onSuccess({ draft, images: null });
     } catch (error) {
       callback.onError(error);
     }
@@ -65,18 +83,11 @@ class DraftHandler {
 
   async deleteDraftFile(req, payload, callback) {
     try {
-      const { modifiedCount } = await DraftModel.updateOne(
+      await DraftModel.updateOne(
         { _id: req.params.id, author: payload.userId },
         { $pull: { images: req.body.image } },
         { new: true, lean: true }
       ).exec();
-
-      if (modifiedCount) {
-        await FileModel.findOneAndDelete(
-          { _id: req.body.image },
-          { lean: true }
-        ).exec();
-      }
 
       callback.onSuccess({});
     } catch (error) {
