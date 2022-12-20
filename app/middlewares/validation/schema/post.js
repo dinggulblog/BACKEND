@@ -50,6 +50,9 @@ const POSTS_PAGINATION_SCHEMA = () => {
         options: (category) => !!category ? decodeURI(category).trim() : null
       }
     },
+    'hasThumbnail': {
+      toBoolean: true
+    },
     'filter': {
       matches: {
         options: [/\b(?:like|comment)\b/],

@@ -305,16 +305,16 @@ class PostHandler {
 
   async #getMatchQuery(queries, loginUserId = null) {
     const matchQuery = {};
-    const { menu, categories, category, filter, userId, skip, limit } = queries;
+    const { menu, category, hasThumbnail, filter, userId, skip, limit } = queries;
 
     if (Array.isArray(menu) && menu.length) {
       matchQuery.menu = { $in: menu };
     }
-    if (categories) {
-      matchQuery.categories = { $in: categories, }
-    }
     if (category && category !== '전체') {
       matchQuery.category = category;
+    }
+    if (hasThumbnail) {
+      matchQuery.thumbnail = { $ne: null }
     }
     if (filter === 'like') {
       matchQuery.likes = userId;

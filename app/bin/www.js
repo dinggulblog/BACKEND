@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync, mkdirSync } from 'fs';
 import app from '../../index.mjs';
 import http from 'http';
-import spdy from 'spdy';
+import http2 from 'node:http2';
 
 import { connectMongoDB, createDefaultDocuments } from '../../config/mongo.js';
 
@@ -26,7 +26,7 @@ if (process.env.NODE_ENV === 'production') {
     cert: readFileSync(process.env.LETSENCRYPT_FULLCHAIN_DIR, 'utf8')
   }
 
-  spdy.createServer(options, app)
+  http2.createSecureServer(options, app)
     .listen(port, '0.0.0.0', () => console.log('\x1b[33m%s\x1b[0m', app.get('port') + '(SSL) Port is listening!'))
     .on('error', onError);
 }
@@ -37,7 +37,7 @@ else {
 }
 
 // Connect to MongoDB server
-connectMongoDB(process.env.MONGO_CONNECT_URL).then(createDefaultDocuments);
+await connectMongoDB(process.env.MONGO_CONNECT_URL).then(createDefaultDocuments);
 
 // Create an upload directory
 try {
