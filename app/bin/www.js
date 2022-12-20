@@ -15,6 +15,8 @@ import { connectMongoDB, createDefaultDocuments } from '../../config/mongo.js';
  */
 const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
+app.enable('trust proxy');
+app.disable('x-powered-by');
 
 /**
  * Create server and Listen on provided port, on all network interfaces.
