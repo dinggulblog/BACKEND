@@ -25,7 +25,8 @@ if (process.env.NODE_ENV === 'production') {
   // Get TSL certificate credentials.
   const options = {
     key: readFileSync(process.env.LETSENCRYPT_PRIVKEY_DIR, 'utf8'),
-    cert: readFileSync(process.env.LETSENCRYPT_FULLCHAIN_DIR, 'utf8')
+    cert: readFileSync(process.env.LETSENCRYPT_FULLCHAIN_DIR, 'utf8'),
+    allowHTTP1: true
   }
 
   http2.createSecureServer(options, app)
