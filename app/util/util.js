@@ -9,7 +9,7 @@ import { join } from 'path';
  * @param {String} childrenFieldName
  * @returns An array of tree structure
  */
-export const convertFlatToTree = (array = [], idFieldName, parentIdFieldName, childrenFieldName) => {
+export const convertFlatToTree = (array = [], idFieldName, parentIdFieldName, childrenFieldName, childrenFieldCountName) => {
   const cloned = array.slice();
 
     for (let i = cloned.length - 1; i > -1 ; i--) {
@@ -21,6 +21,7 @@ export const convertFlatToTree = (array = [], idFieldName, parentIdFieldName, ch
           parent[childrenFieldName]
             ? parent[childrenFieldName].unshift(cloned[i])
             : parent[childrenFieldName] = [cloned[i]];
+          parent[childrenFieldCountName] = parent[childrenFieldName].length
         }
         cloned.splice(i, 1);
       }

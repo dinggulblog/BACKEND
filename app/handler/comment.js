@@ -39,7 +39,7 @@ class CommentHandler {
       ).exec();
 
       callback.onSuccess({
-        comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments'),
+        comments: convertFlatToTree(comments, '_id', 'parentComment', 'childComments', 'childCommentCount'),
         commentCount: comments.length
       });
     } catch (error) {
