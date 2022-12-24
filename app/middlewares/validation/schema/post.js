@@ -67,11 +67,11 @@ const POSTS_PAGINATION_SCHEMA = () => {
       },
       optional: { options: { nullable: true } }
     },
-    'page': {
+    'skip': {
       toInt: true,
       isInt: {
-        options: [{ min: 1 }],
-        errorMessage: 'Page must be an integer greater than 1'
+        options: [{ min: 0 }],
+        errorMessage: 'Page must be an integer greater than 0'
       }
     },
     'limit': {
@@ -79,11 +79,6 @@ const POSTS_PAGINATION_SCHEMA = () => {
       isInt: {
         options: [{ min: 1, max: 10 }],
         errorMessage: 'Limit must be an integer between 1 and 10'
-      }
-    },
-    'skip': {
-      customSanitizer: {
-        options: (v, { req }) => (req.query.page - 1) * req.query.limit
       }
     }
   };
