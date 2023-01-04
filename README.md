@@ -2,7 +2,7 @@
 ### Dinggul Blog API Server with Node.js &amp; MongoDB
 ------
 ## Postman API Document Link (Local)
-<https://documenter.getpostman.com/view/15146904/2s8YzRxhtC>
+<[https://documenter.getpostman.com/view/15146904/2s8YzRxhtC](https://documenter.getpostman.com/view/15146904/2s8Z6x3ZL9)>
 
 ## Blog Preview Link
 <https://dinggul.me>
