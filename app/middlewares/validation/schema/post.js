@@ -71,14 +71,14 @@ const POSTS_PAGINATION_SCHEMA = () => {
       toInt: true,
       isInt: {
         options: [{ min: 0 }],
-        errorMessage: 'Page must be an integer greater than 0'
+        errorMessage: 'Skip must be an integer greater than 0'
       }
     },
     'limit': {
       toInt: true,
       isInt: {
-        options: [{ min: 1, max: 10 }],
-        errorMessage: 'Limit must be an integer between 1 and 10'
+        options: [{ min: 1 }],
+        errorMessage: 'Limit must be an integer greater than 1'
       }
     }
   };

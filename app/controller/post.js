@@ -24,7 +24,7 @@ class PostController extends BaseController {
   get(req, res, next) {
     this.validate(rules.getPostRules, req, res, () => {
       this._postHandler.getPost(req, this._responseManager.getDefaultResponseHandlerError(res, ((data, message, code) => {
-        const hateoasLinks = [this._responseManager.generateHATEOASLink(req.baseUrl + '/:id', 'GET', 'next')];
+        const hateoasLinks = this.#getPostHATEOASLink(req.baseUrl, data?.post?.linkedPosts)
         this._responseManager.respondWithSuccess(res, code || this._responseManager.HTTP_STATUS.OK, data, message, hateoasLinks);
       })));
     });
@@ -109,6 +109,10 @@ class PostController extends BaseController {
         ? this._responseManager.respondWithError(res, error.status ?? 400, error.message)
         : callback();
     });
+  }
+
+  #getPostHATEOASLink(url, linkedPosts = []) {
+    return linkedPosts.map(({ _id, rel }) => this._responseManager.generateHATEOASLink(url + `/${_id}`, 'GET', rel))
   }
 }
 

@@ -195,26 +195,65 @@ class PostHandler {
 
   async getPost(req, callback) {
     try {
-      const post = await PostModel.findOneAndUpdate(
-        { _id: req.params.id },
-        { $inc: { viewCount: 1 } },
-        { new: true,
-          lean: true,
-          populate: [
-            { path: 'author',
-              select: { nickname: 1, avatar: 1, nickname: 1, greetings: 1, isActive: 1 },
-              populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } },
-            { path: 'images',
-              select: { serverFileName: 1, isActive: 1 },
-              match: { isActive: true } }
-          ] }
-        ).exec();
+      const post = await PostModel.aggregate([
+        { $setWindowFields: {
+            partitionBy: { menu: '$menu', category: '$category' },
+            sortBy: { createdAt: -1 },
+            output: {
+              nearIds: {
+                $addToSet: '$_id',
+                window: { documents: [-1, 1] }
+              }
+            }
+          }
+        },
+        { $match: { _id: ObjectId(req.params.id) } },
+        { $limit: 1 },
+        { $lookup: {
+          from: 'posts',
+          localField: 'nearIds',
+          foreignField: '_id',
+          pipeline: [
+            { $match: { _id: { $ne: ObjectId(req.params.id) } } },
+            { $project: { title: { $substrCP: ['$title', 0, 50] }, rel: { $cond: [{ $lt: ['$_id', ObjectId(req.params.id)] }, 'prev', 'next'] } } }
+          ],
+          as: 'linkedPosts'
+        } },
+        { $lookup: {
+          from: 'users',
+          localField: 'author',
+          foreignField: '_id',
+          pipeline: [
+            { $lookup: {
+              from: 'files',
+              localField: 'avatar',
+              foreignField: '_id',
+              as: 'avatar'
+            } },
+            { $project: { avatar: { serverFileName: 1 }, nickname: 1, greetings: 1 } }
+          ],
+          as: 'author'
+        } },
+        { $unwind: '$author' },
+        { $unwind: '$author.avatar' },
+        { $lookup: {
+          from: 'files',
+          localField: 'images',
+          foreignField: '_id',
+          pipeline: [
+            { $project: { serverFileName: 1 } }
+          ],
+          as: 'images'
+        } },
+        { $addFields: {
+          likeCount: { $size: '$likes' }
+        } },
+        { $project: {
+          nearIds: 0
+        } }
+      ]).exec();
 
-      callback.onSuccess({
-        post,
-        likes: post.likes,
-        likeCount: post.likes.length
-      });
+      callback.onSuccess({ post: post[0] ?? null });
     } catch (error) {
       callback.onError(error);
     }
