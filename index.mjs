@@ -1,6 +1,4 @@
-import { resolve, join } from 'path';
-import { config } from 'dotenv';
-import { exit } from 'process';
+import { join } from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import hpp from 'hpp';
@@ -10,28 +8,11 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import history from 'connect-history-api-fallback';
 
-import { ObjectId } from './config/mongo.js';
+import './global.js';
+import './env.js';
 import routes from './app/routes/index.js';
 import authManager from './app/manager/auth.js';
 import responseManager from './app/manager/response.js';
-
-// Global variables
-globalThis.__dirname = resolve();
-globalThis.ObjectId = ObjectId;
-globalThis.accessTokenMaxAge = 7200000; // 2 hours
-globalThis.refreshTokenMaxAge = 1209600000; // 2 weeks
-
-// Set config variables in .env
-if (process.env.NODE_ENV === 'production') {
-  config({ path: join(__dirname, '.env.production')});
-}
-else if (process.env.NODE_ENV === 'develop') {
-  config({ path: join(__dirname, '.env.develop')});
-}
-else {
-  console.log('.env 파일을 찾을 수 없습니다. 서버를 종료합니다.');
-  exit(1);
-}
 
 // Create an express app
 const app = express();

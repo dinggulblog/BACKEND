@@ -2,13 +2,13 @@
 import BaseController from './base.js';
 import PostHandler from '../handler/post.js';
 import rules from '../middlewares/validation/post.js';
-import { upload } from '../middlewares/multer.js';
+import { uploadS3 } from '../middlewares/multer.js';
 
 class PostController extends BaseController {
   constructor() {
     super();
     this._postHandler = new PostHandler();
-    this._upload = upload;
+    this._upload = uploadS3;
   }
 
   create(req, res, next) {

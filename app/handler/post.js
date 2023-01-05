@@ -32,7 +32,7 @@ class PostHandler {
       const { query: { skip, limit } } = req;
 
       const matchQuery = await this.#getMatchQuery(req.query);
-      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit);
+      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit / 2);
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
         { $sort: { createdAt: -1 } },
@@ -88,7 +88,7 @@ class PostHandler {
       const { query: { skip, limit } } = req;
 
       const matchQuery = await this.#getMatchQuery(req.query, payload.userId);
-      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit);
+      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit / 2);
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
         { $sort: { createdAt: -1 } },
@@ -143,7 +143,7 @@ class PostHandler {
       const { query: { skip, limit } } = req;
 
       const matchQuery = await this.#getMatchQuery(req.query, payload.userId)
-      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit);
+      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit / 2);
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
         { $sort: { createdAt: -1 } },
@@ -235,7 +235,7 @@ class PostHandler {
           as: 'author'
         } },
         { $unwind: '$author' },
-        { $unwind: '$author.avatar' },
+        { $unwind: { path: '$author.avatar', preserveNullAndEmptyArrays: true } },
         { $lookup: {
           from: 'files',
           localField: 'images',

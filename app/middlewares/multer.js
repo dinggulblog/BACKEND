@@ -1,8 +1,19 @@
+import S3 from 'aws-sdk/clients/s3.js';
+import sharp from 'sharp';
 import multer from 'multer';
+import multerS3 from 'multer-s3';
 import { join, extname, basename } from 'path';
 import ForbiddenError from '../error/forbidden.js';
 
 const availableMimetype = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+
+const s3 = new S3({
+  region: 'ap-northeast-2',
+  credentials: {
+    accessKeyId: process.env.S3_ACCESS_KEY,
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY
+  }
+});
 
 export const upload = multer({
   storage: multer.diskStorage({
@@ -24,3 +35,32 @@ export const upload = multer({
       : done(new ForbiddenError('지원하지 않는 파일 형식입니다.\n지원 파일 포맷: [jpg, jpeg, png, webp]'), false);
   }
 });
+
+export const uploadS3 = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: 'dinggul-bucket',
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    key: (req, file, done) => {
+      const ext = extname(file.originalname)
+      done(null, `original/${Date.now()}-${basename(file.originalname, ext)}${ext}`)
+    }
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  },
+  fileFilter: (req, file, done) => {
+    availableMimetype.includes(file.mimetype)
+      ? done(null, true)
+      : done(new ForbiddenError('지원하지 않는 파일 형식입니다.\n지원 파일 포맷: [jpg, jpeg, png, webp]'), false);
+  }
+});
+
+export const deleteS3 = (key) => {
+  s3.deleteObject({
+    Bucket: 'dinggul-bucket',
+    Key: key
+  }, (err, data) => {
+    if (err) throw err;
+  });
+};

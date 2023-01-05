@@ -122,17 +122,6 @@ PostSchema.post('findOneAndUpdate', async function (doc, next) {
       next(new ForbiddenError('비활성화 유저의 게시물입니다.'));
     }
 
-    // 게시물에 포함될 File Documents의 belonging field를 게시물 ID로 수정
-    if (this._update?.$addToSet?.images) {
-      for await (const image of doc.images) {
-        FileModel.updateOne(
-          { _id: image },
-          { $set: { belonging: doc._id, belongingModel: 'Post' } },
-          { lean: true }
-        ).exec()
-      }
-    }
-
     next();
   } catch (error) {
     next(error);
