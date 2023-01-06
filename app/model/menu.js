@@ -20,6 +20,4 @@ const MenuSchema = new mongoose.Schema({
   }
 });
 
-MenuSchema.index({ main: 1, sub: 1 }, { unique: true });
-
 export const MenuModel = mongoose.model('Menu', MenuSchema);

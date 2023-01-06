@@ -5,6 +5,8 @@ import { CommentModel } from '../model/comment.js';
 
 class PostHandler {
   constructor() {
+    this.cachedPostIds = [];
+    this.uploadUrl = process.env.NODE_ENV === 'develop' ? 'http://localhost:3000/uploads/' : `${process.env.S3_URL}thumbnail/`;
   }
 
   async createPost(req, payload, callback) {
@@ -33,6 +35,59 @@ class PostHandler {
       const userId = payload ? ObjectId(payload.userId) : null;
 
       const matchQuery = await this.#getMatchQuery(req.query, userId);
+      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / (limit / 2));
+      const posts = await PostModel.aggregate([
+        { $match: matchQuery },
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        { $lookup: {
+          from: 'users',
+          localField: 'author',
+          foreignField: '_id',
+          pipeline: [{ $project: { nickname: 1 } }],
+          as: 'author'
+        } },
+        { $unwind: '$author' },
+        { $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'post',
+          as: 'comments'
+        } },
+        { $lookup: {
+          from: 'files',
+          localField: 'thumbnail',
+          foreignField: '_id',
+          pipeline: [{ $project: { serverFileName: 1 } }],
+          as: 'thumbnail'
+        } },
+        { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
+        { $addFields: {
+          thumbnail: { $concat: [this.uploadUrl, '$thumbnail.serverFileName'] },
+          content: { $substrCP: ['$content', 0, 200] },
+          liked: { $in: [userId, '$likes'] },
+          likeCount: { $size: '$likes' },
+          commentCount: { $size: '$comments' }
+        } },
+        { $project: {
+          comments: 0,
+          images: 0,
+          likes: 0
+        } }
+      ]).exec();
+
+      callback.onSuccess({ posts, maxPage });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async getPostsAsAdmin (req, payload, callback) {
+    try {
+      const { query: { skip, limit } } = req;
+
+      const matchQuery = await this.#getMatchQuery(req.query, payload.userId)
       const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit / 2);
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
@@ -62,65 +117,16 @@ class PostHandler {
         } },
         { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
         { $addFields: {
+          thumbnail: { $concat: [this.uploadUrl, '$thumbnail.serverFileName'] },
           content: { $substrCP: ['$content', 0, 200] },
           liked: { $in: [userId, '$likes'] },
           likeCount: { $size: '$likes' },
           commentCount: { $size: '$comments' }
-        } }
-      ]).exec();
-
-      callback.onSuccess({ posts, maxPage });
-    } catch (error) {
-      callback.onError(error);
-    }
-  }
-
-  async getPostsAsAdmin (req, payload, callback) {
-    try {
-      const { query: { skip, limit } } = req;
-
-      const matchQuery = await this.#getMatchQuery(req.query, payload.userId)
-      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit / 2);
-      const posts = await PostModel.aggregate([
-        { $match: matchQuery },
-        { $sort: { createdAt: -1 } },
-        { $skip: skip },
-        { $limit: limit },
-        { $lookup: {
-          from: 'users',
-          localField: 'author',
-          foreignField: '_id',
-          as: 'author'
         } },
-        { $unwind: '$author' },
-        { $lookup: {
-          from: 'comments',
-          localField: '_id',
-          foreignField: 'post',
-          as: 'comments'
-        } },
-        { $lookup: {
-          from: 'files',
-          localField: 'thumbnail',
-          foreignField: '_id',
-          as: 'thumbnail'
-        } },
-        { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
         { $project: {
-          postNum: 1,
-          author: { nickname: 1 },
-          thumbnail: { serverFileName: 1 },
-          menu: 1,
-          category: 1,
-          title: 1,
-          content: { $substrCP: ['$content', 0, 200] },
-          isPublic: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          viewCount: 1,
-          liked: { $in: [ObjectId(payload.userId), '$likes'] },
-          likeCount: { $size: '$likes' },
-          commentCount: { $size: '$comments' }
+          comments: 0,
+          images: 0,
+          likes: 0
         } }
       ]).exec();
 
@@ -132,27 +138,22 @@ class PostHandler {
 
   async getPost(req, callback) {
     try {
+      const postId = ObjectId(req.params.id);
       const post = await PostModel.aggregate([
         { $setWindowFields: {
-            partitionBy: { menu: '$menu', category: '$category' },
-            sortBy: { createdAt: -1 },
-            output: {
-              nearIds: {
-                $addToSet: '$_id',
-                window: { documents: [-1, 1] }
-              }
-            }
-          }
-        },
-        { $match: { _id: ObjectId(req.params.id) } },
+          partitionBy: { menu: '$menu', category: '$category' },
+          sortBy: { createdAt: -1 },
+          output: { nearIds: { $addToSet: '$_id', window: { documents: [-1, 1] } } }
+        } },
+        { $match: { _id: postId } },
         { $limit: 1 },
         { $lookup: {
           from: 'posts',
           localField: 'nearIds',
           foreignField: '_id',
           pipeline: [
-            { $match: { _id: { $ne: ObjectId(req.params.id) } } },
-            { $project: { title: { $substrCP: ['$title', 0, 50] }, rel: { $cond: [{ $lt: ['$_id', ObjectId(req.params.id)] }, 'prev', 'next'] } } }
+            { $match: { _id: { $ne: postId } } },
+            { $project: { title: { $substrCP: ['$title', 0, 50] }, rel: { $cond: [{ $lt: ['$_id', postId] }, 'prev', 'next'] } } }
           ],
           as: 'linkedPosts'
         } },
@@ -167,20 +168,21 @@ class PostHandler {
               foreignField: '_id',
               as: 'avatar'
             } },
-            { $project: { avatar: { serverFileName: 1 }, nickname: 1, greetings: 1 } }
+            { $unwind: { path: '$avatar', preserveNullAndEmptyArrays: true } },
+            { $project: { avatar: { thumbnail: { $concat: [this.uploadUrl, '$avatar.serverFileName'] } }, nickname: 1, greetings: 1 } }
           ],
           as: 'author'
         } },
-        { $unwind: '$author' },
-        { $unwind: { path: '$author.avatar', preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: '$author' } },
         { $lookup: {
           from: 'files',
           localField: 'images',
           foreignField: '_id',
-          pipeline: [
-            { $project: { serverFileName: 1 } }
-          ],
+          pipeline: [{ $project: { thumbnail: { $concat: [this.uploadUrl, '$serverFileName'] } } }],
           as: 'images'
+        } },
+        { $set: {
+          viewCount: { $add: ['$viewCount', 1] }
         } },
         { $addFields: {
           likeCount: { $size: '$likes' }
@@ -190,7 +192,9 @@ class PostHandler {
         } }
       ]).exec();
 
-      callback.onSuccess({ post: post[0] ?? null });
+      if (post.length) this.cachedPostIds.push(post[0]._id)
+
+      callback.onSuccess({ post: post.shift() ?? null });
     } catch (error) {
       callback.onError(error);
     }
@@ -281,7 +285,7 @@ class PostHandler {
 
   async #getMatchQuery(queries, loginUserId) {
     const matchQuery = {};
-    const { menu, category, hasThumbnail, filter, userId, skip, limit } = queries;
+    const { menu, category, hasThumbnail, filter, userId } = queries;
 
     if (Array.isArray(menu) && menu.length) {
       matchQuery.menu = { $in: menu };
@@ -290,7 +294,7 @@ class PostHandler {
       matchQuery.category = category;
     }
     if (hasThumbnail) {
-      matchQuery.thumbnail = { $ne: null }
+      matchQuery.thumbnail = { $exists: true, $ne: null }
     }
     if (filter === 'like') {
       matchQuery.likes = userId;
@@ -299,7 +303,7 @@ class PostHandler {
       const comments = await CommentModel.find(
         { commenter: userId },
         { post: 1 },
-        { skip: skip, limit: limit, lean: true }
+        { lean: true }
       ).exec();
 
       matchQuery._id = { $in: comments.map(comment => comment.post) };
@@ -308,12 +312,11 @@ class PostHandler {
     if (loginUserId) {
       return { $or: [
         { isPublic: true, isActive: true, ...matchQuery },
-        { author: ObjectId(loginUserId), isPublic: false, isActive: true, ...matchQuery }
+        { author: loginUserId, isPublic: false, isActive: true, ...matchQuery }
       ] }
     }
-    else {
-      return { isPublic: true, isActive: true, ...matchQuery }
-    }
+
+    return { isPublic: true, isActive: true, ...matchQuery }
   }
 
   async #getSearchQuery(queries) {
@@ -344,6 +347,10 @@ class PostHandler {
     }
 
     return searchQuery;
+  }
+
+  async #increaseViewCount() {
+    
   }
 }
 

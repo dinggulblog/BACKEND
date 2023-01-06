@@ -5,6 +5,7 @@ import InvalidRequestError from '../error/invalid-request.js';
 
 class UserHandler {
   constructor() {
+    this.uploadUrl = process.env.NODE_ENV === 'develop' ? 'http://localhost:3000/uploads/' : `${process.env.S3_URL}avatar/`;
   }
 
   async createUserAccount(req, callback) {
@@ -39,7 +40,7 @@ class UserHandler {
         { nickname: 1, avatar: 1, isActive: 1, greetings: 1, introduce: 1 },
         { lean: true,
           timestamps: false,
-          populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
+          populate: { path: 'avatar', select: { thumbnail: { $concat: [this.uploadUrl, '$serverFileName'] } }, match: { isActive: true } } }
         ).exec();
 
       user.lastLoginIP = getSecuredIPString(user.lastLoginIP);
@@ -59,7 +60,7 @@ class UserHandler {
         { nickname: 1, avatar: 1, isActive: 1, greetings: 1, introduce: 1 },
         { lean: true,
           timestamps: false,
-          populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
+          populate: { path: 'avatar', select: { thumbnail: { $concat: [this.uploadUrl, '$serverFileName'] } }, match: { isActive: true } } }
         ).exec();
 
       callback.onSuccess({ profile });
@@ -118,7 +119,7 @@ class UserHandler {
           lean: true,
           timestamps: false,
           projection: { avatar: 1, isActive: 1 },
-          populate: { path: 'avatar', select: 'serverFileName isActive', match: { isActive: true } } }
+          populate: { path: 'avatar', select: { thumbnail: { $concat: [this.uploadUrl, '$serverFileName'] } }, match: { isActive: true } } }
       ).exec();
 
       callback.onSuccess({ profile });

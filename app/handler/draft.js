@@ -3,12 +3,14 @@ import { FileModel } from '../model/file.js';
 
 class DraftHandler {
   constructor() {
+    this.uploadUrl = process.env.NODE_ENV === 'develop' ? 'http://localhost:3000/uploads/' : `${process.env.S3_URL}thumbnail/`;
   }
 
   async createDraft(req, payload, callback) {
     try {
       const { menu, category, title, content, isPublic, thumbnail } = req.body;
 
+      let images = null;
       const draft = await new DraftModel({
         author: payload.userId,
         menu,
@@ -20,14 +22,13 @@ class DraftHandler {
       }).save({ validateBeforeSave: false });
 
       if (req.files) {
-        const images = await FileModel.createManyInstances(payload.userId, draft._id, 'Draft', req.files)
-        draft.images = images.map(image => image._id)
-        await draft.save({ validateBeforeSave: false })
-
-        return callback.onSuccess({ draft, images })
+        images = await FileModel.createManyInstances(payload.userId, draft._id, 'Draft', req.files);
+        images.forEach(image => image.serverFileName = this.uploadUrl.concat(image.serverFileName));
+        draft.images = images.map(image => image._id);
+        await draft.save({ validateBeforeSave: false });
       }
 
-      callback.onSuccess({ draft, images: null });
+      callback.onSuccess({ draft, images });
     } catch (error) {
       callback.onError(error);
     }

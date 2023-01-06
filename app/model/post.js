@@ -63,8 +63,9 @@ const PostSchema = new mongoose.Schema({
 });
 
 PostSchema.index({ menu: 1, createdAt: -1 });
+PostSchema.index({ menu: 1, category: 1, createdAt: -1 });
 
-// 게시물 저장 전 게시물 넘버링(카운터)을 위한 훅
+// 게시물 저장 전 게시물 넘버링
 PostSchema.pre('save', async function (next) {
   try {
     if (this.isNew) {
@@ -82,25 +83,17 @@ PostSchema.pre('save', async function (next) {
   }
 });
 
-// 게시물이 정상적으로 저장되면, 게시물에 포함될 File Documents의 belonging field를 게시물 ID로 수정 및
-// 임시저장된 글 삭제
+// 게시물이 정상적으로 저장되면, 게시물에 포함될 파일들의 belonging을 게시물 ID로 수정
 PostSchema.post('save', async function (doc, next) {
   try {
-    if (this.isNew) {
-      if (doc.images.length) {
-        for await (const image of doc.images) {
-          FileModel.updateOne(
-            { _id: image },
-            { $set: { belonging: doc._id, belongingModel: 'Post' } },
-            { lean: true }
-          ).exec()
-        }
+    if (this.isNew && doc.images.length) {
+      for await (const image of doc.images) {
+        FileModel.updateOne(
+          { _id: image },
+          { $set: { belonging: doc._id, belongingModel: 'Post' } },
+          { lean: true }
+        ).exec()
       }
-
-      await DraftModel.findOneAndDelete(
-        { author: doc.author },
-        { lean: true }
-      ).exec();
     }
 
     next();
@@ -109,43 +102,22 @@ PostSchema.post('save', async function (doc, next) {
   }
 });
 
-// findOneAndUpdate -> 게시물 받기
-PostSchema.post('findOneAndUpdate', async function (doc, next) {
+PostSchema.post(['findOneAndUpdate', 'updateOne'], async function (doc, next) {
   try {
     if (!doc) {
       next(new ForbiddenError('존재하지 않는 게시물입니다.'))
     }
-    else if (!doc.isActive) {
-      next(new ForbiddenError('본 게시물은 삭제되었거나 비활성화 상태입니다.'))
-    }
+
+    /*
     else if (this.getPopulatedPaths().includes('author') && !doc.author.isActive) {
       next(new ForbiddenError('비활성화 유저의 게시물입니다.'));
     }
+    */
 
     next();
   } catch (error) {
     next(error);
   }
 });
-
-// 게시물이 삭제된 경우 이미지 삭제 CASCADE
-/* 현재 사용 안함
-PostSchema.post('findOneAndDelete', async function (doc, next) {
-  try {
-    for await (const image of doc.images) {
-      if (image) {
-        FileModel.findOneAndDelete(
-          { _id: image },
-          { lean: true }
-        ).exec();
-      }
-    }
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-*/
 
 export const PostModel = mongoose.model('Post', PostSchema);

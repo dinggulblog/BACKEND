@@ -1,13 +1,13 @@
 import BaseController from './base.js';
 import UserHandler from '../handler/user.js';
 import rules from '../middlewares/validation/user.js';
-import { uploadS3 } from '../middlewares/multer.js';
+import { upload, uploadS3 } from '../middlewares/multer.js';
 
 class UserController extends BaseController {
   constructor() {
     super();
     this._userHandler = new UserHandler();
-    this._upload = uploadS3;
+    this._upload = process.env.NODE_ENV === 'develop' ? upload : uploadS3;
   }
 
   create(req, res, next) {

@@ -86,7 +86,7 @@ fileModel.createSingleInstance = async function (uploader, belonging, belongingM
       belongingModel,
       storage: file.key ? 's3' : 'local',
       originalFileName: file.originalname,
-      serverFileName: file?.filename ?? file.key,
+      serverFileName: file?.filename ?? file.key.split('/')[file.key.split('/').length - 1],
       size: file.size
     });
   };
@@ -109,7 +109,7 @@ fileModel.createManyInstances = async function (uploader, belonging, belongingMo
       belongingModel,
       storage: file.key ? 's3' : 'local',
       originalFileName: file.originalname,
-      serverFileName: file?.filename ?? file.key,
+      serverFileName: file?.filename ?? file.key.split('/')[file.key.split('/').length - 1],
       size: file.size
     })
   ));
