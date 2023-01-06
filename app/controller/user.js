@@ -1,15 +1,15 @@
 import BaseController from './base.js';
 import UserHandler from '../handler/user.js';
 import rules from '../middlewares/validation/user.js';
-import { upload } from '../middlewares/multer.js';
+import { uploadS3 } from '../middlewares/multer.js';
 
 class UserController extends BaseController {
   constructor() {
     super();
     this._userHandler = new UserHandler();
-    this._upload = upload;
+    this._upload = uploadS3;
   }
-  
+
   create(req, res, next) {
     this._passport.authenticate('secret-key-auth', {
       onVerified: () => {

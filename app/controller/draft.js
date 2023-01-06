@@ -1,12 +1,12 @@
 import BaseController from './base.js';
 import DraftHandler from '../handler/draft.js';
-import { upload } from '../middlewares/multer.js';
+import { uploadS3 } from '../middlewares/multer.js';
 
 class DraftController extends BaseController {
   constructor() {
     super();
     this._draftHandler = new DraftHandler();
-    this._upload = upload;
+    this._upload = uploadS3;
   }
 
   get(req, res, next) {

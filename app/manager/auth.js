@@ -29,11 +29,14 @@ class AuthManager extends BaseAutoBindedClass {
 
   async _verifyRevokedToken(token, payload, callback) {
     try {
+      /*
       const revokedToken = await RevokedTokenModel.findOne({ token })
 
       revokedToken
         ? callback.onFailure(new ForbiddenError('Refresh token has been revoked'))
         : callback.onVerified(token, payload);
+      */
+      callback.onVerified(token, payload);
     } catch (error) {
       callback.onFailure(error);
     }

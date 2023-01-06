@@ -27,11 +27,12 @@ class PostHandler {
     }
   }
 
-  async getPosts(req, callback) {
+  async getPosts(req, payload, callback) {
     try {
       const { query: { skip, limit } } = req;
+      const userId = payload ? ObjectId(payload.userId) : null;
 
-      const matchQuery = await this.#getMatchQuery(req.query);
+      const matchQuery = await this.#getMatchQuery(req.query, userId);
       const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit / 2);
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
@@ -42,6 +43,7 @@ class PostHandler {
           from: 'users',
           localField: 'author',
           foreignField: '_id',
+          pipeline: [{ $project: { nickname: 1 } }],
           as: 'author'
         } },
         { $unwind: '$author' },
@@ -55,78 +57,13 @@ class PostHandler {
           from: 'files',
           localField: 'thumbnail',
           foreignField: '_id',
+          pipeline: [{ $project: { serverFileName: 1 } }],
           as: 'thumbnail'
         } },
         { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
-        { $project: {
-          postNum: 1,
-          author: { nickname: 1 },
-          thumbnail: { serverFileName: 1 },
-          menu: 1,
-          category: 1,
-          title: 1,
+        { $addFields: {
           content: { $substrCP: ['$content', 0, 200] },
-          isActive: 1,
-          isPublic: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          viewCount: 1,
-          liked: { $literal: false },
-          likeCount: { $size: '$likes' },
-          commentCount: { $size: '$comments' }
-        } }
-      ]).exec();
-
-      callback.onSuccess({ posts, maxPage });
-    } catch (error) {
-      callback.onError(error);
-    }
-  }
-
-  async getPostsAsUser (req, payload, callback) {
-    try {
-      const { query: { skip, limit } } = req;
-
-      const matchQuery = await this.#getMatchQuery(req.query, payload.userId);
-      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit / 2);
-      const posts = await PostModel.aggregate([
-        { $match: matchQuery },
-        { $sort: { createdAt: -1 } },
-        { $skip: skip },
-        { $limit: limit },
-        { $lookup: {
-          from: 'users',
-          localField: 'author',
-          foreignField: '_id',
-          as: 'author'
-        } },
-        { $unwind: '$author' },
-        { $lookup: {
-          from: 'comments',
-          localField: '_id',
-          foreignField: 'post',
-          as: 'comments'
-        } },
-        { $lookup: {
-          from: 'files',
-          localField: 'thumbnail',
-          foreignField: '_id',
-          as: 'thumbnail'
-        } },
-        { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
-        { $project: {
-          postNum: 1,
-          author: { nickname: 1 },
-          thumbnail: { serverFileName: 1 },
-          menu: 1,
-          category: 1,
-          title: 1,
-          content: { $substrCP: ['$content', 0, 200] },
-          isPublic: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          viewCount: 1,
-          liked: { $in: [ObjectId(payload.userId), '$likes'] },
+          liked: { $in: [userId, '$likes'] },
           likeCount: { $size: '$likes' },
           commentCount: { $size: '$comments' }
         } }
@@ -342,7 +279,7 @@ class PostHandler {
     }
   }
 
-  async #getMatchQuery(queries, loginUserId = null) {
+  async #getMatchQuery(queries, loginUserId) {
     const matchQuery = {};
     const { menu, category, hasThumbnail, filter, userId, skip, limit } = queries;
 

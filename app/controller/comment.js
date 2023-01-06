@@ -1,13 +1,11 @@
 import BaseController from './base.js';
 import CommentHandler from '../handler/comment.js';
 import rules from '../middlewares/validation/comment.js';
-import { upload } from '../middlewares/multer.js';
 
 class CommentController extends BaseController {
   constructor() {
     super();
     this._commentHandler = new CommentHandler();
-    this._upload = upload;
   }
 
   create(req, res, next) {
@@ -41,14 +39,6 @@ class CommentController extends BaseController {
       this.validate(rules.deleteCommentRules, req, res, () => {
         this._commentHandler.deleteComment(req, payload, this._responseManager.getDefaultResponseHandler(res));
       });
-    });
-  }
-
-  #upload(req, res, next, callback) {
-    this._upload.single('image')(req, res, (error) => {
-      return error
-        ? this._responseManager.respondWithError(res, error.status ?? 400, error.message)
-        : callback();
     });
   }
 }

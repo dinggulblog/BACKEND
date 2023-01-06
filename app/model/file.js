@@ -46,6 +46,8 @@ const FileSchema = new mongoose.Schema({
 
 FileSchema.post('findOneAndDelete', async function (doc, next) {
   try {
+    if (!doc) return next();
+
     if (doc.storage === 'local') {
       const filePath = join(__dirname, 'uploads', doc.serverFileName);
       accessSync(filePath, constants.F_OK);

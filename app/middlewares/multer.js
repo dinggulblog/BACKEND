@@ -1,5 +1,4 @@
 import S3 from 'aws-sdk/clients/s3.js';
-import sharp from 'sharp';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import { join, extname, basename } from 'path';
@@ -21,7 +20,6 @@ export const upload = multer({
       done(null, join(__dirname, 'uploads'));
     },
     filename: (req, file, done) => {
-      file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8')
       const ext = extname(file.originalname);
       done(null, Date.now() + '-' + basename(file.originalname, ext) + ext);
     }
@@ -42,8 +40,9 @@ export const uploadS3 = multer({
     bucket: 'dinggul-bucket',
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, done) => {
+      const foldername = req.baseUrl.includes('users') ? 'avatar' : 'original'
       const ext = extname(file.originalname)
-      done(null, `original/${Date.now()}-${basename(file.originalname, ext)}${ext}`)
+      done(null, `${foldername}/${Date.now()}-${basename(file.originalname, ext)}${ext}`)
     }
   }),
   limits: {
