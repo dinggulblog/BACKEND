@@ -35,12 +35,12 @@ class PostHandler {
       const userId = payload ? ObjectId(payload.userId) : null;
 
       const matchQuery = await this.#getMatchQuery(req.query, userId);
-      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / (limit / 2));
+      const maxPage = !skip ? Math.ceil(await PostModel.countDocuments(matchQuery) / limit) : null;
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
         { $sort: { createdAt: -1 } },
         { $skip: skip },
-        { $limit: limit },
+        { $limit: skip ? limit : limit * 2 },
         { $lookup: {
           from: 'users',
           localField: 'author',
@@ -88,12 +88,12 @@ class PostHandler {
       const { query: { skip, limit } } = req;
 
       const matchQuery = await this.#getMatchQuery(req.query, payload.userId)
-      const maxPage = Math.ceil(await PostModel.countDocuments(matchQuery) / limit / 2);
+      const maxPage = !skip ? Math.ceil(await PostModel.countDocuments(matchQuery) / limit) : null;
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
         { $sort: { createdAt: -1 } },
         { $skip: skip },
-        { $limit: limit },
+        { $limit: skip ? limit : limit * 2 },
         { $lookup: {
           from: 'users',
           localField: 'author',
@@ -350,7 +350,7 @@ class PostHandler {
   }
 
   async #increaseViewCount() {
-    
+
   }
 }
 
