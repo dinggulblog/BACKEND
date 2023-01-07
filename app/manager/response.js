@@ -116,10 +116,7 @@ class ResponseManager {
     response.data = data;
     response.message = message;
     response.links = links;
-    cookieNames.forEach(name => name === 'accessToken'
-      ? res.clearCookie(name, cookieOption(accessTokenMaxAge))
-      : res.clearCookie(name, cookieOption(refreshTokenMaxAge))
-    );
+    cookieNames.forEach(name => res.cookie(name, '', cookieOption(0)));
 
     res.status(code).json(response);
   }
