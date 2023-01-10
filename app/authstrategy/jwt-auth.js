@@ -61,7 +61,11 @@ class JwtAuthStrategy extends BaseAuthStrategy {
     const accessToken = this._extractToken('accessToken', req);
 
     if (!ecPublicKey) {
-      return callback.onFailure(new ServerError('서버 에러: JWT 인증에 사용할 공개키가 존재하지 않음'))
+      return callback.onFailure(new ServerError('서버 에러: JWT 인증에 사용할 공개키가 존재하지 않음'));
+    }
+
+    if (!refreshToken) {
+      return callback.onFailure(new JwtError('토큰이 존재하지 않아 로그인이 필요합니다.'));
     }
 
     if (req.originalUrl === '/v1/auth' && req.method === 'PUT') {

@@ -22,12 +22,25 @@ class PostController extends BaseController {
   }
 
   get(req, res, next) {
-    this.validate(rules.getPostRules, req, res, () => {
-      this._postHandler.getPost(req, this._responseManager.getDefaultResponseHandlerError(res, ((data, message, code) => {
-        const hateoasLinks = this.#getPostHATEOASLink(req.baseUrl, data?.post?.linkedPosts)
-        this._responseManager.respondWithSuccess(res, code || this._responseManager.HTTP_STATUS.OK, data, message, hateoasLinks);
-      })));
-    });
+    this._passport.authenticate('jwt-auth', {
+      onVerified: (token, payload) => {
+        this.validate(rules.getPostRules, req, res, () => {
+          this._postHandler.getPost(req, payload, this._responseManager.getDefaultResponseHandlerError(res, ((data, message, code) => {
+            const hateoasLinks = this.#getPostHATEOASLink(req.baseUrl, data?.post?.linkedPosts)
+            this._responseManager.respondWithSuccess(res, code || this._responseManager.HTTP_STATUS.OK, data, message, hateoasLinks);
+          })));
+        });
+      },
+      onFailure: (error) => {
+        this.validate(rules.getPostRules, req, res, () => {
+          this._postHandler.getPost(req, null, this._responseManager.getDefaultResponseHandlerError(res, ((data, message, code) => {
+            const hateoasLinks = this.#getPostHATEOASLink(req.baseUrl, data?.post?.linkedPosts)
+            this._responseManager.respondWithSuccess(res, code || this._responseManager.HTTP_STATUS.OK, data, message, hateoasLinks);
+          })));
+        });
+      }
+    })(req, res, next);
+
   }
 
   getAll(req, res, next) {

@@ -35,12 +35,12 @@ class PostHandler {
       const userId = payload ? ObjectId(payload.userId) : null;
 
       const matchQuery = await this.#getMatchQuery(req.query, userId);
-      const maxPage = !skip ? Math.ceil(await PostModel.countDocuments(matchQuery) / limit) : null;
+      const maxPage = !skip ? await PostModel.countDocuments(matchQuery) : null;
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
         { $sort: { createdAt: -1 } },
         { $skip: skip },
-        { $limit: skip ? limit : limit * 2 },
+        { $limit: limit },
         { $lookup: {
           from: 'users',
           localField: 'author',
@@ -88,12 +88,12 @@ class PostHandler {
       const { query: { skip, limit } } = req;
 
       const matchQuery = await this.#getMatchQuery(req.query, payload.userId)
-      const maxPage = !skip ? Math.ceil(await PostModel.countDocuments(matchQuery) / limit) : null;
+      const maxPage = !skip ? await PostModel.countDocuments(matchQuery) : null;
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
         { $sort: { createdAt: -1 } },
         { $skip: skip },
-        { $limit: skip ? limit : limit * 2 },
+        { $limit: limit },
         { $lookup: {
           from: 'users',
           localField: 'author',
@@ -136,8 +136,9 @@ class PostHandler {
     }
   }
 
-  async getPost(req, callback) {
+  async getPost(req, payload, callback) {
     try {
+      const userId = payload ? ObjectId(payload.userId) : null;
       const postId = ObjectId(req.params.id);
       const post = await PostModel.aggregate([
         { $setWindowFields: {
@@ -185,6 +186,7 @@ class PostHandler {
           viewCount: { $add: ['$viewCount', 1] }
         } },
         { $addFields: {
+          liked: { $in: [userId, '$likes'] },
           likeCount: { $size: '$likes' }
         } },
         { $project: {
