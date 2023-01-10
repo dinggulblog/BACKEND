@@ -23,7 +23,6 @@ class DraftHandler {
 
       if (req.files) {
         images = await FileModel.createManyInstances(payload.userId, draft._id, 'Draft', req.files);
-        images.forEach(image => image.serverFileName = this.uploadUrl.concat(image.serverFileName));
         draft.images = images.map(image => image._id);
         await draft.save({ validateBeforeSave: false });
       }
