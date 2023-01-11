@@ -194,7 +194,7 @@ class PostHandler {
         } }
       ]).exec();
 
-      if (post.length) this.cachedPostIds.push(post[0]._id)
+      // if (post.length) this.cachedPostIds.push(post[0]._id)
 
       callback.onSuccess({ post: post.shift() ?? null });
     } catch (error) {
