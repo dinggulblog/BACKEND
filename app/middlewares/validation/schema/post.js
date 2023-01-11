@@ -54,18 +54,17 @@ const POSTS_PAGINATION_SCHEMA = () => {
       toBoolean: true
     },
     'filter': {
+      optional: { options: { nullable: true, checkFalsy: true } },
       matches: {
         options: [/\b(?:like|comment)\b/],
         errorMessage: 'Available filtering words: like, comment'
-      },
-      optional: { options: { nullable: true } },
+      }
     },
     'userId': {
-      isMongoId: true,
+      optional: { options: { nullable: true, checkFalsy: true } },
       customSanitizer: {
-        options: (id) => ObjectId(id)
-      },
-      optional: { options: { nullable: true } }
+        options: (id) => id && ObjectId.isValid(id) ? ObjectId(id) : null
+      }
     },
     'skip': {
       toInt: true,
