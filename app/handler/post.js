@@ -6,7 +6,6 @@ import { CommentModel } from '../model/comment.js';
 class PostHandler {
   constructor() {
     this.cachedPostIds = [];
-    this.uploadUrl = process.env.NODE_ENV === 'develop' ? 'http://localhost:3000/uploads/' : `${process.env.S3_URL}thumbnail/`;
   }
 
   async createPost(req, payload, callback) {
@@ -59,12 +58,12 @@ class PostHandler {
           from: 'files',
           localField: 'thumbnail',
           foreignField: '_id',
-          pipeline: [{ $project: { serverFileName: 1 } }],
+          pipeline: [{ $project: { thumbnail: 1 } }],
           as: 'thumbnail'
         } },
         { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
         { $addFields: {
-          thumbnail: { $concat: [this.uploadUrl, '$thumbnail.serverFileName'] },
+          thumbnail: '$thumbnail.thumbnail',
           content: { $substrCP: ['$content', 0, 200] },
           liked: { $in: [userId, '$likes'] },
           likeCount: { $size: '$likes' },
@@ -112,12 +111,12 @@ class PostHandler {
           from: 'files',
           localField: 'thumbnail',
           foreignField: '_id',
-          pipeline: [{ $project: { serverFileName: 1 } }],
+          pipeline: [{ $project: { thumbnail: 1 } }],
           as: 'thumbnail'
         } },
         { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
         { $addFields: {
-          thumbnail: { $concat: [this.uploadUrl, '$thumbnail.serverFileName'] },
+          thumbnail: '$thumbnail.thumbnail',
           content: { $substrCP: ['$content', 0, 200] },
           liked: { $in: [userId, '$likes'] },
           likeCount: { $size: '$likes' },
@@ -170,7 +169,7 @@ class PostHandler {
               as: 'avatar'
             } },
             { $unwind: { path: '$avatar', preserveNullAndEmptyArrays: true } },
-            { $project: { avatar: { thumbnail: { $concat: [this.uploadUrl, '$avatar.serverFileName'] } }, nickname: 1, greetings: 1 } }
+            { $project: { avatar: { thumbnail: 1 }, nickname: 1, greetings: 1 } }
           ],
           as: 'author'
         } },
@@ -179,7 +178,7 @@ class PostHandler {
           from: 'files',
           localField: 'images',
           foreignField: '_id',
-          pipeline: [{ $project: { thumbnail: { $concat: [this.uploadUrl, '$serverFileName'] } } }],
+          pipeline: [{ $project: { serverFileName: 1, thumbnail: 1 } }],
           as: 'images'
         } },
         { $set: {

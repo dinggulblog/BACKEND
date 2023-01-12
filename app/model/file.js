@@ -3,6 +3,8 @@ import { join } from 'path';
 import { accessSync, constants, unlinkSync } from 'fs';
 import { deleteS3 } from '../middlewares/multer.js';
 
+const uploadUrl = process.env.NODE_ENV === 'develop' ? 'http://localhost:3000/uploads/' : `${process.env.S3_URL}thumbnail/`;
+
 const FileSchema = new mongoose.Schema({
   uploader: {
     type: mongoose.Schema.Types.ObjectId,
@@ -29,6 +31,9 @@ const FileSchema = new mongoose.Schema({
   serverFileName: {
     type: String,
     required: true
+  },
+  thumbnail: {
+    type: String,
   },
   size: {
     type: Number
@@ -80,13 +85,15 @@ const fileModel = mongoose.model('File', FileSchema);
  */
 fileModel.createSingleInstance = async function (uploader, belonging, belongingModel, file) {
   if (file && file?.originalname) {
+    const serverFileName = file?.filename ?? file.key.split('/')[file.key.split('/').length - 1];
     return await FileModel.create({
       uploader,
       belonging,
       belongingModel,
       storage: file.key ? 's3' : 'local',
       originalFileName: file.originalname,
-      serverFileName: file?.filename ?? file.key.split('/')[file.key.split('/').length - 1],
+      serverFileName: serverFileName,
+      thumbnail: uploadUrl + serverFileName,
       size: file.size
     });
   };
@@ -110,6 +117,7 @@ fileModel.createManyInstances = async function (uploader, belonging, belongingMo
       storage: file.key ? 's3' : 'local',
       originalFileName: file.originalname,
       serverFileName: file?.filename ?? file.key.split('/')[file.key.split('/').length - 1],
+      thumbnail: uploadUrl + file?.filename ?? file.key.split('/')[file.key.split('/').length - 1],
       size: file.size
     })
   ));

@@ -86,7 +86,7 @@ PostSchema.pre('save', async function (next) {
 // 게시물이 정상적으로 저장되면, 게시물에 포함될 파일들의 belonging을 게시물 ID로 수정
 PostSchema.post('save', async function (doc, next) {
   try {
-    if (this.isNew && doc.images.length) {
+    if (doc.images.length) {
       for await (const image of doc.images) {
         FileModel.updateOne(
           { _id: image },

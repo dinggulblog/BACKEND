@@ -3,7 +3,6 @@ import { FileModel } from '../model/file.js';
 
 class DraftHandler {
   constructor() {
-    this.uploadUrl = process.env.NODE_ENV === 'develop' ? 'http://localhost:3000/uploads/' : `${process.env.S3_URL}thumbnail/`;
   }
 
   async createDraft(req, payload, callback) {
