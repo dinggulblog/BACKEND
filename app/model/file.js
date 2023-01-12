@@ -110,16 +110,19 @@ fileModel.createSingleInstance = async function (uploader, belonging, belongingM
  */
 fileModel.createManyInstances = async function (uploader, belonging, belongingModel, files = []) {
   return await FileModel.insertMany(files.map(
-    file => ({
-      uploader,
-      belonging,
-      belongingModel,
-      storage: file.key ? 's3' : 'local',
-      originalFileName: file.originalname,
-      serverFileName: file?.filename ?? file.key.split('/')[file.key.split('/').length - 1],
-      thumbnail: uploadUrl + file?.filename ?? file.key.split('/')[file.key.split('/').length - 1],
-      size: file.size
+    file => {
+      const serverFileName = file?.filename ?? file.key.split('/')[file.key.split('/').length - 1];
+      return ({
+        uploader,
+        belonging,
+        belongingModel,
+        storage: file.key ? 's3' : 'local',
+        originalFileName: file.originalname,
+        serverFileName: serverFileName,
+        thumbnail: uploadUrl + serverFileName,
+        size: file.size
     })
+  }
   ));
 };
 
