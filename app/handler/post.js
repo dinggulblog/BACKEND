@@ -3,9 +3,10 @@ import { PostModel } from '../model/post.js';
 import { FileModel } from '../model/file.js';
 import { CommentModel } from '../model/comment.js';
 
-class PostHandler {
+export const cachedPostIds = new Map();
+
+export class PostHandler {
   constructor() {
-    this.cachedPostIds = [];
   }
 
   async createPost(req, payload, callback) {
@@ -193,7 +194,10 @@ class PostHandler {
         } }
       ]).exec();
 
-      // if (post.length) this.cachedPostIds.push(post[0]._id)
+      if (post.length) {
+        const id = post[0]._id;
+        cachedPostIds.has(id) ? cachedPostIds.set(id, cachedPostIds.get(id) + 1) : cachedPostIds.set(id, 1)
+      }
 
       callback.onSuccess({ post: post.shift() ?? null });
     } catch (error) {
@@ -349,10 +353,4 @@ class PostHandler {
 
     return searchQuery;
   }
-
-  async #increaseViewCount() {
-
-  }
 }
-
-export default PostHandler;

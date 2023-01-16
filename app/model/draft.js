@@ -46,7 +46,9 @@ const DraftSchema = new mongoose.Schema({
     ref: 'User'
   }]
 }, {
-  timestamps: false,
+  timestamps: {
+    currentTime: (time = Date.now()) => new Date(time).getTime() - new Date(time).getTimezoneOffset() * 60 * 1000
+  },
   versionKey: false
 });
 
@@ -63,21 +65,6 @@ DraftSchema.post('findOneAndDelete', async function (doc, next) {
           { lean: true }
         ).exec();
       }
-    }
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-DraftSchema.post('updateOne', async function (doc, next) {
-  try {
-    if (this._update?.$pull?.images) {
-      await FileModel.findOneAndDelete(
-        { _id: this._update.$pull.images },
-        { lean: true }
-      ).exec();
     }
 
     next();

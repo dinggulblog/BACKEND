@@ -8,6 +8,8 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import history from 'connect-history-api-fallback';
 
+import './app/util/node-scheduler.js';
+import './app/util/toad-scheduler.js';
 import './global.js';
 import './env.js';
 import routes from './app/routes/index.js';

@@ -8,5 +8,6 @@
   },
   "execMap": {
     "mjs": "node"
-  }
+  },
+  "delay": 2000
 }

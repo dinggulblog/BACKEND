@@ -1,10 +1,9 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "A blog API server using Nodejs, Express and Mongoose",
+  "description": "A blog API server using Nodejs, Express and MongoDB",
   "exports": "./index.mjs",
   "type": "module",
-  "private": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/dinggulblog/backend"
@@ -14,12 +13,12 @@
     "dev": "cross-env NODE_ENV=develop PORT=3000 nodemon --inspect ./app/bin/www.js"
   },
   "keywords": [
-    "API",
+    "Blog",
     "Nodejs",
     "Express",
-    "Mongoose"
+    "MongoDB"
   ],
-  "author": "dinggul",
+  "author": "Sudal1",
   "license": "MIT",
   "dependencies": {
     "auto-bind": "^5.0.1",
@@ -43,13 +42,12 @@
     "node-cache": "^5.1.2",
     "node-schedule": "^2.1.0",
     "passport": "^0.6.0",
-    "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
     "passport-strategy": "^1.0.0",
     "redis": "^4.3.1",
     "sanitize-html": "^2.7.3",
     "sharp": "^0.31.2",
-    "spdy": "^4.0.2"
+    "toad-scheduler": "^2.2.0"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

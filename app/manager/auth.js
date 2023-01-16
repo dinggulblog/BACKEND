@@ -2,14 +2,12 @@ import passport from 'passport';
 import { SignJWT, importPKCS8 } from 'jose';
 import { readFileSync } from 'fs';
 
-import { RevokedTokenModel } from '../model/revoked-token.js';
 import { JwtTokenModel } from '../model/jwt-token.js';
 import { jwtOptions } from '../../config/jwt-options.js';
 import BaseAutoBindedClass from '../base/autobind.js';
 import CredentialsAuth from '../authstrategy/credentials.js';
 import JwtAuthStrategy from '../authstrategy/jwt-auth.js';
 import SecretKeyAuth from '../authstrategy/secret-key.js';
-import ForbiddenError from '../error/forbidden.js';
 
 class AuthManager extends BaseAutoBindedClass {
   constructor() {
