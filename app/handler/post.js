@@ -34,7 +34,7 @@ class PostHandler {
       const userId = payload ? ObjectId(payload.userId) : null;
 
       const matchQuery = await this.#getMatchQuery(req.query, userId);
-      const maxPage = !skip ? await PostModel.countDocuments(matchQuery) : null;
+      const maxCount = !skip ? await PostModel.countDocuments(matchQuery) : null;
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
         { $sort: { createdAt: -1 } },
@@ -76,7 +76,7 @@ class PostHandler {
         } }
       ]).exec();
 
-      callback.onSuccess({ posts, maxPage });
+      callback.onSuccess({ posts, maxCount });
     } catch (error) {
       callback.onError(error);
     }
@@ -87,7 +87,7 @@ class PostHandler {
       const { query: { skip, limit } } = req;
 
       const matchQuery = await this.#getMatchQuery(req.query, payload.userId)
-      const maxPage = !skip ? await PostModel.countDocuments(matchQuery) : null;
+      const maxCount = !skip ? await PostModel.countDocuments(matchQuery) : null;
       const posts = await PostModel.aggregate([
         { $match: matchQuery },
         { $sort: { createdAt: -1 } },
@@ -129,7 +129,7 @@ class PostHandler {
         } }
       ]).exec();
 
-      callback.onSuccess({ posts, maxPage });
+      callback.onSuccess({ posts, maxCount });
     } catch (error) {
       callback.onError(error);
     }
