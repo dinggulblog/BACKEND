@@ -269,18 +269,11 @@ export class PostHandler {
 
   async deletePostFile(req, payload, callback) {
     try {
-      const { modifiedCount } = await PostModel.updateOne(
+      await PostModel.updateOne(
         { _id: req.params.id, author: payload.userId },
         { $pull: { images: req.body.image } },
         { lean: true }
       ).exec();
-
-      if (modifiedCount) {
-        await FileModel.findOneAndDelete(
-          { _id: req.body.image },
-          { lean: true }
-        ).exec();
-      }
 
       callback.onSuccess({});
     } catch (error) {

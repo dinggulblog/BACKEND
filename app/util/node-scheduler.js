@@ -9,7 +9,7 @@ rule.minute = 0;
 rule.second = 0;
 rule.tz = 'Asia/Seoul';
 
-
+if (process.env.INSTANCE_ID === 0) {
   const job = scheduleJob(rule, async () => {
     try {
       console.log('A new daily node scheduler has begun!');
@@ -22,17 +22,16 @@ rule.tz = 'Asia/Seoul';
         { lean: true }
       ).exec();
 
-      console.log('Deleted drafts: ', drafts, '\nCount: %d', drafts.length);
-
       const deleted = await DraftModel.deleteMany(
         { _id: { $in: drafts.map(({ _id }) => _id) } },
         { lean: true }
       ).exec();
 
+      console.log('\nLength of deleted draft: %d', drafts.length);
       console.log('Succesfully deleted Count: %d', deleted.deletedCount);
     } catch (error) {
       console.error(error);
       throw new Error(error);
     }
   });
-
+}
