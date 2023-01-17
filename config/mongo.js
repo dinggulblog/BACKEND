@@ -29,9 +29,6 @@ export const createDefaultDocuments = async () => {
       { sub: 'dev', type: 'list', categories: ['기타', 'Javascript', 'Node.js', 'MongoDB'] },
       { sub: 'daily', type: 'list', categories: ['기타', '일상', '햄찌', '게임'] },
       { sub: 'album', type: 'card', categories: ['기타', '햄찌', '게임', '여행'] }
-    ],
-    'guest': [
-      { sub: 'guest book' }
     ]
   };
 
