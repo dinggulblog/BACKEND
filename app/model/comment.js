@@ -45,7 +45,6 @@ const CommentSchema = new mongoose.Schema({
 });
 
 CommentSchema.index({ post: 1 });
-CommentSchema.index({ post: 1, createdAt: 1 });
 CommentSchema.index({ commenter: 1 });
 
 CommentSchema.virtual('id')

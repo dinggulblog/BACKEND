@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 
 import { CounterModel } from './counter.js';
-import { DraftModel } from './draft.js';
 import { FileModel } from './file.js';
 import ForbiddenError from '../error/forbidden.js';
 

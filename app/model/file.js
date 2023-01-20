@@ -49,6 +49,8 @@ const FileSchema = new mongoose.Schema({
   versionKey: false
 });
 
+FileSchema.index({ belonging: 1 });
+
 FileSchema.post('findOneAndDelete', async function (doc, next) {
   try {
     if (!doc) return next();

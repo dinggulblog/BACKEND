@@ -1,4 +1,3 @@
-import { UserModel } from '../model/user.js';
 import { PostModel } from '../model/post.js';
 import { FileModel } from '../model/file.js';
 import { CommentModel } from '../model/comment.js';
@@ -31,14 +30,15 @@ export class PostHandler {
 
   async getPosts(req, payload, callback) {
     try {
-      const { query: { skip, limit } } = req;
-      const userId = payload ? ObjectId(payload.userId) : null;
+      const userId = payload ? new ObjectId(payload.userId) : null;
 
-      const matchQuery = await this.#getMatchQuery(req.query, userId);
-      const maxCount = !skip ? await PostModel.countDocuments(matchQuery) : null;
+      const { skip, limit } = req.query;
+      const { match, sort } = await this.#getMatchQuery(req.query, userId);
+      const maxCount = !skip ? await PostModel.countDocuments(match) : null;
       const posts = await PostModel.aggregate([
-        { $match: matchQuery },
-        { $sort: { createdAt: -1 } },
+        { $match: match },
+        { $addFields: { likeCount: { $size: '$likes' } } },
+        { $sort: sort },
         { $skip: skip },
         { $limit: limit },
         { $lookup: {
@@ -59,7 +59,6 @@ export class PostHandler {
           from: 'files',
           localField: 'thumbnail',
           foreignField: '_id',
-          pipeline: [{ $project: { thumbnail: 1 } }],
           as: 'thumbnail'
         } },
         { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
@@ -67,7 +66,6 @@ export class PostHandler {
           thumbnail: '$thumbnail.thumbnail',
           content: { $substrCP: ['$content', 0, 200] },
           liked: { $in: [userId, '$likes'] },
-          likeCount: { $size: '$likes' },
           commentCount: { $size: '$comments' }
         } },
         { $project: {
@@ -85,13 +83,14 @@ export class PostHandler {
 
   async getPostsAsAdmin (req, payload, callback) {
     try {
-      const { query: { skip, limit } } = req;
+      const { skip, limit } = req.query;
 
-      const matchQuery = await this.#getMatchQuery(req.query, payload.userId)
+      const { match, sort } = await this.#getMatchQuery(req.query, userId);
       const maxCount = !skip ? await PostModel.countDocuments(matchQuery) : null;
       const posts = await PostModel.aggregate([
-        { $match: matchQuery },
-        { $sort: { createdAt: -1 } },
+        { $match: match },
+        { $addFields: { likeCount: { $size: '$likes' } } },
+        { $sort: sort },
         { $skip: skip },
         { $limit: limit },
         { $lookup: {
@@ -112,7 +111,6 @@ export class PostHandler {
           from: 'files',
           localField: 'thumbnail',
           foreignField: '_id',
-          pipeline: [{ $project: { thumbnail: 1 } }],
           as: 'thumbnail'
         } },
         { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
@@ -120,7 +118,6 @@ export class PostHandler {
           thumbnail: '$thumbnail.thumbnail',
           content: { $substrCP: ['$content', 0, 200] },
           liked: { $in: [userId, '$likes'] },
-          likeCount: { $size: '$likes' },
           commentCount: { $size: '$comments' }
         } },
         { $project: {
@@ -138,8 +135,8 @@ export class PostHandler {
 
   async getPost(req, payload, callback) {
     try {
-      const userId = payload ? ObjectId(payload.userId) : null;
-      const postId = ObjectId(req.params.id);
+      const userId = payload ? new ObjectId(payload.userId) : null;
+      const postId = new ObjectId(req.params.id);
       const post = await PostModel.aggregate([
         { $setWindowFields: {
           partitionBy: { menu: '$menu', category: '$category' },
@@ -214,7 +211,7 @@ export class PostHandler {
         { _id: req.params.id, author: payload.userId },
         {
           $set: { menu, category, title, content, isPublic, thumbnail },
-          $addToSet: { images: { $each: images.map(image => image._id) } }
+          $addToSet: { images: { $each: images.map(({ _id }) => _id) } }
         },
         { new: true, lean: true }
       ).exec();
@@ -282,8 +279,9 @@ export class PostHandler {
   }
 
   async #getMatchQuery(queries, loginUserId) {
-    const matchQuery = {};
-    const { menu, category, hasThumbnail, filter, userId } = queries;
+    let sortQuery = { createdAt: -1 };
+    const matchQuery = { isPublic: true, isActive: true };
+    const { menu, category, hasThumbnail, filter, userId, sort } = queries;
 
     if (Array.isArray(menu) && menu.length) {
       matchQuery.menu = { $in: menu };
@@ -304,46 +302,29 @@ export class PostHandler {
         { lean: true }
       ).exec();
 
-      matchQuery._id = { $in: comments.map(comment => comment.post) };
+      matchQuery._id = { $in: comments.map(({ post }) => post) };
+    }
+
+    if (sort === 'like') {
+      sortQuery = { likeCount: -1, ...sortQuery };
+    }
+    else if (sort === 'view') {
+      sortQuery = { viewCount: -1, ...sortQuery };
     }
 
     if (loginUserId) {
-      return { $or: [
-        { isPublic: true, isActive: true, ...matchQuery },
-        { author: loginUserId, isPublic: false, isActive: true, ...matchQuery }
-      ] }
+      return {
+        sort: sortQuery,
+        match: { $or: [
+          { ...matchQuery },
+          { ...matchQuery, author: loginUserId, isPublic: false }
+        ] }
+      };
     }
 
-    return { isPublic: true, isActive: true, ...matchQuery }
-  }
-
-  async #getSearchQuery(queries) {
-    const searchQuery = {};
-
-    if (queries.searchType && queries?.searchText.length >= 2) {
-      const searchTypes = queries.searchType.toLowerCase().split('+').map(elem => elem.trim());
-      const searchQuries = [];
-
-      if (searchTypes.indexOf('title') >= 0) {
-        searchQuries.push({ title: { $regex: new RegExp(queries.searchText, 'i') } });
-      }
-      if (searchTypes.indexOf('content') >= 0) {
-        searchQuries.push({ content: { $regex: new RegExp(queries.searchText, 'i') } });
-      }
-      if (searchTypes.indexOf('author!') >= 0) {
-        const user = await UserModel.findOne({ nickname: queries.searchText }).lean().exec();
-        if (user) searchQuries.push({ author: user.id });
-      }
-      else if (searchTypes.indexOf('author') >= 0) {
-        const users = await UserModel.find({ nickname: { $regex: new RegExp(queries.searchText, 'i') } }).lean().exec();
-        users.forEach(user => { if (user) searchQuries.push({ author: { $in: user.id } }) });
-      }
-
-      if (searchQuries.length > 0) {
-        searchQuery.$or = searchQuries;
-      }
-    }
-
-    return searchQuery;
+    return {
+      sort: sortQuery,
+      match: matchQuery
+    };
   }
 }

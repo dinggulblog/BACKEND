@@ -8,23 +8,20 @@ class DraftHandler {
   async createDraft(req, payload, callback) {
     try {
       const { menu, category, title, content, isPublic, thumbnail } = req.body;
+      const id = new ObjectId();
 
-      let images = null;
+      const images = req.files ? await FileModel.createManyInstances(payload.userId, id, 'Draft', req.files) : null;
       const draft = await new DraftModel({
+        _id: id,
         author: payload.userId,
         menu,
         category,
         title,
         content,
         isPublic,
-        thumbnail
+        thumbnail,
+        images: images.map(({ _id }) => _id)
       }).save({ validateBeforeSave: false });
-
-      if (req.files) {
-        images = await FileModel.createManyInstances(payload.userId, draft._id, 'Draft', req.files);
-        draft.images = images.map(image => image._id);
-        await draft.save({ validateBeforeSave: false });
-      }
 
       callback.onSuccess({ draft, images });
     } catch (error) {

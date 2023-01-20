@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { RoleModel } from '../app/model/role.js';
 import { MenuModel } from '../app/model/menu.js';
+import { UserModel } from '../app/model/user.js';
 
 export const ObjectId = mongoose.Types.ObjectId;
 
@@ -42,6 +43,16 @@ export const createDefaultDocuments = async () => {
       await Promise.all(
         Object.keys(menus).map(main => menus[main].map(async ({ sub, type, categories }) => await new MenuModel({ main, sub, type, categories }).save())).flat()
       );
+    }
+    if (!await UserModel.estimatedDocumentCount()) {
+      const adminRole = await RoleModel.findOne({ name: 'ADMIN' }, { _id: 1 }, { lean: true }).exec();
+      await UserModel.create({
+        roles: adminRole._id,
+        email: 'test0001@test.com',
+        nickname: 'test0001',
+        password: 'test0001',
+        passwordConfirmation: 'test0001'
+      });
     }
   } catch (error) {
     console.error('MongoDB initiation ERROR: ' + error);
