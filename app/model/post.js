@@ -61,7 +61,6 @@ const PostSchema = new mongoose.Schema({
   versionKey: false
 });
 
-PostSchema.index({ menu: 1, createdAt: -1 });
 PostSchema.index({ menu: 1, category: 1, createdAt: -1 });
 
 // 게시물 저장 전 게시물 넘버링
