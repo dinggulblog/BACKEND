@@ -3,7 +3,7 @@ import { join } from 'path';
 import { accessSync, constants, unlinkSync } from 'fs';
 import { deleteS3 } from '../middlewares/multer.js';
 
-const uploadUrl = process.env.NODE_ENV === 'develop' ? 'http://localhost:3000/uploads/' : `${process.env.S3_URL}thumbnail/`;
+const uploadUrl = `${process.env.S3_URL}thumbnail/`;
 
 const FileSchema = new mongoose.Schema({
   uploader: {
@@ -95,7 +95,7 @@ fileModel.createSingleInstance = async function (uploader, belonging, belongingM
       storage: file.key ? 's3' : 'local',
       originalFileName: file.originalname,
       serverFileName: serverFileName,
-      thumbnail: uploadUrl + serverFileName,
+      thumbnail: file.key ? uploadUrl + serverFileName : 'http://localhost:3000/uploads/' + serverFileName,
       size: file.size
     });
   };
@@ -121,7 +121,7 @@ fileModel.createManyInstances = async function (uploader, belonging, belongingMo
         storage: file.key ? 's3' : 'local',
         originalFileName: file.originalname,
         serverFileName: serverFileName,
-        thumbnail: uploadUrl + serverFileName,
+        thumbnail: file.key ? uploadUrl + serverFileName : 'http://localhost:3000/uploads/' + serverFileName,
         size: file.size
     })
   }

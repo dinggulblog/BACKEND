@@ -40,9 +40,9 @@ export const uploadS3 = multer({
     bucket: 'dinggul-bucket',
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, done) => {
-      const foldername = req.baseUrl.includes('users') ? 'avatar' : 'original'
-      const ext = extname(file.originalname)
-      done(null, `${foldername}/${Date.now()}-${basename(file.originalname, ext)}${ext}`)
+      const foldername = req.baseUrl.includes('users') ? 'avatar' : 'original';
+      const ext = extname(file.originalname);
+      done(null, `${foldername}/${Date.now()}-${basename(file.originalname, ext)}${ext}`);
     }
   }),
   limits: {

@@ -1,3 +1,8 @@
+import './global.js';
+import './env.js';
+import './app/util/node-scheduler.js';
+import './app/util/toad-scheduler.js';
+
 import { join } from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -7,11 +12,6 @@ import morgan from 'morgan';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import history from 'connect-history-api-fallback';
-
-import './app/util/node-scheduler.js';
-import './app/util/toad-scheduler.js';
-import './global.js';
-import './env.js';
 import routes from './app/routes/index.js';
 import authManager from './app/manager/auth.js';
 import responseManager from './app/manager/response.js';

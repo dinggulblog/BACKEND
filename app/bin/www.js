@@ -4,9 +4,9 @@
  * Module dependencies.
  */
 import { readFileSync, readdirSync, mkdirSync } from 'fs';
-import app from '../../index.mjs';
 import http from 'http';
 import http2 from 'node:http2';
+import app from '../../index.mjs';
 
 import { connectMongoDB, createDefaultDocuments } from '../../config/mongo.js';
 
@@ -26,7 +26,6 @@ if (process.env.NODE_ENV === 'production') {
   const options = {
     key: readFileSync(process.env.LETSENCRYPT_PRIVKEY_DIR, 'utf8'),
     cert: readFileSync(process.env.LETSENCRYPT_FULLCHAIN_DIR, 'utf8'),
-    allowHTTP1: true
   }
 
   http2.createSecureServer(options, app)

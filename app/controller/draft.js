@@ -6,7 +6,7 @@ class DraftController extends BaseController {
   constructor() {
     super();
     this._draftHandler = new DraftHandler();
-    this._upload = process.env.NODE_ENV === 'develop' ? upload : uploadS3;
+    this._upload = process.env.NODE_ENV === 'develop' ? uploadS3 : uploadS3;
   }
 
   get(req, res, next) {
