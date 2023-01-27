@@ -8,7 +8,7 @@ const EMAIL_VALIDATION_SCHEMA = () => {
       bail: true,
       trim: true,
       isEmail: true,
-      normalizeEmail: true,
+      normalizeEmail: { options: { gmail_remove_dots: false } },
       errorMessage: '이메일 형식이 올바르지 않습니다.',
       custom: {
         options: async (email) => {
@@ -54,7 +54,7 @@ const ACCOUNT_VALIDATION_SCHEMA = () => {
     'email': {
       trim: true,
       isEmail: true,
-      normalizeEmail: true,
+      normalizeEmail: { options: { gmail_remove_dots: false } },
       errorMessage: '이메일 형식이 올바르지 않습니다.'
     },
     'password': {
