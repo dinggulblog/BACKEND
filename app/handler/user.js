@@ -121,12 +121,16 @@ class UserHandler {
   // Do not use 'lean' option!
   async updateAccountUsingCode(req, callback) {
     try {
-      const user = await UserModel.findOne({ email: req.params.email })
+      const { email, code, newPassword, passwordConfirmation } = req.body;
+      const user = await UserModel.findOne({ email })
         .select('password isActive')
         .exec();
 
-      user.code = req.body.code;
-      user.password = req.body.newPassword;
+      user.code = code;
+      user.originalPassword = user.password;
+      user.password = newPassword;
+      user.newPassword = newPassword;
+      user.passwordConfirmation = passwordConfirmation;
 
       await user.save();
 

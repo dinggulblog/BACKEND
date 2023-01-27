@@ -98,16 +98,16 @@ UserSchema.path('password').validate(function (value) {
     if (!passwordRegex.test(this.password)) {
       this.invalidate('password', 'Password REGEX Error');
     }
-    else if (this.password !== this.passwordConfirmation) {
+    if (this.password !== this.passwordConfirmation) {
       this.invalidate('password', 'Password confirmation does not matched!');
     }
   }
 
   if (this.code) {
-    if (this.newPassword && !passwordRegex.test(this.newPassword)) {
+    if (!passwordRegex.test(this.newPassword)) {
       this.invalidate('newPassword', 'Password REGEX Error');
     }
-    else if (this.newPassword !== this.passwordConfirmation) {
+    if (this.newPassword !== this.passwordConfirmation) {
       this.invalidate('passwordConfirmation', 'Password confirmation does not matched!');
     }
   }

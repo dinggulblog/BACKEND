@@ -25,8 +25,6 @@ const MailSchema = new mongoose.Schema({
   }
 }, { versionKey: false });
 
-MailSchema.index({ to: 1 });
-
 const mailModel = mongoose.model('Mail', MailSchema);
 
 mailModel.createCode = async function (to, type) {
@@ -37,9 +35,8 @@ mailModel.createCode = async function (to, type) {
   });
 };
 
-mailModel.validateCode = async function (to, code) {
-  const mail = await mailModel.findOne({ to: to }, null, { lean: true }).exec();
-  return !!mail && mail.code === code
+mailModel.getCode = async function (code) {
+  return await mailModel.findOne({ code }, null, { lean: true }).exec();
 };
 
 export const MailModel = mailModel

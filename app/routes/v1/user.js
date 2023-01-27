@@ -10,9 +10,8 @@ router.route('/account')
   .put(userController.update)
   .delete(userController.delete);
 
-router.route('/account/:email/reset')
-  .post(userController.createResetLink)
-  .put(userController.updateUsingCode);
+router.post('/account/reset/:email', userController.createResetLink);
+router.put('/account/reset', userController.updateUsingCode);
 
 router.route('/profile/:nickname')
   .get(userController.getProfile)

@@ -26,8 +26,10 @@ const EMAIL_CODE_VALIDATION_SCHEMA = () => {
       trim: true,
       custom: {
         options: async (code, { req }) => {
-          const validate = await MailModel.validateCode(req.params.email, code);
-          return !validate ? Promise.reject('링크가 만료되었거나, 인증에 문제가 발생하였습니다. 다시 시도해 주세요.') : true;
+          const mail = await MailModel.getCode(code);
+          if (!mail) return Promise.reject('링크가 만료되었거나, 인증에 문제가 발생하였습니다. 다시 시도해 주세요.');
+          req.body.email = mail.to;
+          return true
         }
       }
     },
