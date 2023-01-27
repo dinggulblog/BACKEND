@@ -15,5 +15,5 @@ export const validator = async (schemas = [], request, done) => {
 
   return errors.isEmpty()
     ? done(null)
-    : done(new UnprocessableError('Validation errors: ' + errorMessages.join(' & ')));
+    : done(new UnprocessableError(errorMessages.join(' & ')));
 }

@@ -35,12 +35,8 @@ const CommentSchema = new mongoose.Schema({
     default: false
   }
 }, {
-  toObject: {
-    virtuals: true
-  },
-  timestamps: {
-    currentTime: (time = Date.now()) => new Date(time).getTime() - new Date(time).getTimezoneOffset() * 60 * 1000
-  },
+  toObject: { virtuals: true },
+  timestamps: true,
   versionKey: false
 });
 

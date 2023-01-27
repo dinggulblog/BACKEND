@@ -1,4 +1,5 @@
 import AWS from 'aws-sdk';
+import striptags from 'striptags';
 
 const ses = new AWS.SES({
   region: 'ap-northeast-2',
@@ -8,7 +9,7 @@ const ses = new AWS.SES({
   }
 });
 
-const sendMail = ({ to, subject, body, from = process.env.SES_SENDER}) => {
+export const sendMail = ({ to, subject, body, from = 'Dinggul <support@dinggul.me>'}) => {
   return new Promise((resolve, reject) => {
     const params = {
       Destination: {
@@ -24,15 +25,15 @@ const sendMail = ({ to, subject, body, from = process.env.SES_SENDER}) => {
           },
           Text: {
             Charset: 'UTF-8',
-            Data: body
-          },
-          Subject: {
-            Charset: 'UTF-8',
-            Data: subject
+            Data: striptags(body)
           }
         },
-        Source: from
-      }
+        Subject: {
+          Charset: 'UTF-8',
+          Data: subject
+        }
+      },
+      Source: from
     };
 
     ses.sendEmail(params, (err, data) => {
@@ -41,5 +42,3 @@ const sendMail = ({ to, subject, body, from = process.env.SES_SENDER}) => {
     });
   });
 };
-
-export default sendMail;

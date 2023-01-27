@@ -1,36 +1,83 @@
 import sanitizeHtml from 'sanitize-html';
+import { UserModel } from '../../../model/user.js';
+import { MailModel } from '../../../model/mail.js';
 
-const USER_ACCOUNT_VALIDATION_SCHEMA = () => {
+const EMAIL_VALIDATION_SCHEMA = () => {
   return {
     'email': {
+      bail: true,
       trim: true,
       isEmail: true,
       normalizeEmail: true,
-      errorMessage: 'Invalid email format'
-    },
-    'password': {
-      trim: true,
-      isLength: {
-        options: [{ min: 4, max: 30 }],
-        errorMessage: 'Password must be between 4 and 30 chars long'
-      }
-    },
-    'passwordConfirmation': {
-      trim: true,
+      errorMessage: '이메일 형식이 올바르지 않습니다.',
       custom: {
-        options: (value, { req }) => value !== req.body.password ? Promise.reject('Password confirmation does not match password') : true
-      }
-    },
-    'nickname': {
-      matches: {
-        options: [/^[ㄱ-ㅎ가-힣a-zA-Z0-9]{2,15}$/],
-        errorMessage: 'Nickname must be between 2 and 15 chars long'
+        options: async (email) => {
+          const user = await UserModel.findOne({ email: email }, { email: 1, isActive: 1 }, { lean: true }).exec();
+          return !user ? Promise.reject('해당 이메일을 찾을 수 없습니다.') : true;
+        }
       }
     }
   };
 };
 
-const USER_ACCOUNT_UPDATE_VALIDATION_SCHEMA = () => {
+const EMAIL_CODE_VALIDATION_SCHEMA = () => {
+  return {
+    'code': {
+      trim: true,
+      custom: {
+        options: async (code, { req }) => {
+          const validate = await MailModel.validateCode(req.params.email, code);
+          return !validate ? Promise.reject('링크가 만료되었거나, 인증에 문제가 발생하였습니다. 다시 시도해 주세요.') : true;
+        }
+      }
+    },
+    'newPassword': {
+      trim: true,
+      isLength: {
+        options: [{ min: 4, max: 30 }],
+        errorMessage: '패스워드는 4자 이상, 30자 이하만 가능합니다.'
+      }
+    },
+    'passwordConfirmation': {
+      trim: true,
+      custom: {
+        options: (value, { req }) => value !== req.body.newPassword ? Promise.reject('패스워드가 일치하지 않습니다.') : true
+      }
+    },
+  };
+};
+
+const ACCOUNT_VALIDATION_SCHEMA = () => {
+  return {
+    'email': {
+      trim: true,
+      isEmail: true,
+      normalizeEmail: true,
+      errorMessage: '이메일 형식이 올바르지 않습니다.'
+    },
+    'password': {
+      trim: true,
+      isLength: {
+        options: [{ min: 4, max: 30 }],
+        errorMessage: '패스워드는 4자 이상, 30자 이하만 가능합니다.'
+      }
+    },
+    'passwordConfirmation': {
+      trim: true,
+      custom: {
+        options: (value, { req }) => value !== req.body.password ? Promise.reject('패스워드가 일치하지 않습니다.') : true
+      }
+    },
+    'nickname': {
+      matches: {
+        options: [/^[ㄱ-ㅎ가-힣a-zA-Z0-9]{2,15}$/],
+        errorMessage: '닉네임은 2자 이상, 15자 이하만 가능합니다.'
+      }
+    }
+  };
+};
+
+const ACCOUNT_UPDATE_VALIDATION_SCHEMA = () => {
   return {
     'currentPassword': {
       trim: true
@@ -39,37 +86,37 @@ const USER_ACCOUNT_UPDATE_VALIDATION_SCHEMA = () => {
       trim: true,
       isLength: {
         options: [{ min: 4, max: 30 }],
-        errorMessage: 'Password must be between 4 and 30 chars long'
+        errorMessage: '패스워드는 4자 이상, 30자 이하만 가능합니다.'
       }
     },
     'passwordConfirmation': {
       trim: true,
       custom: {
-        options: (value, { req }) => value !== req.body.newPassword ? Promise.reject('Password confirmation does not match password') : true
+        options: (value, { req }) => value !== req.body.newPassword ? Promise.reject('패스워드가 일치하지 않습니다.') : true
       }
     },
     'nickname': {
       matches: {
         options: [/^[ㄱ-ㅎ가-힣a-zA-Z0-9]{2,15}$/],
-        errorMessage: 'Nickname must be between 2 and 15 chars long'
+        errorMessage: '닉네임은 2자 이상, 15자 이하만 가능합니다.'
       }
     }
   };
 };
 
-const USER_PROFILE_UPDATE_VALIDATION_SCHEMA = () => {
+const PROFILE_UPDATE_VALIDATION_SCHEMA = () => {
   return {
     'greetings': {
       isLength: {
         options: [{ max: 300 }],
-        errorMessage: 'Greetings must be under 300 chars long'
+        errorMessage: '인사말은 300자 이하만 가능합니다.'
       },
       optional: { options: { nullable: true } }
     },
     'introduce': {
       isLength: {
         options: [{ max: 10000 }],
-        errorMessage: 'Introduce must be under 10000 chars long'
+        errorMessage: '소개글은 최대 10000자까지 가능합니다.'
       },
       customSanitizer: {
         options: value => value !== undefined
@@ -81,7 +128,9 @@ const USER_PROFILE_UPDATE_VALIDATION_SCHEMA = () => {
 };
 
 export default {
-  USER_ACCOUNT_VALIDATION_SCHEMA,
-  USER_ACCOUNT_UPDATE_VALIDATION_SCHEMA,
-  USER_PROFILE_UPDATE_VALIDATION_SCHEMA
+  EMAIL_VALIDATION_SCHEMA,
+  EMAIL_CODE_VALIDATION_SCHEMA,
+  ACCOUNT_VALIDATION_SCHEMA,
+  ACCOUNT_UPDATE_VALIDATION_SCHEMA,
+  PROFILE_UPDATE_VALIDATION_SCHEMA
 };

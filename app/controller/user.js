@@ -14,7 +14,7 @@ class UserController extends BaseController {
     this._passport.authenticate('secret-key-auth', {
       onVerified: () => {
         this.validate(rules.createAccountRules, req, res, () => {
-          this._userHandler.createUserAccount(req, this._responseManager.getDefaultResponseHandler(res));
+          this._userHandler.createAccount(req, this._responseManager.getDefaultResponseHandler(res));
         });
       },
       onFailure: (error) => {
@@ -23,28 +23,40 @@ class UserController extends BaseController {
     })(req, res, next);
   }
 
+  createResetLink(req, res, next) {
+    this.validate(rules.getAccountRules, req, res, () => {
+      this._userHandler.createAccountLink(req, this._responseManager.getDefaultResponseHandler(res));
+    });
+  }
+
   get(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this._userHandler.getUserAccount(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      this._userHandler.getAccount(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 
   getProfile(req, res) {
-    this._userHandler.getUserProfile(req, this._responseManager.getDefaultResponseHandler(res));
+    this._userHandler.getProfile(req, this._responseManager.getDefaultResponseHandler(res));
   }
 
   update(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this.validate(rules.updateAccountRules, req, res, () => {
-        this._userHandler.updateUserAccount(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        this._userHandler.updateAccount(req, payload, this._responseManager.getDefaultResponseHandler(res));
       });
+    });
+  }
+
+  updateUsingCode(req, res) {
+    this.validate(rules.updateAccountCodeRules, req, res, () => {
+      this._userHandler.updateAccountUsingCode(req, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 
   updateProfile(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this.validate(rules.updateProfileRules, req, res, () => {
-        this._userHandler.updateUserProfile(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        this._userHandler.updateProfile(req, payload, this._responseManager.getDefaultResponseHandler(res));
       });
     });
   }
@@ -52,20 +64,20 @@ class UserController extends BaseController {
   updateProfileAvatar(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this.#upload(req, res, () => {
-        this._userHandler.updateUserProfileAvatar(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        this._userHandler.updateProfileAvatar(req, payload, this._responseManager.getDefaultResponseHandler(res));
       });
     });
   }
 
   delete(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this._userHandler.deleteUserAccount(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      this._userHandler.deleteAccount(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 
   deleteProfileAvatar(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this._userHandler.deleteUserProfileAvatar(req, payload, this._responseManager.getDefaultResponseHandler(res));
+      this._userHandler.deleteProfileAvatar(req, payload, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 

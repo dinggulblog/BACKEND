@@ -46,9 +46,7 @@ const DraftSchema = new mongoose.Schema({
     ref: 'User'
   }]
 }, {
-  timestamps: {
-    currentTime: (time = Date.now()) => new Date(time).getTime() - new Date(time).getTimezoneOffset() * 60 * 1000
-  },
+  timestamps: true,
   versionKey: false
 });
 

@@ -2,9 +2,9 @@ import { genSalt, hash, compareSync } from 'bcrypt';
 import mongoose from 'mongoose';
 
 import { RoleModel } from './role.js';
-// import { PostModel } from './post.js';
 import { CommentModel } from './comment.js';
 import ForbiddenError from '../error/forbidden.js';
+import { MailModel } from './mail.js';
 
 const UserSchema = new mongoose.Schema({
   avatar: {
@@ -55,23 +55,23 @@ const UserSchema = new mongoose.Schema({
     expires: 0
   }
 }, {
-  toObject: {
-    virtuals: true
-  },
-  timestamps: {
-    currentTime: (time = Date.now()) => new Date(time).getTime() - new Date(time).getTimezoneOffset() * 60 * 1000
-  },
+  toObject: { virtuals: true },
+  timestamps: true,
   versionKey: false
 });
 
-UserSchema.index( { expiredAt: 1 }, { expireAfterSeconds: 0 } );
+UserSchema.index({ expiredAt: 1 }, { expireAfterSeconds: 0 });
 
 UserSchema.virtual('id')
   .get(function () { return this._id });
 
+UserSchema.virtual('code')
+  .get(function () { return this._code; })
+  .set(function (value) { this._code = value; });
+
 UserSchema.virtual('passwordConfirmation')
   .get(function(){ return this._passwordConfirmation; })
-  .set(function(value){ this._passwordConfirmation=value; });
+  .set(function(value){ this._passwordConfirmation = value; });
 
 UserSchema.virtual('originalPassword')
   .get(function() { return this._originalPassword })
@@ -103,7 +103,16 @@ UserSchema.path('password').validate(function (value) {
     }
   }
 
-  if (!this.isNew) {
+  if (this.code) {
+    if (this.newPassword && !passwordRegex.test(this.newPassword)) {
+      this.invalidate('newPassword', 'Password REGEX Error');
+    }
+    else if (this.newPassword !== this.passwordConfirmation) {
+      this.invalidate('passwordConfirmation', 'Password confirmation does not matched!');
+    }
+  }
+
+  else if (!this.isNew) {
     if (!this.currentPassword) {
       this.invalidate('currentPassword', 'Current password is required!');
     }
@@ -136,6 +145,16 @@ UserSchema.pre('save', async function (next) {
     next();
   }
 });
+
+UserSchema.post('save', async function (doc, next) {
+  try {
+    if (this.code) await MailModel.deleteOne({ code: this.code }, { lean: true }).exec();
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+})
 
 // 유저 정보 조회 시 훅
 UserSchema.post('findOne', function (doc, next) {
