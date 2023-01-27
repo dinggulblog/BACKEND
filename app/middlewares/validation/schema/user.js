@@ -5,11 +5,7 @@ import { MailModel } from '../../../model/mail.js';
 const EMAIL_VALIDATION_SCHEMA = () => {
   return {
     'email': {
-      bail: true,
       trim: true,
-      isEmail: true,
-      normalizeEmail: { options: { gmail_remove_dots: false } },
-      errorMessage: '이메일 형식이 올바르지 않습니다.',
       custom: {
         options: async (email) => {
           const user = await UserModel.findOne({ email: email }, { email: 1, isActive: 1 }, { lean: true }).exec();
