@@ -159,7 +159,7 @@ UserSchema.post('save', async function (doc, next) {
 // 유저 정보 조회 시 훅
 UserSchema.post('findOne', function (doc, next) {
   if (!doc) {
-    next(new ForbiddenError('존재하지 않는 유저입니다.'));
+    next(new ForbiddenError('해당 유저를 찾을 수 없습니다.'));
   }
   else if (!doc.isActive) {
     next(new ForbiddenError('본 계정은 비활성화 상태입니다. 관리자에게 문의하세요.'));
