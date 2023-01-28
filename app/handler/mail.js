@@ -9,14 +9,18 @@ class MailHandler {
     try {
       const { email, subject, content } = req.body;
 
-      await MailModel.create({ to: process.env.HOST_MAIL });
-
       await sendMail({
         to: process.env.HOST_MAIL,
-        subject: subject,
-        body: content,
-        from: email
+        subject: `문의: ${subject}`,
+        body: `<div>보낸 사람: ${email}</div><br/><br/><div>${content}</div>`,
       });
+
+      await MailModel.create({
+        to: email,
+        type: 'self',
+        subject,
+        content
+       });
 
       callback.onSuccess({});
     } catch (error) {

@@ -8,10 +8,16 @@ const MailSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    defalut: 'ses',
-    enum: ['ses', 'self']
+    defalut: 'find',
+    enum: ['find', 'self']
   },
   code: {
+    type: String
+  },
+  subject: {
+    type: String
+  },
+  content: {
     type: String
   },
   createdAt: {
