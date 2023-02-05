@@ -2,12 +2,12 @@ import { UserModel } from '../model/user.js';
 import { FileModel } from '../model/file.js';
 import { MailModel } from '../model/mail.js';
 import { sendMail } from '../middlewares/sendmail.js';
-import { getSecuredIPString } from '../util/util.js';
+import { securedIPString } from '../util/util.js';
 import InvalidRequestError from '../error/invalid-request.js';
 
 class UserHandler {
   constructor() {
-    this._host = process.env.NODE_ENV === 'production' ? 'https://dinggul.me' : 'http://localhost:8080'
+    this._host = process.env.HOST
   }
 
   async createAccount(req, callback) {
@@ -60,25 +60,17 @@ class UserHandler {
     try {
       const user = await UserModel.findOne(
         { _id: payload.userId },
-        { roles: 1, email: 1, isActive: 1, lastLoginIP: 1 },
+        { roles: 1, avatar: 1, email: 1, nickname: 1, isActive: 1, lastLoginIP: 1 },
         { lean: true,
           timestamps: false,
-          populate: { path: 'roles', select: 'name' } }
-        ).exec();
-
-      const profile = await UserModel.findOne(
-        { _id: payload.userId },
-        { nickname: 1, avatar: 1, isActive: 1, greetings: 1, introduce: 1 },
-        { lean: true,
-          timestamps: false,
+          populate: { path: 'roles', select: 'name' },
           populate: { path: 'avatar', select: 'thumbnail', match: { isActive: true } } }
         ).exec();
 
-      user.lastLoginIP = getSecuredIPString(user.lastLoginIP);
+      user.lastLoginIP = securedIPString(user.lastLoginIP);
       user.roles = user.roles.map(role => role.name);
-      delete profile.isActive;
 
-      callback.onSuccess({ user, profile });
+      callback.onSuccess({ user });
     } catch (error) {
       callback.onError(error);
     }

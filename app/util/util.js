@@ -1,5 +1,6 @@
 import { accessSync, unlinkSync, constants } from 'fs';
 import { join } from 'path';
+import { randomBytes } from 'crypto';
 
 /**
  * Convert a flat array to tree structure array
@@ -53,7 +54,18 @@ export const deleteMissingFiles = (fileObject) => {
   }
 }
 
-export const getSecuredIPString = (ip = '') => {
+export const securedIPString = (ip = '') => {
   const IP = ip.split('.');
   return IP.shift() + '.' + IP.shift() + '.' + '***.***';
+}
+
+/**
+ * Generates a random string of length characters by creating random bytes
+ * @param {Number} length
+ * @returns A string of length characters
+ */
+export const randomString = (length = 10) => {
+  return randomBytes(Math.ceil(length / 2))
+    .toString('hex')   // convert to hexadecimal format
+    .slice(0, length); // return required number of characters
 }

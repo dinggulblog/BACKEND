@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { randomUUID } from 'crypto';
+import { randomString } from '../util/util.js';
 
 const MailSchema = new mongoose.Schema({
   to: {
@@ -39,7 +39,7 @@ mailModel.createCode = async function (to, type) {
   return await mailModel.create({
     to,
     type,
-    code: randomUUID(),
+    code: randomString(12),
     expiredAt: Date.now() + 3600 * 24
   });
 };
