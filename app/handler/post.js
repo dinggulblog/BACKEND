@@ -150,7 +150,7 @@ export class PostHandler {
           localField: 'nearIds',
           foreignField: '_id',
           pipeline: [
-            { $match: { _id: { $ne: postId } } },
+            { $match: { _id: { $ne: postId }, isActive: true } },
             { $project: { title: { $substrCP: ['$title', 0, 50] }, rel: { $cond: [{ $lt: ['$_id', postId] }, 'prev', 'next'] } } }
           ],
           as: 'linkedPosts'
