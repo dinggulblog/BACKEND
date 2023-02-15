@@ -3,8 +3,8 @@ import mongoose from 'mongoose';
 
 import { RoleModel } from './role.js';
 import { CommentModel } from './comment.js';
-import ForbiddenError from '../error/forbidden.js';
 import { MailModel } from './mail.js';
+import ForbiddenError from '../error/forbidden.js';
 
 const UserSchema = new mongoose.Schema({
   avatar: {
@@ -59,8 +59,6 @@ const UserSchema = new mongoose.Schema({
   timestamps: true,
   versionKey: false
 });
-
-UserSchema.index({ expiredAt: 1 }, { expireAfterSeconds: 0 });
 
 UserSchema.virtual('id')
   .get(function () { return this._id });

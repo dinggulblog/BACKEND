@@ -31,8 +31,6 @@ const MailSchema = new mongoose.Schema({
   }
 }, { versionKey: false });
 
-MailSchema.index({ expiredAt: 1 }, { expireAfterSeconds: 0 });
-
 const mailModel = mongoose.model('Mail', MailSchema);
 
 mailModel.createCode = async function (to, type) {

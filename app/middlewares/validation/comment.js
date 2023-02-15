@@ -12,13 +12,13 @@ const getCommentsRules = [
 ];
 
 const updateCommentRules = [
-  param('id', 'Comment ID is not OID').isMongoId(),
+  param('id', '댓글 ID가 올바르지 않습니다.').isMongoId(),
   checkSchema(CommentSchema.POSTID_VALIDATION_SCHEMA(), ['params']),
   checkSchema(CommentSchema.COMMENT_VALIDATION_SCHEMA(), ['body'])
 ];
 
 const deleteCommentRules = [
-  param('id', 'Comment ID is not OID').isMongoId(),
+  param('id', '댓글 ID가 올바르지 않습니다.').isMongoId(),
   checkSchema(CommentSchema.POSTID_VALIDATION_SCHEMA(), ['params'])
 ];
 

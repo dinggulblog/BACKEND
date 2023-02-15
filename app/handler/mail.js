@@ -1,5 +1,5 @@
 import { MailModel } from '../model/mail.js';
-import { sendMail } from '../middlewares/sendmail.js';
+import { sendMail } from '../util/sendmail.js';
 
 class MailHandler {
   constructor() {

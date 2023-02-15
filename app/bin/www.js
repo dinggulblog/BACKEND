@@ -40,7 +40,7 @@ else {
 }
 
 // Connect to MongoDB server
-connectMongoDB(process.env.MONGO_CONNECT_URL).then(createDefaultDocuments);
+connectMongoDB(process.env.MONGO_ATLAS_CONNECT_URL).then(createDefaultDocuments);
 
 // Create an upload directory
 try {

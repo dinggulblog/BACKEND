@@ -1,4 +1,4 @@
-import { checkSchema, param, query } from 'express-validator';
+import { checkSchema, param } from 'express-validator';
 import PostSchema from './schema/post.js';
 
 const createPostRules = [
@@ -11,11 +11,11 @@ const getPostsRules = [
 ];
 
 const getPostRules = [
-  param('id', 'Post ID is not OID').isMongoId()
+  param('id', '게시물 ID가 올바르지 않습니다.').isMongoId()
 ];
 
 const updatePostRules = [
-  param('id', 'Post ID is not OID').isMongoId(),
+  param('id', 'P게시물 ID가 올바르지 않습니다.').isMongoId(),
   checkSchema(PostSchema.POST_VALIDATION_SCHEMA(), ['body'])
 ];
 

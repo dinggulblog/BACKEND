@@ -1,7 +1,7 @@
 import { UserModel } from '../model/user.js';
 import { FileModel } from '../model/file.js';
 import { MailModel } from '../model/mail.js';
-import { sendMail } from '../middlewares/sendmail.js';
+import { sendMail } from '../util/sendmail.js';
 import { securedIPString } from '../util/util.js';
 import InvalidRequestError from '../error/invalid-request.js';
 
