@@ -16,6 +16,17 @@ class ResponseManager {
     return StatusCodes;
   }
 
+  static getEndResponseHandler(res) {
+    return {
+      onSuccess: (data) => {
+        res.end(data)
+      },
+      onError: (error) => {
+        res.end({ ...BasicResponse, message: error.message })
+      }
+    }
+  }
+
   static getDefaultResponseHandler(res) {
     return {
       onSuccess: (data, message, code) => {
@@ -23,17 +34,6 @@ class ResponseManager {
       },
       onError: (error) => {
         this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
-      }
-    };
-  }
-
-  static getDefaultResponseHandlerData(res) {
-    return {
-      onSuccess: (data, message, code) => {
-        this.respondWithSuccess(res, code || this.HTTP_STATUS.OK, data, message);
-      },
-      onError: (error) => {
-        this.respondWithErrorData(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error', error.data);
       }
     };
   }

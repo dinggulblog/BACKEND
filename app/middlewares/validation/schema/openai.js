@@ -1,5 +1,4 @@
-const parameters = ['model', 'stream', 'max_tokens', 'temperature', 'top_p']
-const models = ['text-davinci-003', 'text-davinci-002']
+const models = ['text-davinci-003', 'text-davinci-002'];
 
 const COMPLETION_VALIDATION_SCHEMA = () => {
   return {
@@ -14,20 +13,33 @@ const COMPLETION_VALIDATION_SCHEMA = () => {
       toObject: true
     },
     'parameters.model': {
+      optional: { options: { nullable: true } },
       custom: {
         options: model => models.includes(model)
       }
     },
-    'parameters.stream': {
-      customSanitizer: {
-        options: stream => typeof stream === 'string' || typeof stream === 'boolean' ? Boolean(stream) : false
-      }
-    },
     'parameters.max_tokens': {
+      optional: { options: { nullable: true } },
       toInt: true,
       isInt: {
-        options: [{ min: 1, max: 5 }],
-        errorMessage: '파라미터 n값은 1보다 크고 5보다 작아야 합니다.'
+        options: [{ min: 1, max: 2048 }],
+        errorMessage: 'max_tokens 값은 0보다 크고 2048보다 작거나 같은 정수만 가능합니다.'
+      }
+    },
+    'parameters.temperature': {
+      optional: { options: { nullable: true } },
+      toFloat: true,
+      isFloat: {
+        options: [{ min: 0, max: 1 }],
+        errorMessage: 'temperature 값은 0과 1사이의 숫자만 가능합니다.'
+      }
+    },
+    'parameters.top_p': {
+      optional: { options: { nullable: true } },
+      toFloat: true,
+      isFloat: {
+        options: [{ min: 0, max: 1 }],
+        errorMessage: 'top_p 값은 0과 1사이의 숫자만 가능합니다.'
       }
     }
   };

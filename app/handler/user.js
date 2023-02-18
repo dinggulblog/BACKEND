@@ -63,12 +63,11 @@ class UserHandler {
         { roles: 1, avatar: 1, email: 1, nickname: 1, isActive: 1, lastLoginIP: 1 },
         { lean: true,
           timestamps: false,
-          populate: { path: 'roles', select: 'name' },
-          populate: { path: 'avatar', select: 'thumbnail', match: { isActive: true } } }
+          populate: [{ path: 'roles' }, { path: 'avatar', select: 'thumbnail', match: { isActive: true } }] }
         ).exec();
 
       user.lastLoginIP = securedIPString(user.lastLoginIP);
-      user.roles = user.roles.map(role => role.name);
+      user.roles = user.roles.map(({ name }) => name);
 
       callback.onSuccess({ user });
     } catch (error) {

@@ -1,12 +1,10 @@
-import { body } from 'express-validator';
+import { checkSchema } from 'express-validator';
+import OpenAISchema from './schema/openai.js';
 
 const createCompletionRules = [
-  body('prompt', 'OpenAI API를 사용하려면 텍스트를 5자 이상 입력해야 합니다.')
-    .isLength({ min: 5, max: 1000 })
-    .trim(),
-  body('')
+  checkSchema(OpenAISchema.COMPLETION_VALIDATION_SCHEMA(), ['body'])
 ];
 
 export default {
   createCompletionRules
-}
+};
