@@ -22,7 +22,7 @@ class ResponseManager {
         res.end(data)
       },
       onError: (error) => {
-        res.end({ ...BasicResponse, message: error.message })
+        res.end(JSON.stringify({ ...BasicResponse, message: error.message }))
       }
     }
   }

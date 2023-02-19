@@ -1,3 +1,4 @@
+import sse from 'better-sse';
 import { Configuration, OpenAIApi } from 'openai';
 
 const defaultParameters = {
@@ -21,16 +22,17 @@ class OpenAIHandler {
 
   async createCompletion(req, res, callback) {
     try {
-      const { prompt, parameters } = req.body;
-      
+      const { prompt } = req.body;
+
+      const session = await sse.createSession(req, res);
       const { data } = await this.#openai.createCompletion({
         ...defaultParameters,
-        ...parameters,
         stream: true,
         prompt: `
           Write blog posts in markdown format.
           Write the theme of your blog as ${prompt}.
           Highlight, bold, or italicize important words or sentences.
+          If you need code, include it using an inline code block
           Please make the entire blog less than 10 minutes long.
           The audience of the article is 20-40 years old.
           Add a summary of the article at the beginning of the blog post.
@@ -48,26 +50,19 @@ class OpenAIHandler {
           if (message === '[DONE]') return;
           try {
             const parsed = JSON.parse(message);
-            console.log(parsed.choices[0].text);
-            res.write(parsed.choices[0].text);
+            session.push(parsed.choices[0].text);
           } catch (err) {
-            console.log('in Data', err);
+            throw err;
           }
         }
       });
 
       data.on('close', () => {
-        console.log('close')
         callback.onSuccess('')
       });
 
-      data.on('end', () => {
-        console.log('end')
-      });
-
       data.on('error', (err) => {
-        console.err('error: ', err);
-        callback.onError(err);
+        throw err;
       });
     } catch (error) {
       callback.onError(error);

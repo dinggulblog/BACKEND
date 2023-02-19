@@ -9,16 +9,13 @@ const COMPLETION_VALIDATION_SCHEMA = () => {
         errorMessage: '입력에 필요한 텍스트는 최소 5자 이상, 최대 150자입니다.'
       }
     },
-    'parameters': {
-      toObject: true
-    },
-    'parameters.model': {
+    'model': {
       optional: { options: { nullable: true } },
       custom: {
         options: model => models.includes(model)
       }
     },
-    'parameters.max_tokens': {
+    'max_tokens': {
       optional: { options: { nullable: true } },
       toInt: true,
       isInt: {
@@ -26,7 +23,7 @@ const COMPLETION_VALIDATION_SCHEMA = () => {
         errorMessage: 'max_tokens 값은 0보다 크고 2048보다 작거나 같은 정수만 가능합니다.'
       }
     },
-    'parameters.temperature': {
+    'temperature': {
       optional: { options: { nullable: true } },
       toFloat: true,
       isFloat: {
@@ -34,7 +31,7 @@ const COMPLETION_VALIDATION_SCHEMA = () => {
         errorMessage: 'temperature 값은 0과 1사이의 숫자만 가능합니다.'
       }
     },
-    'parameters.top_p': {
+    'top_p': {
       optional: { options: { nullable: true } },
       toFloat: true,
       isFloat: {

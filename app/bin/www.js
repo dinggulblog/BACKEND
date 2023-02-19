@@ -4,11 +4,10 @@
  * Module dependencies.
  */
 import { readFileSync, readdirSync, mkdirSync } from 'fs';
+import { connectMongoDB, createDefaultDocuments } from '../../config/mongo.js';
 import http from 'http';
 import http2 from 'node:http2';
 import app from '../../index.mjs';
-
-import { connectMongoDB, createDefaultDocuments } from '../../config/mongo.js';
 
 /**
  * Get port from environment and store in Express.
