@@ -1,4 +1,5 @@
 import sanitizeHtml from 'sanitize-html';
+import { MailModel } from '../../../model/mail.js';
 
 const MAIL_VALIDATION_SCHEMA = () => {
   return {
@@ -22,6 +23,22 @@ const MAIL_VALIDATION_SCHEMA = () => {
       },
       customSanitizer: {
         options: value => sanitizeHtml(value, { exclusiveFilter: (frame) => frame.tag === 'script' })
+      }
+    }
+  };
+};
+
+export const CODE_VALIDATION_SCHEMA = () => {
+  return {
+    'code': {
+      trim: true,
+      custom: {
+        options: async (code, { req }) => {
+          const mail = await MailModel.getCode(code);
+          if (!mail) return Promise.reject('링크가 만료되었거나, 인증에 문제가 발생하였습니다. 다시 시도해 주세요.');
+          req.body.email = mail.to;
+          return true
+        }
       }
     }
   };

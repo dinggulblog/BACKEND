@@ -24,6 +24,12 @@ class MailController extends BaseController {
     });
   }
 
+  createCode(req, res, next) {
+    this.validate(rules.getAccountRules, req, res, () => {
+      this._userHandler.createAccountLink(req, this._responseManager.getDefaultResponseHandler(res));
+    });
+  }
+
   update(req, res, next) {
     next(new Error('Not yet implemented.'));
   }
