@@ -22,7 +22,7 @@ class OpenAIHandler {
 
   async createCompletion(req, res, callback) {
     try {
-      const { prompt } = req.body;
+      const { prompt } = req.query;
 
       const session = await sse.createSession(req, res);
       const { data } = await this.#openai.createCompletion({
@@ -30,9 +30,8 @@ class OpenAIHandler {
         stream: true,
         prompt: `
           Write blog posts in markdown format.
-          Write the theme of your blog as ${prompt}.
+          Write the theme of your blog as ${encodeURI(prompt)}.
           Highlight, bold, or italicize important words or sentences.
-          If you need code, include it using an inline code block
           Please make the entire blog less than 10 minutes long.
           The audience of the article is 20-40 years old.
           Add a summary of the article at the beginning of the blog post.
@@ -52,6 +51,7 @@ class OpenAIHandler {
             const parsed = JSON.parse(message);
             session.push(parsed.choices[0].text);
           } catch (err) {
+            console.log(err)
             throw err;
           }
         }
@@ -62,9 +62,10 @@ class OpenAIHandler {
       });
 
       data.on('error', (err) => {
-        throw err;
+        callback.onError(err);
       });
     } catch (error) {
+      console.log('Catch!', error)
       callback.onError(error);
     }
   }
