@@ -15,7 +15,7 @@ const getPostRules = [
 ];
 
 const updatePostRules = [
-  param('id', 'P게시물 ID가 올바르지 않습니다.').isMongoId(),
+  param('id', '게시물 ID가 올바르지 않습니다.').isMongoId(),
   checkSchema(PostSchema.POST_VALIDATION_SCHEMA(), ['body'])
 ];
 

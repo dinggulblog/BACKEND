@@ -29,7 +29,7 @@ export const convertFlatToTree = (array = [], idFieldName, parentIdFieldName, ch
     }
 
     return cloned;
-}
+};
 
 /**
  * Delete the files if an error occurs after the files are uploaded
@@ -52,12 +52,12 @@ export const deleteMissingFiles = (fileObject) => {
       unlinkSync(filePath);
     })
   }
-}
+};
 
 export const securedIPString = (ip = '') => {
   const IP = ip.split('.');
   return IP.shift() + '.' + IP.shift() + '.' + '***.***';
-}
+};
 
 /**
  * Generates a random string of length characters by creating random bytes
@@ -68,4 +68,4 @@ export const randomString = (length = 10) => {
   return randomBytes(Math.ceil(length / 2))
     .toString('hex')   // convert to hexadecimal format
     .slice(0, length); // return required number of characters
-}
+};

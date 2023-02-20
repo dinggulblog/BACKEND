@@ -39,7 +39,6 @@ class PostController extends BaseController {
         });
       }
     })(req, res, next);
-
   }
 
   getAll(req, res, next) {

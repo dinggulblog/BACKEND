@@ -3,7 +3,7 @@ const POST_VALIDATION_SCHEMA = () => {
     'menu': {
       isMongoId: {
         bail: true,
-        errorMessage: 'Invalide menu ID!'
+        errorMessage: '게시물의 메뉴 ID가 올바르지 않습니다.'
       }
     },
     'category': {
@@ -18,14 +18,14 @@ const POST_VALIDATION_SCHEMA = () => {
       trim: true,
       isLength: {
         options: [{ min: 1, max: 150 }],
-        errorMessage: 'Post title must be between 1 and 150 chars long'
+        errorMessage: '게시물 제목은 1자 이상 150자 이내로 작성해 주세요.'
       }
     },
     'content': {
       trim: true,
       isLength: {
         options: [{ max: 10000 }],
-        errorMessage: 'Post content must be under 10000 chars long'
+        errorMessage: '게시물 내용은 최대 10000자까지 가능합니다.'
       }
     },
     'thumbnail': {

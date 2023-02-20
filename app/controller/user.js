@@ -23,12 +23,6 @@ class UserController extends BaseController {
     })(req, res, next);
   }
 
-  createResetLink(req, res, next) {
-    this.validate(rules.getAccountRules, req, res, () => {
-      this._userHandler.createAccountLink(req, this._responseManager.getDefaultResponseHandler(res));
-    });
-  }
-
   get(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this._userHandler.getAccount(req, payload, this._responseManager.getDefaultResponseHandler(res));

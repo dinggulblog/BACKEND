@@ -1,6 +1,7 @@
 import BaseController from './base.js';
 import MailHandler from '../handler/mail.js';
-import rules from '../middlewares/validation/mail.js';
+import { createMailRules } from '../middlewares/validation/mail.js';
+import { getEmailRules } from '../middlewares/validation/user.js';
 
 class MailController extends BaseController {
   constructor() {
@@ -18,15 +19,15 @@ class MailController extends BaseController {
 
   create(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
-      this.validate(rules.createMailRules, req, res, () => {
+      this.validate(createMailRules, req, res, () => {
         this._mailHandler.createMail(req, this._responseManager.getDefaultResponseHandler(res));
       });
     });
   }
 
   createCode(req, res, next) {
-    this.validate(rules.getAccountRules, req, res, () => {
-      this._userHandler.createAccountLink(req, this._responseManager.getDefaultResponseHandler(res));
+    this.validate(getEmailRules, req, res, () => {
+      this._mailHandler.createCode(req, this._responseManager.getDefaultResponseHandler(res));
     });
   }
 

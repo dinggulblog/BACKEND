@@ -89,4 +89,4 @@ mailModel.getCode = async function (code) {
   return await mailModel.findOne({ code }, null, { lean: true }).exec();
 };
 
-export const MailModel = mailModel
+export const MailModel = mailModel;

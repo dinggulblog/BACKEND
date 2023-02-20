@@ -51,8 +51,7 @@ class OpenAIHandler {
             const parsed = JSON.parse(message);
             session.push(parsed.choices[0].text);
           } catch (err) {
-            console.log(err)
-            throw err;
+            return callback.onError(err);
           }
         }
       });
@@ -65,7 +64,6 @@ class OpenAIHandler {
         callback.onError(err);
       });
     } catch (error) {
-      console.log('Catch!', error)
       callback.onError(error);
     }
   }
