@@ -281,10 +281,10 @@ export class PostHandler {
   async #getMatchQuery(queries, loginUserId) {
     let sortQuery = { createdAt: -1 };
     const matchQuery = { isPublic: true, isActive: true };
-    const { menu, category, hasThumbnail, filter, userId, sort } = queries;
+    const { menus, category, hasThumbnail, filter, userId, sort } = queries;
 
-    if (Array.isArray(menu) && menu.length) {
-      matchQuery.menu = { $in: menu };
+    if (menus.length) {
+      matchQuery.menu = { $in: menus };
     }
     if (category && category !== '전체') {
       matchQuery.category = category;

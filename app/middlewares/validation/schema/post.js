@@ -38,10 +38,10 @@ const POST_VALIDATION_SCHEMA = () => {
 
 const POSTS_PAGINATION_SCHEMA = () => {
   return {
-    'menu': {
+    'menus': {
       toArray: true,
       customSanitizer: {
-        options: (menu) => menu.map(menuId => ObjectId.isValid(menuId) ? ObjectId(menuId) : null).filter(Boolean)
+        options: (menus) => menus.map(menuId => ObjectId.isValid(menuId) ? ObjectId(menuId) : null).filter(Boolean)
       }
     },
     'category': {
