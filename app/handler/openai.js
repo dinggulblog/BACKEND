@@ -32,7 +32,7 @@ class OpenAIHandler {
           Write blog posts in markdown format.
           Write the theme of your blog as ${encodeURI(prompt)}.
           Highlight, bold, or italicize important words or sentences.
-          Please make the entire blog less than 10 minutes long.
+          Please make the entire blog less than 15 ~ 20 minutes long.
           The audience of the article is 20-40 years old.
           Add a summary of the article at the beginning of the blog post.
           Add a paragraph topic starting with an h3 tag on the first line of each paragraph.
