@@ -20,7 +20,7 @@ const task = new AsyncTask(
     });
   },
   (err) => {
-    return console.error('Toad scheduler error: ', err)
+    return console.error('Toad scheduler', err)
   }
 );
 

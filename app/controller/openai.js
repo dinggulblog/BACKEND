@@ -12,7 +12,7 @@ class OpenAIController extends BaseController {
     this.authenticate(req, res, next, (token, payload) => {
       this.verify(payload.roles, res, () => {
         this.validate(rules.createCompletionRules, req, res, () => {
-          this._openAIHandler.createCompletion(req, res, this._responseManager.getEndResponseHandler(res));
+          this._openAIHandler.createCompletion(req, res, payload, this._responseManager.getEndResponseHandler(res));
         });
       });
     });
