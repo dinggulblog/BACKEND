@@ -53,8 +53,6 @@ class UserHandler {
           populate: [{ path: 'roles' }, { path: 'avatar', select: 'thumbnail', match: { isActive: true } }] }
       ).exec();
 
-      users.forEach((user) => user.roles = user.roles.map(({ name }) => name));
-
       callback.onSuccess({ users });
     } catch (error) {
       callback.onError(error);
