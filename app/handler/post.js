@@ -286,7 +286,7 @@ export class PostHandler {
     if (menus.length) {
       matchQuery.menu = { $in: menus };
     }
-    if (category && category !== '전체') {
+    if (category && !category.includes('전체')) {
       matchQuery.category = category;
     }
     if (hasThumbnail) {
