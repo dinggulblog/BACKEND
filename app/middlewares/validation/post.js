@@ -6,8 +6,7 @@ const createPostRules = [
 ];
 
 const getPostsRules = [
-  checkSchema(PostSchema.POSTS_PAGINATION_SCHEMA(), ['query']),
-  checkSchema(PostSchema.POSTS_SEARCH_SCHEMA, ['query'])
+  checkSchema(PostSchema.POSTS_PAGINATION_SCHEMA(), ['query'])
 ];
 
 const getPostRules = [

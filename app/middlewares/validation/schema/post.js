@@ -79,29 +79,19 @@ const POSTS_PAGINATION_SCHEMA = () => {
         options: [{ min: 1 }],
         errorMessage: 'Limit must be an integer greater than 1'
       }
-    }
-  };
-};
-
-const POSTS_SEARCH_SCHEMA = () => {
-  return {
-    'searchType': {
-      trim: true,
-      optional: { options: { nullable: true } }
     },
     'searchText': {
+      optional: { options: { nullable: true } },
       trim: true,
       isString: {
         options: [{ min: 2, max: 30 }],
         errorMessage: 'Search text must be between 2 and 30 chars long'
-      },
-      optional: { options: { nullable: true } }
+      }
     }
   };
 };
 
 export default {
   POST_VALIDATION_SCHEMA,
-  POSTS_PAGINATION_SCHEMA,
-  POSTS_SEARCH_SCHEMA
+  POSTS_PAGINATION_SCHEMA
 };

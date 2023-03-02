@@ -121,9 +121,8 @@ fileModel.createManyInstances = async function (uploader, belonging, belongingMo
         serverFileName: serverFileName,
         thumbnail: file.key ? uploadUrl + serverFileName : 'http://localhost:3000/uploads/' + serverFileName,
         size: file.size
-    })
-  }
-  ));
+    });
+  }));
 };
 
 export const FileModel = fileModel;

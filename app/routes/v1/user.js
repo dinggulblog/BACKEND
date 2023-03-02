@@ -12,6 +12,9 @@ router.route('/account')
 
 router.put('/account/reset', userController.updateUsingCode);
 
+router.route('/accounts')
+  .get(userController.getAll);
+
 router.route('/profile/:nickname')
   .get(userController.getProfile)
   .put(userController.updateProfile);

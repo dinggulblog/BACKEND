@@ -29,6 +29,14 @@ class UserController extends BaseController {
     });
   }
 
+  getAll(req, res, next) {
+    this.authenticate(req, res, next, (token, payload) => {
+      this.verify(payload.roles, res, () => {
+        this._userHandler.getAccount(req, this._responseManager.getDefaultResponseHandler(res));
+      });
+    });
+  }
+
   getProfile(req, res) {
     this._userHandler.getProfile(req, this._responseManager.getDefaultResponseHandler(res));
   }

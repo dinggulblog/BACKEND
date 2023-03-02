@@ -1,7 +1,5 @@
 import { UserModel } from '../model/user.js';
 import { FileModel } from '../model/file.js';
-import { MailModel } from '../model/mail.js';
-import { sendMail } from '../util/sendmail.js';
 import { securedIPString } from '../util/util.js';
 import InvalidRequestError from '../error/invalid-request.js';
 
@@ -41,6 +39,23 @@ class UserHandler {
       user.roles = user.roles.map(({ name }) => name);
 
       callback.onSuccess({ user });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async getAccounts(req, callback) {
+    try {
+      const users = await UserModel.find(
+        {},
+        { greetings: 0, introduce: 0, expiredAt: 0 },
+        { lean: true,
+          populate: [{ path: 'roles' }, { path: 'avatar', select: 'thumbnail', match: { isActive: true } }] }
+      ).exec();
+
+      users.forEach((user) => user.roles = user.roles.map(({ name }) => name));
+
+      callback.onSuccess({ users });
     } catch (error) {
       callback.onError(error);
     }
