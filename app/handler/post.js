@@ -82,58 +82,6 @@ export class PostHandler {
     }
   }
 
-  async getPostsAsAdmin (req, payload, callback) {
-    try {
-      const { skip, limit } = req.query;
-
-      const { match, sort } = await this.#getMatchQuery(req.query, userId);
-      const maxCount = !skip ? await PostModel.countDocuments(matchQuery) : null;
-      const posts = await PostModel.aggregate([
-        { $match: match },
-        { $addFields: { likeCount: { $size: '$likes' } } },
-        { $sort: sort },
-        { $skip: skip },
-        { $limit: limit },
-        { $lookup: {
-          from: 'users',
-          localField: 'author',
-          foreignField: '_id',
-          pipeline: [{ $project: { nickname: 1 } }],
-          as: 'author'
-        } },
-        { $unwind: '$author' },
-        { $lookup: {
-          from: 'comments',
-          localField: '_id',
-          foreignField: 'post',
-          as: 'comments'
-        } },
-        { $lookup: {
-          from: 'files',
-          localField: 'thumbnail',
-          foreignField: '_id',
-          as: 'thumbnail'
-        } },
-        { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
-        { $addFields: {
-          thumbnail: '$thumbnail.thumbnail',
-          content: { $substrCP: ['$content', 0, 200] },
-          liked: { $in: [userId, '$likes'] },
-          commentCount: { $size: '$comments' }
-        } },
-        { $project: {
-          comments: 0,
-          images: 0,
-          likes: 0
-        } }
-      ]).exec();
-
-      callback.onSuccess({ posts, maxCount });
-    } catch (error) {
-      callback.onError(error);
-    }
-  }
-
   async getPost(req, payload, callback) {
     try {
       const userId = payload ? new ObjectId(payload.userId) : null;
@@ -337,24 +285,30 @@ export class PostHandler {
     else {
       query.$search = {
         index: 'test',
-        text: {
-          query: searchText,
-          path: ['title, content'],
-          score: {
-            function: {
-              path: {
-                value: sort === 'view'
-                  ? 'viewCount'
-                  : { $size: '$likes' },
-                undefined: 0
-              }
+        compound: {
+          filter: [{
+            text: {
+              query: searchText,
+              path: ['title, content'],
             }
-          }
+          }],
+          should: [{
+            near: {
+              origin: 100000,
+              path: 'viewCount',
+              pivot: 1
+            }
+          }],
+          must: [{
+            near: {
+              origin: 1000000,
+              path: '_id',
+              pivot: 1000000
+            }
+          }]
         }
       };
     }
-
-    query.$count = 'total';
 
     return { query };
   }

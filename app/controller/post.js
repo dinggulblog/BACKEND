@@ -60,7 +60,7 @@ class PostController extends BaseController {
     this.authenticate(req, res, next, (token, payload) => {
       this.verify(payload.roles, res, () => {
         this.validate(rules.getCommentsRules, req, res, () => {
-          this._postHandler.getPostsAsAdmin(req, payload, this._responseManager.getDefaultResponseHandler(res));
+          this._postHandler.getPosts(req, payload, this._responseManager.getDefaultResponseHandler(res));
         });
       });
     });
