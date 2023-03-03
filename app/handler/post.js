@@ -33,13 +33,13 @@ export class PostHandler {
       const userId = payload ? new ObjectId(payload.userId) : null;
 
       const { skip, limit, sort, searchText } = req.query;
-      const { query } = searchText
-        ? this.#getSearchQuery(searchText, sort)
-        : await this.#getMatchQuery(req.query, userId);
+      const query = !searchText
+        ? await this.#getMatchQuery(req.query, userId)
+        : this.#getSearchQuery(searchText, sort);
 
       const maxCount = !skip && !searchText ? await PostModel.countDocuments(query.$match) : null;
       const posts = await PostModel.aggregate([
-        query,
+        ...query,
         { $skip: skip },
         { $limit: limit },
         { $lookup: {
@@ -174,8 +174,9 @@ export class PostHandler {
   async updatePostLike(req, payload, callback) {
     try {
       await PostModel.updateOne(
-        { _id: req.params.id },
-        { $addToSet: { likes: payload.userId } },
+        { _id: req.params.id, likes: { $ne: payload.userId } },
+        { $addToSet: { likes: payload.userId },
+          $inc: { likeCount: 1 } },
         { lean: true, timestamps: false }
       ).exec();
 
@@ -202,8 +203,9 @@ export class PostHandler {
   async deletePostLike(req, payload, callback) {
     try {
       await PostModel.updateOne(
-        { _id: req.params.id },
-        { $pull: { likes: payload.userId } },
+        { _id: req.params.id, likes: payload.userId },
+        { $pull: { likes: payload.userId },
+          $inc: { likeCount: -1 } },
         { lean: true, timestamps: false }
       ).exec();
 
@@ -229,8 +231,8 @@ export class PostHandler {
 
   async #getMatchQuery(queries, loginUserId) {
     const { menus, category, hasThumbnail, filter, userId, sort } = queries;
-    const query = {};
     const matchQuery = { isPublic: true, isActive: true };
+    const sortQuery = {};
 
     if (menus.length) {
       matchQuery.menu = { $in: menus };
@@ -249,67 +251,55 @@ export class PostHandler {
       matchQuery._id = { $in: comments };
     }
 
-    if (loginUserId) {
-      query.$match = { $or: [
-        { ...matchQuery },
-        { ...matchQuery, author: loginUserId, isPublic: false }
-      ] };
-    }
-    else {
-      query.$match = matchQuery;
-    }
-
     if (sort === 'like') {
-      query.$addFields = { likeCount: { $size: '$likes' } };
-      query.$sort = { likeCount: -1, createdAt: -1 };
+      sortQuery.likeCount = -1;
     }
     else if (sort === 'view') {
-      query.$sort = { viewCount: -1, createdAt: -1 };
+      sortQuery.viewCount = -1;
     }
 
-    return { query };
+    return [{
+      $match: !loginUserId
+        ? matchQuery
+        : { $or: [{ ...matchQuery }, { ...matchQuery, author: loginUserId, isPublic: false }] }
+    }, {
+      $sort: { ...sortQuery, createdAt: -1 }
+    }];
   }
 
   #getSearchQuery(searchText, sort) {
-    const query = {};
-
-    if (!sort) {
-      query.$search = {
-        index: 'test',
-        text: {
-          query: searchText,
-          path: ['title', 'content']
+    return [{
+      $search: !sort
+        ? {
+          text: {
+            query: searchText,
+            path: ['title', 'content']
+          }
         }
-      };
-    }
-    else {
-      query.$search = {
-        index: 'test',
-        compound: {
-          filter: [{
-            text: {
-              query: searchText,
-              path: ['title, content'],
-            }
-          }],
-          should: [{
-            near: {
-              origin: 100000,
-              path: 'viewCount',
-              pivot: 1
-            }
-          }],
-          must: [{
-            near: {
-              origin: 1000000,
-              path: '_id',
-              pivot: 1000000
-            }
-          }]
+        : {
+          compound: {
+            filter: [{
+              text: {
+                query: searchText,
+                path: ['title, content'],
+              }
+            }],
+            should: [{
+              near: {
+                origin: 100000,
+                path: sort === 'view' ? 'viewCount' : 'likeCount',
+                pivot: 1
+              }
+            }],
+            must: [{
+              near: {
+                origin: 100000,
+                path: '_id',
+                pivot: 100000
+              }
+            }]
+          }
         }
-      };
-    }
-
-    return { query };
+    }];
   }
-}
+};
