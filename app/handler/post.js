@@ -271,33 +271,44 @@ export class PostHandler {
     return [{
       $search: !sort
         ? {
-          text: {
-            query: searchText,
-            path: ['title', 'content']
+          compound: {
+            should: {
+              text: {
+                query: searchText,
+                path: ['title', 'content'],
+              }
+            },
+            must: {
+              near: {
+                origin: 1000000,
+                path: 'postNum',
+                pivot: 1000000
+              }
+            }
           }
         }
         : {
           compound: {
-            filter: [{
+            filter: {
               text: {
                 query: searchText,
-                path: ['title, content'],
+                path: ['title', 'content'],
               }
-            }],
-            should: [{
+            },
+            should: {
               near: {
                 origin: 100000,
                 path: sort === 'view' ? 'viewCount' : 'likeCount',
+                pivot: 2
+              }
+            },
+            must: {
+              near: {
+                origin: 1000000,
+                path: 'postNum',
                 pivot: 1
               }
-            }],
-            must: [{
-              near: {
-                origin: 100000,
-                path: '_id',
-                pivot: 100000
-              }
-            }]
+            }
           }
         }
     }];
