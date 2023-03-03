@@ -32,13 +32,14 @@ export class PostHandler {
     try {
       const userId = payload ? new ObjectId(payload.userId) : null;
 
-      const { skip, limit } = req.query;
-      const { match, sort } = await this.#getMatchQuery(req.query, userId);
-      const maxCount = !skip ? await PostModel.countDocuments(match) : null;
+      const { skip, limit, sort, searchText } = req.query;
+      const { query } = searchText
+        ? this.#getSearchQuery(searchText, sort)
+        : await this.#getMatchQuery(req.query, userId);
+
+      const maxCount = !skip && !searchText ? await PostModel.countDocuments(query.$match) : null;
       const posts = await PostModel.aggregate([
-        { $match: match },
-        { $addFields: { likeCount: { $size: '$likes' } } },
-        { $sort: sort },
+        query,
         { $skip: skip },
         { $limit: limit },
         { $lookup: {
@@ -279,9 +280,9 @@ export class PostHandler {
   }
 
   async #getMatchQuery(queries, loginUserId) {
-    let sortQuery = { createdAt: -1 };
-    const matchQuery = { isPublic: true, isActive: true };
     const { menus, category, hasThumbnail, filter, userId, sort } = queries;
+    const query = {};
+    const matchQuery = { isPublic: true, isActive: true };
 
     if (menus.length) {
       matchQuery.menu = { $in: menus };
@@ -290,41 +291,71 @@ export class PostHandler {
       matchQuery.category = category;
     }
     if (hasThumbnail) {
-      matchQuery.thumbnail = { $exists: true, $ne: null }
+      matchQuery.thumbnail = { $exists: true, $ne: null };
     }
     if (filter === 'like') {
       matchQuery.likes = userId;
     }
     else if (filter === 'comment') {
-      const comments = await CommentModel.find(
-        { commenter: userId },
-        { post: 1 },
-        { lean: true }
-      ).exec();
-
-      matchQuery._id = { $in: comments.map(({ post }) => post) };
-    }
-
-    if (sort === 'like') {
-      sortQuery = { likeCount: -1, ...sortQuery };
-    }
-    else if (sort === 'view') {
-      sortQuery = { viewCount: -1, ...sortQuery };
+      const comments = await CommentModel.distinct('post', { commenter: userId }).exec();
+      matchQuery._id = { $in: comments };
     }
 
     if (loginUserId) {
-      return {
-        sort: sortQuery,
-        match: { $or: [
-          { ...matchQuery },
-          { ...matchQuery, author: loginUserId, isPublic: false }
-        ] }
+      query.$match = { $or: [
+        { ...matchQuery },
+        { ...matchQuery, author: loginUserId, isPublic: false }
+      ] };
+    }
+    else {
+      query.$match = matchQuery;
+    }
+
+    if (sort === 'like') {
+      query.$addFields = { likeCount: { $size: '$likes' } };
+      query.$sort = { likeCount: -1, createdAt: -1 };
+    }
+    else if (sort === 'view') {
+      query.$sort = { viewCount: -1, createdAt: -1 };
+    }
+
+    return { query };
+  }
+
+  #getSearchQuery(searchText, sort) {
+    const query = {};
+
+    if (!sort) {
+      query.$search = {
+        index: 'test',
+        text: {
+          query: searchText,
+          path: ['title', 'content']
+        }
+      };
+    }
+    else {
+      query.$search = {
+        index: 'test',
+        text: {
+          query: searchText,
+          path: ['title, content'],
+          score: {
+            function: {
+              path: {
+                value: sort === 'view'
+                  ? 'viewCount'
+                  : { $size: '$likes' },
+                undefined: 0
+              }
+            }
+          }
+        }
       };
     }
 
-    return {
-      sort: sortQuery,
-      match: matchQuery
-    };
+    query.$count = 'total';
+
+    return { query };
   }
 }

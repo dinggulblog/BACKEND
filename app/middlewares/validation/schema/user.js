@@ -75,7 +75,23 @@ const PROFILE_VALIDATION_SCHEMA = () => {
       },
       customSanitizer: {
         options: value => value !== undefined
-          ? sanitizeHtml(value, { exclusiveFilter: (frame) => frame.tag === 'script' })
+          ? sanitizeHtml(value, {
+            exclusiveFilter: (frame) => frame.tag === 'script',
+            allowedAttributes: {
+              'p': ['style'],
+              'span': ['style'],
+              'strong': ['style'],
+              'pre': ['class', 'spellcheck']
+            },
+            allowedStyles: {
+              '*': {
+                'color': [/^#(0x)?[0-9a-f]+$/i, /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/],
+                'background-color': [/^#(0x)?[0-9a-f]+$/i, /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/],
+                'text-align': [/^left$/, /^right$/, /^center$/],
+                'font-size': [/^\d+(?:px|em|%)$/]
+              }
+            }
+          })
           : undefined
       }
     }

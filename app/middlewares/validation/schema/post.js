@@ -86,6 +86,9 @@ const POSTS_PAGINATION_SCHEMA = () => {
       isString: {
         options: [{ min: 2, max: 30 }],
         errorMessage: 'Search text must be between 2 and 30 chars long'
+      },
+      customSanitizer: {
+        options: (text) => !!text ? decodeURI(text) : null
       }
     }
   };
