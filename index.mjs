@@ -25,14 +25,19 @@ if (process.env.NODE_ENV === 'production') {
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(hpp());
 } else {
-  app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
   app.use(morgan('dev'));
+  app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
 }
 
 // Express Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
+app.use(csurf({ cookie: { secure: true, sameSite: 'strict' } }));
+app.use((req, res, next) => {
+  res.cookie('XSRF-TOKEN', req.csrfToken());
+  next();
+});
 
 // Middleware passport initialize
 app.use(authManager.providePassport().initialize());

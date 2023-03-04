@@ -1,4 +1,4 @@
-import { resolve } from 'path'
+import { resolve } from 'path';
 import { ObjectId } from './config/mongo.js';
 
 // Global variables
