@@ -97,15 +97,17 @@ class UserHandler {
     try {
       const { users } = req.body;
 
-      await Promise.all(users.map(async (user) =>
-        UserModel.updateOne(
+      const responses = await Promise.all(users.map(async (user, index) => {
+        const { modifiedCount } = await UserModel.updateOne(
           { _id: user._id },
           { $set: { roles: user.roles, nickname: user.nickname, isActive: user.isActive } },
           { lean: true, timestamps: false }
-        ).exec()
-      ));
+        ).exec();
 
-      callback.onSuccess({});
+        return modifiedCount ? index : null;
+      }));
+
+      callback.onSuccess({ users: responses.filter((item) => item !== null).map((idx) => users[idx]._id )});
     } catch (error) {
       callback.onError(error);
     }

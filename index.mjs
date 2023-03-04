@@ -33,7 +33,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
-app.use(csurf({ cookie: { secure: true, sameSite: 'strict' } }));
+app.use(csurf({ cookie: { secure: process.env.NODE_ENV === 'production' } }));
 app.use((req, res, next) => {
   res.cookie('XSRF-TOKEN', req.csrfToken());
   next();
