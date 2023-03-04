@@ -41,7 +41,7 @@ class PostController extends BaseController {
     })(req, res, next);
   }
 
-  getAll(req, res, next) {
+  getMany(req, res, next) {
     this._passport.authenticate('jwt-auth', {
       onVerified: (token, payload) => {
         this.validate(rules.getPostsRules, req, res, () => {

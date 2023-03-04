@@ -49,6 +49,16 @@ class UserController extends BaseController {
     });
   }
 
+  updateMany(req, res, next) {
+    this.authenticate(req, res, next, (token, payload) => {
+      this.verify(payload.roles, res, () => {
+        this.validate(rules.updateAccountsRules, req, res, () => {
+          this._userHandler.updateAccounts(req, this._responseManager.getDefaultResponseHandler(res));
+        });
+      });
+    });
+  }
+
   updateUsingCode(req, res) {
     this.validate(rules.updateAccountCodeRules, req, res, () => {
       this._userHandler.updateAccountUsingCode(req, this._responseManager.getDefaultResponseHandler(res));

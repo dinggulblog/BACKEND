@@ -5,7 +5,7 @@ const router = Router();
 const postController = new PostController();
 
 router.route('/')
-  .get(postController.getAll)
+  .get(postController.getMany)
   .post(postController.create);
 
 router.route('/:id')

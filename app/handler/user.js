@@ -5,7 +5,6 @@ import InvalidRequestError from '../error/invalid-request.js';
 
 class UserHandler {
   constructor() {
-    this._host = process.env.HOST
   }
 
   async createAccount(req, callback) {
@@ -87,6 +86,24 @@ class UserHandler {
       for (const key in req.body) user[key] = req.body[key];
 
       await user.save();
+
+      callback.onSuccess({});
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async updateAccounts(req, callback) {
+    try {
+      const { users } = req.body;
+
+      await Promise.all(users.map(async (user) =>
+        UserModel.updateOne(
+          { _id: user._id },
+          { $set: { roles: user.roles, nickname: user.nickname, isActive: user.isActive } },
+          { lean: true, timestamps: false }
+        ).exec()
+      ));
 
       callback.onSuccess({});
     } catch (error) {

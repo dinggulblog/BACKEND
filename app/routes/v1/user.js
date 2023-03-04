@@ -4,16 +4,17 @@ import UserController from '../../controller/user.js';
 const router = Router();
 const userController = new UserController();
 
+router.put('/account/reset', userController.updateUsingCode);
+
 router.route('/account')
   .get(userController.get)
   .post(userController.create)
   .put(userController.update)
   .delete(userController.delete);
 
-router.put('/account/reset', userController.updateUsingCode);
-
 router.route('/accounts')
-  .get(userController.getAll);
+  .get(userController.getAll)
+  .put(userController.updateMany);
 
 router.route('/profile/:nickname')
   .get(userController.getProfile)

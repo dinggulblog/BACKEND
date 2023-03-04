@@ -153,7 +153,7 @@ UserSchema.post('save', async function (doc, next) {
   } catch (error) {
     next(error);
   }
-})
+});
 
 // 유저 정보 조회 시 훅
 UserSchema.post('findOne', function (doc, next) {

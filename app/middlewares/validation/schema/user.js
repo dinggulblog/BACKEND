@@ -1,5 +1,6 @@
 import sanitizeHtml from 'sanitize-html';
 import { UserModel } from '../../../model/user.js';
+import { RoleModel } from '../../../model/role.js';
 
 const EMAIL_EXIST_VALIDATION_SCHEMA = () => {
   return {
@@ -53,7 +54,7 @@ const NICKNAME_VALIDATION_SCHEMA = () => {
     'nickname': {
       matches: {
         options: [/^[ㄱ-ㅎ가-힣a-zA-Z0-9]{2,15}$/],
-        errorMessage: '닉네임은 2자 이상, 15자 이하만 가능합니다.'
+        errorMessage: '닉네임은 2글자 이상, 15자 이하 영문, 한글 및 숫자 조합만 가능합니다.'
       }
     }
   };
@@ -62,11 +63,11 @@ const NICKNAME_VALIDATION_SCHEMA = () => {
 const PROFILE_VALIDATION_SCHEMA = () => {
   return {
     'greetings': {
+      optional: { options: { nullable: true } },
       isLength: {
         options: [{ max: 300 }],
         errorMessage: '인사말은 300자 이하만 가능합니다.'
-      },
-      optional: { options: { nullable: true } }
+      }
     },
     'introduce': {
       isLength: {
@@ -98,10 +99,65 @@ const PROFILE_VALIDATION_SCHEMA = () => {
   };
 };
 
+const ACCOUNTS_VALIDATION_SCHEMA = () => {
+  return {
+    'users': {
+      isArray: {
+        bail: true,
+        options: [{ min: 0 }],
+        errorMessage: '수정하려는 유저 목록을 배열로 전달해 주세요.'
+      }
+    },
+    'users.*._id': {
+      isMongoId: {
+        bail: true,
+        errorMessage: '유저 ID가 올바르지 않습니다.'
+      }
+    },
+    'users.*.nickname': {
+      optional: {
+        options: { nullable: true, checkFalsy: true }
+      },
+      matches: {
+        options: [/^[ㄱ-ㅎ가-힣a-zA-Z0-9]{2,15}$/],
+        errorMessage: '닉네임은 2글자 이상, 15자 이하 영문, 한글 및 숫자 조합만 가능합니다.'
+      }
+    },
+    'users.*.roles': {
+      optional: {
+        options: { nullable: true, checkFalsy: true }
+      },
+      isArray: {
+        bail: true,
+        options: [{ min: 1 }],
+        errorMessage: '최소 1개 이상의 권한이 필요합니다.'
+      }
+    },
+    'users.*.roles.*': {
+      toString: true,
+      toUpperCase: true,
+      matches: {
+        options: [/\b(?:USER|ADMIN)\b/],
+        errorMessage: '사용 가능한 권한: "USER", "ADMIN"'
+      },
+      customSanitizer: {
+        options: async role => {
+          const { _id } = await RoleModel.findOne({ name: role }, { _id: 1 }, { lean: true }).exec();
+          return _id;
+        }
+      }
+    },
+    'users.*.isActive': {
+      toBoolean: true
+    }
+  };
+};
+
 export default {
   EMAIL_EXIST_VALIDATION_SCHEMA,
   EMAIL_VALIDATION_SCHEMA,
   PASSWORD_VALIDATION_SCHEMA,
   NICKNAME_VALIDATION_SCHEMA,
-  PROFILE_VALIDATION_SCHEMA
+  PROFILE_VALIDATION_SCHEMA,
+  ACCOUNTS_VALIDATION_SCHEMA
 };

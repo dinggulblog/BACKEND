@@ -28,6 +28,10 @@ const updateAccountCodeRules = [
   }, ['body'])
 ];
 
+const updateAccountsRules = [
+  checkSchema(UserSchema.ACCOUNTS_VALIDATION_SCHEMA(), ['body'])
+];
+
 const updateProfileRules = [
   checkSchema(UserSchema.PROFILE_VALIDATION_SCHEMA(), ['body'])
 ];
@@ -37,5 +41,6 @@ export default {
   createAccountRules,
   updateAccountRules,
   updateAccountCodeRules,
+  updateAccountsRules,
   updateProfileRules
 };
