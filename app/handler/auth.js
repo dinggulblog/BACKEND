@@ -44,9 +44,9 @@ class AuthHandler {
     }
   }
 
-  revokeToken(req, payload, callback) {
+  revokeToken(req, callback) {
     try {
-      callback.onSuccess({ accessToken: null, refreshToken: null }, {}, 'Token has been successfully revoked');
+      callback.onSuccess({ accessToken: null, refreshToken: null }, {}, '정상적으로 로그아웃 처리되었습니다.');
     } catch (error) {
       callback.onError(error);
     }

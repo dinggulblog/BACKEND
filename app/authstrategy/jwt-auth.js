@@ -56,7 +56,7 @@ class JwtAuthStrategy extends BaseAuthStrategy {
   }
 
   async authenticate(req, callback) {
-    const ecPublicKey = await importSPKI(this._publicKey, 'EdDSA');
+    const ecPublicKey = await importSPKI(this._publicKey, this._jwtOptions.algorithms);
     const refreshToken = this._extractToken('refreshToken', req);
     const accessToken = this._extractToken('accessToken', req);
 
@@ -65,7 +65,7 @@ class JwtAuthStrategy extends BaseAuthStrategy {
     }
 
     if (!refreshToken) {
-      return callback.onFailure(new JwtError('토큰이 존재하지 않아 로그인이 필요합니다.'));
+      return callback.onFailure(new JwtError('토큰이 존재하지 않습니다.'));
     }
 
     if (req.originalUrl === '/v1/auth' && req.method === 'PUT') {
