@@ -148,6 +148,7 @@ const ACCOUNTS_VALIDATION_SCHEMA = () => {
       }
     },
     'users.*.isActive': {
+      optional: { options: { nullable: true } },
       toBoolean: true
     }
   };
