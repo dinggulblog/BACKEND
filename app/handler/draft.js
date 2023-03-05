@@ -46,7 +46,7 @@ class DraftHandler {
 
   async updateDraft(req, payload, callback) {
     try {
-      const { menu, category, title, content, isPublic, thumbnail } = req.body;
+      const { menu, title, content, category, isPublic, thumbnail } = req.body;
 
       const images = await FileModel.createManyInstances(payload.userId, req.params.id, 'Draft', req.files)
       const draft = await DraftModel.findOneAndUpdate(
@@ -55,7 +55,7 @@ class DraftHandler {
           $set: { menu, category, title, content, isPublic, thumbnail },
           $addToSet: { images: { $each: images.map(image => image._id) } }
         },
-        { lean: true }
+        { upsert: true, lean: true }
       ).exec();
 
       callback.onSuccess({ draft, images });

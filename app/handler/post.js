@@ -122,6 +122,14 @@ export class PostHandler {
         } },
         { $unwind: { path: '$author' } },
         { $lookup: {
+          from: 'menus',
+          localField: 'menu',
+          foreignField: '_id',
+          pipeline: [{ $project: { main: 1, sub: 1 } }],
+          as: 'menu'
+        } },
+        { $unwind: { path: '$menu' } },
+        { $lookup: {
           from: 'files',
           localField: 'images',
           foreignField: '_id',
@@ -272,17 +280,18 @@ export class PostHandler {
       $search: !sort
         ? {
           compound: {
-            should: {
+            must: {
               text: {
                 query: searchText,
                 path: ['title', 'content'],
               }
             },
-            must: {
+            should: {
               near: {
                 origin: 1000000,
                 path: 'postNum',
-                pivot: 1000000
+                pivot: 1,
+                score: { boost: { value: 999 } }
               }
             }
           }
@@ -295,18 +304,19 @@ export class PostHandler {
                 path: ['title', 'content'],
               }
             },
-            should: {
+            must: {
               near: {
                 origin: 100000,
                 path: sort === 'view' ? 'viewCount' : 'likeCount',
                 pivot: 2
               }
             },
-            must: {
+            should: {
               near: {
                 origin: 1000000,
                 path: 'postNum',
-                pivot: 1
+                pivot: 1,
+                score: { boost: { value: 999 } }
               }
             }
           }

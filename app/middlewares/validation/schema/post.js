@@ -1,9 +1,24 @@
+import { MenuModel } from '../../../model/menu.js';
+
 const POST_VALIDATION_SCHEMA = () => {
   return {
-    'menu': {
-      isMongoId: {
-        bail: true,
-        errorMessage: '게시물의 메뉴 ID가 올바르지 않습니다.'
+    'main': {
+      toString: true
+    },
+    'sub': {
+      custom: {
+        options: async (sub, { req }) => {
+          const menu = await MenuModel.findOne(
+            { main: req.body.main, sub: sub },
+            { _id: 1 },
+            { lean: true }
+          ).exec();
+
+          if (!menu) return Promise.reject('게시물 메뉴가 올바르지 않습니다.');
+
+          req.body.menu = menu._id;
+          return true
+        }
       }
     },
     'category': {
