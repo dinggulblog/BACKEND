@@ -108,12 +108,6 @@ PostSchema.post(['findOneAndUpdate', 'updateOne'], async function (doc, next) {
       next(new ForbiddenError('존재하지 않는 게시물입니다.'))
     }
 
-    /*
-    else if (this.getPopulatedPaths().includes('author') && !doc.author.isActive) {
-      next(new ForbiddenError('비활성화 유저의 게시물입니다.'));
-    }
-    */
-
     next();
   } catch (error) {
     next(error);

@@ -37,7 +37,7 @@ export class PostHandler {
         ? await this.#getMatchQuery(req.query, userId)
         : this.#getSearchQuery(searchText, sort);
 
-      const maxCount = !skip && !searchText ? await PostModel.countDocuments(query.$match) : null;
+      const maxCount = !skip && !searchText ? await PostModel.countDocuments(query[0].$match) : null;
       const posts = await PostModel.aggregate([
         ...query,
         { $skip: skip },
