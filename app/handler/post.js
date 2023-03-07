@@ -76,6 +76,8 @@ export class PostHandler {
         } }
       ]).exec();
 
+      console.log('query: ', req.query.menus, '\nposts: ', posts);
+
       callback.onSuccess({ posts, maxCount });
     } catch (error) {
       callback.onError(error);
