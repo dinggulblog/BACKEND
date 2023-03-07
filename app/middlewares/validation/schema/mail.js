@@ -1,14 +1,19 @@
 import sanitizeHtml from 'sanitize-html';
 import { MailModel } from '../../../model/mail.js';
 
-const MAIL_VALIDATION_SCHEMA = () => {
+const EMAIL_VALIDATION_SCHEMA = () => {
   return {
     'email': {
       trim: true,
       isEmail: true,
       normalizeEmail: { options: { gmail_remove_dots: false } },
       errorMessage: '이메일 형식이 올바르지 않습니다.'
-    },
+    }
+  };
+};
+
+const FORM_VALIDATION_SCHEMA = () => {
+  return {
     'subject': {
       trim: true,
       isLength: {
@@ -44,4 +49,8 @@ export const CODE_VALIDATION_SCHEMA = () => {
   };
 };
 
-export default { MAIL_VALIDATION_SCHEMA };
+export default {
+  EMAIL_VALIDATION_SCHEMA,
+  FORM_VALIDATION_SCHEMA,
+  CODE_VALIDATION_SCHEMA
+};

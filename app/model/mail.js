@@ -56,7 +56,7 @@ const MailSchema = new mongoose.Schema({
   versionKey: false
 });
 
-MailSchema.pre('create', async function (next) {
+MailSchema.post('create', async function (doc, next) {
   try {
     const to = this.type === 'self' ? process.env.HOST_MAIL : this.to;
     const body = this.type === 'self' ? inquiryForm(this.to, this.content) : accountForm(this.code);

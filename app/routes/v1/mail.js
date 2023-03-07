@@ -7,7 +7,7 @@ const mailController = new MailController();
 router.route('/')
   .post(mailController.create);
 
-router.route('/:email/code')
+router.route('/code')
   .post(mailController.createCode);
 
 export { router as mailRouter };

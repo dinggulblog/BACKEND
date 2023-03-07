@@ -13,7 +13,7 @@ class MailHandler {
         type: 'self',
         subject: `문의: ${subject}`,
         content
-       });
+      });
 
       callback.onSuccess({});
     } catch (error) {
