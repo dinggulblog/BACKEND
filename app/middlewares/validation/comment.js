@@ -3,8 +3,10 @@ import CommentSchema from './schema/comment.js';
 
 const createCommentRules = [
   checkSchema(CommentSchema.POSTID_VALIDATION_SCHEMA(), ['params']),
-  checkSchema(CommentSchema.PARENTID_VALIDATION_SCHEMA(), ['params']),
-  checkSchema(CommentSchema.COMMENT_VALIDATION_SCHEMA(), ['body'])
+  checkSchema({
+    ...CommentSchema.PARENTID_VALIDATION_SCHEMA(),
+    ...CommentSchema.COMMENT_VALIDATION_SCHEMA()
+  }, ['body'])
 ];
 
 const getCommentsRules = [

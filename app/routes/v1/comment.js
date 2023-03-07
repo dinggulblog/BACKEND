@@ -5,7 +5,7 @@ const router = Router();
 const commentController = new CommentController();
 
 router.get('/:postId', commentController.getAll);
-router.post('/:postId/:parentId?', commentController.create);
+router.post('/:postId', commentController.create);
 router.put('/:postId/:id', commentController.update);
 router.delete('/:postId/:id', commentController.delete);
 

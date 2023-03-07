@@ -21,10 +21,8 @@ const PARENTID_VALIDATION_SCHEMA = () => {
       custom: {
         options: async (value) => {
           if (!value) return true;
-          else {
-            const comment = await CommentModel.findById(value, { isActive: 1 }, { lean: true }).exec();
-            return !comment || !comment.isActive ? Promise.reject('존재하지 않거나 비활성화된 댓글입니다.') : true;
-          }
+          const comment = await CommentModel.findOne({ _id: value, isActive: true }, { isActive: 1 }, { lean: true }).exec();
+          return !comment ? Promise.reject('존재하지 않거나 비활성화된 댓글입니다.') : true;
         }
       }
     }

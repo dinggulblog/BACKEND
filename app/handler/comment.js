@@ -10,7 +10,7 @@ class CommentHandler {
       const comment = await CommentModel.create({
         commenter: payload.userId,
         post: req.params.postId,
-        parentComment: req.params?.parentId,
+        parentComment: req.body.parentId,
         content: req.body.content,
         isPublic: req.body.isPublic
       });
