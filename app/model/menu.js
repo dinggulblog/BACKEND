@@ -26,7 +26,7 @@ MenuSchema.post('findOneAndUpdate', async function (doc, next) {
   try {
     const query = this.getUpdate();
 
-    if (doc.main !== query.$set.main) {
+    if (query.$set?.main && (query.$set.main !== doc.main)) {
       await menuModel.updateMany(
         { main: doc.main },
         { $set: { main: query.$set.main } },
