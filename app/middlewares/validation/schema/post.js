@@ -56,7 +56,10 @@ const POSTS_PAGINATION_SCHEMA = () => {
     'menus': {
       toArray: true,
       customSanitizer: {
-        options: (menus) => menus.map(menuId => ObjectId.isValid(menuId) ? ObjectId(menuId) : null).filter(Boolean)
+        options: (menus) => {
+          console.log('menus: ', menus)
+          return menus.map(menuId => ObjectId.isValid(menuId) ? ObjectId(menuId) : null).filter(Boolean)
+        }
       }
     },
     'category': {
