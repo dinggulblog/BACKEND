@@ -31,7 +31,7 @@ class MenuHandler {
       const { main, sub, type, categories } = req.body;
       const menu = await MenuModel.findOneAndUpdate(
         { _id: req.params.id },
-        { $set: { main, sub, type, categories } },
+        { $set: { main, sub, type }, $addToSet: { categories } },
         { lean: true }
       ).exec();
 
