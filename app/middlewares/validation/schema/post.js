@@ -56,8 +56,8 @@ const POSTS_PAGINATION_SCHEMA = () => {
     'menus': {
       toArray: true,
       customSanitizer: {
-        options: (menus) => {
-          console.log('menus: ', menus)
+        options: (menus, { req }) => {
+          console.log('menus: ', req.query)
           return menus.map(menuId => ObjectId.isValid(menuId) ? ObjectId(menuId) : null).filter(Boolean)
         }
       }
