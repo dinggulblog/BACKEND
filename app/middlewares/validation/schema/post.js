@@ -54,6 +54,7 @@ const POST_VALIDATION_SCHEMA = () => {
 const POSTS_PAGINATION_SCHEMA = () => {
   return {
     'menus': {
+      toArray: true,
       customSanitizer: {
         options: (menus) => {
           console.log('menus: ', menus)
