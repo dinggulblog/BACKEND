@@ -258,7 +258,7 @@ export class PostHandler {
     if (Array.isArray(menus)) {
       matchQuery.menu = { $in: menus.map((menu) => new ObjectId(menu)) };
     }
-    else if (typeof menus === 'string') {
+    else if (typeof menus === 'string' && menus !== 'undefined') {
       matchQuery.menu = new ObjectId(menus);
     }
     if (category && !category.includes('전체')) {
