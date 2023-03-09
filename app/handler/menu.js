@@ -41,7 +41,7 @@ class MenuHandler {
       else {
         await MenuModel.updateOne(
           { _id: req.params.id },
-          { $set: { main, sub, type, categories } },\
+          { $set: { main, sub, type, categories } },
           { lean: true }
         ).exec();
       }
