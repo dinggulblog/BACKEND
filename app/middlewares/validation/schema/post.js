@@ -54,12 +54,12 @@ const POST_VALIDATION_SCHEMA = () => {
 const POSTS_PAGINATION_SCHEMA = () => {
   return {
     'menus': {
-      toArray: true,
-      customSanitizer: {
-        options: (menus, { req }) => {
-          console.log('menus: ', req.query)
-          return menus.map((menuId) => new ObjectId(menuId))
-        }
+      toArray: true
+    },
+    'menus.*': {
+      isMongoId: {
+        bail: true,
+        errorMessage: '메뉴 ID가 올바르지 않습니다.'
       }
     },
     'category': {
@@ -75,7 +75,7 @@ const POSTS_PAGINATION_SCHEMA = () => {
       optional: { options: { nullable: true, checkFalsy: true } },
       matches: {
         options: [/\b(?:like|comment)\b/],
-        errorMessage: 'Available filtering words: like, comment'
+        errorMessage: '사용 가능한 필터링: like, comment'
       }
     },
     'userId': {
@@ -88,22 +88,22 @@ const POSTS_PAGINATION_SCHEMA = () => {
       toInt: true,
       isInt: {
         options: [{ min: 0 }],
-        errorMessage: 'Skip must be an integer greater than 0'
+        errorMessage: 'Skip 값은 0보다 큰 정수가 필요합니다.'
       }
     },
     'limit': {
       toInt: true,
       isInt: {
         options: [{ min: 1 }],
-        errorMessage: 'Limit must be an integer greater than 1'
+        errorMessage: 'Limit 값은 1보다 큰 정수가 필요합니다.'
       }
     },
     'searchText': {
       optional: { options: { nullable: true } },
       trim: true,
       isString: {
-        options: [{ min: 2, max: 30 }],
-        errorMessage: 'Search text must be between 2 and 30 chars long'
+        options: [{ min: 2, max: 255 }],
+        errorMessage: '검색어는 최소 2글자 이상, 최대 255글자 이내로 작성해 주세요.'
       },
       customSanitizer: {
         options: (text) => !!text ? decodeURI(text) : null
