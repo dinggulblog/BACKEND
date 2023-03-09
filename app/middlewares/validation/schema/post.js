@@ -60,6 +60,9 @@ const POSTS_PAGINATION_SCHEMA = () => {
       isMongoId: {
         bail: true,
         errorMessage: '메뉴 ID가 올바르지 않습니다.'
+      },
+      customSanitizer: {
+        options: (menu) => new ObjectId(menu)
       }
     },
     'category': {
