@@ -28,62 +28,6 @@ export class PostHandler {
     }
   }
 
-  async getPosts(req, payload, callback) {
-    try {
-      const userId = payload ? new ObjectId(payload.userId) : null;
-
-      const { skip, limit, sort, searchText } = req.query;
-      const query = !searchText
-        ? await this.#getMatchQuery(req.query, userId)
-        : this.#getSearchQuery(searchText, sort);
-
-      const maxCount = !skip && !searchText ? await PostModel.countDocuments(query[0].$match) : null;
-      const posts = await PostModel.aggregate([
-        ...query,
-        { $skip: skip },
-        { $limit: limit },
-        { $lookup: {
-          from: 'users',
-          localField: 'author',
-          foreignField: '_id',
-          pipeline: [{ $project: { nickname: 1 } }],
-          as: 'author'
-        } },
-        { $unwind: '$author' },
-        { $lookup: {
-          from: 'comments',
-          localField: '_id',
-          foreignField: 'post',
-          as: 'comments'
-        } },
-        { $lookup: {
-          from: 'files',
-          localField: 'thumbnail',
-          foreignField: '_id',
-          as: 'thumbnail'
-        } },
-        { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
-        { $addFields: {
-          thumbnail: '$thumbnail.thumbnail',
-          content: { $substrCP: ['$content', 0, 200] },
-          liked: { $in: [userId, '$likes'] },
-          commentCount: { $size: '$comments' }
-        } },
-        { $project: {
-          comments: 0,
-          images: 0,
-          likes: 0
-        } }
-      ]).exec();
-
-      console.log('query: ', req.query, '\nposts: ', posts.length);
-
-      callback.onSuccess({ posts, maxCount });
-    } catch (error) {
-      callback.onError(error);
-    }
-  }
-
   async getPost(req, payload, callback) {
     try {
       const userId = payload ? new ObjectId(payload.userId) : null;
@@ -156,6 +100,72 @@ export class PostHandler {
       }
 
       callback.onSuccess({ post: post.shift() ?? null });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async getPosts(req, payload, callback) {
+    try {
+      const userId = payload ? new ObjectId(payload.userId) : null;
+
+      const { skip, limit, sort, searchText } = req.query;
+      const query = !searchText
+        ? await this.#getMatchQuery(req.query, userId)
+        : this.#getSearchQuery(searchText, sort);
+
+      const maxCount = !skip && !searchText ? await PostModel.countDocuments(query[0].$match) : null;
+      const posts = await PostModel.aggregate([
+        ...query,
+        { $skip: skip },
+        { $limit: limit },
+        { $lookup: {
+          from: 'users',
+          localField: 'author',
+          foreignField: '_id',
+          pipeline: [{ $project: { nickname: 1 } }],
+          as: 'author'
+        } },
+        { $unwind: '$author' },
+        { $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'post',
+          as: 'comments'
+        } },
+        { $lookup: {
+          from: 'files',
+          localField: 'thumbnail',
+          foreignField: '_id',
+          as: 'thumbnail'
+        } },
+        { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
+        { $addFields: {
+          thumbnail: '$thumbnail.thumbnail',
+          content: { $substrCP: ['$content', 0, 200] },
+          liked: { $in: [userId, '$likes'] },
+          commentCount: { $size: '$comments' }
+        } },
+        { $project: {
+          comments: 0,
+          images: 0,
+          likes: 0
+        } }
+      ]).exec();
+
+      callback.onSuccess({ posts, maxCount });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async getCounts(req, callback) {
+    try {
+      const counts = await PostModel.aggregate([
+        { $group: { _id: '$menu', count: { $sum: 1 } } }
+      ]).exec();
+
+      callback.onSuccess({ counts });
     } catch (error) {
       callback.onError(error);
     }

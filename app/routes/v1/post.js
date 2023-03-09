@@ -8,6 +8,9 @@ router.route('/')
   .get(postController.getMany)
   .post(postController.create);
 
+router.route('/count')
+  .get(postController.getCounts);
+
 router.route('/:id')
   .get(postController.get)
   .put(postController.update)
@@ -17,6 +20,7 @@ router.route('/:id/like')
   .put(postController.updateLike)
   .delete(postController.deleteLike);
 
-router.delete('/:id/file', postController.deleteFile);
+router.route('/:id/file')
+  .delete(postController.deleteFile);
 
 export { router as postRouter };

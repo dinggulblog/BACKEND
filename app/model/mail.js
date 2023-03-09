@@ -26,7 +26,8 @@ const accountForm = (code) => `
 const MailSchema = new mongoose.Schema({
   to: {
     type: String,
-    required: [true, 'Mail destination is required!']
+    required: [true, 'Mail destination is required!'],
+    lowercase: true
   },
   type: {
     type: String,

@@ -26,7 +26,7 @@ class MenuHandler {
     }
   }
 
-  async updateMenu(req, payload, callback) {
+  async updateMenu(req, callback) {
     try {
       const { main, sub, type, categories } = req.body;
       const menu = await MenuModel.findOne({ _id: req.params.id }, null, { lean: true }).exec();
@@ -46,7 +46,7 @@ class MenuHandler {
         ).exec();
       }
 
-      callback.onSuccess({ menu });
+      callback.onSuccess({});
     } catch (error) {
       callback.onError(error);
     }

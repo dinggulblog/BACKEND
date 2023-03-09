@@ -56,7 +56,7 @@ class PostController extends BaseController {
     })(req, res, next);
   }
 
-  getAllAsAdmin(req, res, next) {
+  getManyAsAdmin(req, res, next) {
     this.authenticate(req, res, next, (token, payload) => {
       this.verify(payload.roles, res, () => {
         this.validate(rules.getCommentsRules, req, res, () => {
@@ -64,6 +64,10 @@ class PostController extends BaseController {
         });
       });
     });
+  }
+
+  getCounts(req, res, next) {
+    this._postHandler.getCounts(req, this._responseManager.getDefaultResponseHandler(res));
   }
 
   update(req, res, next) {

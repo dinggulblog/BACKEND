@@ -5,7 +5,7 @@ const MENU_VALIDATION_SCHEMA = () => {
       trim: true,
       matches: {
         options: [/^[\.|\w|가-힣]{2,20}$/],
-        errorMessage: 'Main menu must consist of dots and characters between 2 and 20 in length'
+        errorMessage: '메인 메뉴명은 2글자 이상 20글자 이내의 "."(dot), 한글, 영문 및 숫자 조합만 가능합니다.'
       }
     },
     'sub': {
@@ -13,7 +13,7 @@ const MENU_VALIDATION_SCHEMA = () => {
       trim: true,
       matches: {
         options: [/^[\.|\w|가-힣]{2,20}$/],
-        errorMessage: 'Sub menu must consist of dots and characters between 2 and 20 in length'
+        errorMessage: '서브 메뉴명은 2글자 이상 20글자 이내의 "."(dot), 한글, 영문 및 숫자 조합만 가능합니다.'
       }
     },
     'type': {
@@ -21,7 +21,7 @@ const MENU_VALIDATION_SCHEMA = () => {
       trim: true,
       isIn: {
         options: [['list', 'card', 'slide']],
-        errorMessage: 'Available type words: list, card, slide'
+        errorMessage: '사용 가능한 타입: list, card, slide'
       }
     },
     'categories': {
@@ -32,7 +32,7 @@ const MENU_VALIDATION_SCHEMA = () => {
       trim: true,
       matches: {
         options: [/^[\.|\w|가-힣]{1,20}$/],
-        errorMessage: 'Category must consist of dots and characters between 2 and 20 in length'
+        errorMessage: '서브 메뉴명은 1글자 이상 20글자 이내의 "."(dot), 한글, 영문 및 숫자 조합만 가능합니다.'
       }
     }
   };

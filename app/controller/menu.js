@@ -30,7 +30,7 @@ class MenuController extends BaseController {
     this.authenticate(req, res, next, (token, payload) => {
       this.verify(payload.roles, res, () => {
         this.validate(rules.updateMenuRules, req, res, () => {
-          this._menuHandler.updateMenu(req, payload, this._responseManager.getDefaultResponseHandler(res));
+          this._menuHandler.updateMenu(req, this._responseManager.getDefaultResponseHandler(res));
         });
       });
     });

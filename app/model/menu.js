@@ -3,11 +3,13 @@ import mongoose from 'mongoose';
 const MenuSchema = new mongoose.Schema({
   main: {
     type: String,
-    required: [true, 'Main menu is required!']
+    required: [true, 'Main menu is required!'],
+    lowercase: true
   },
   sub: {
     type: String,
-    required: [true, 'Sub menu is required!']
+    required: [true, 'Sub menu is required!'],
+    lowercase: true
   },
   type: {
     type: String,
