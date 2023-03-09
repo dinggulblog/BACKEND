@@ -153,11 +153,13 @@ class ResponseManager {
 
   static sanitizeErrorResponse = (error) => {
     if (typeof error !== 'object') {
-      return error;
+      return new Error(error);
     }
     if (error.code === 11000 || error.code === 11001) {
       return new ConflictError('중복 에러: [' + Object.entries(error.keyValue).map(([key, value]) => ` ${key.charAt(0).toUpperCase()}${key.slice(1)}: '${value}'`) + ' ]');
     }
+
+    return error;
   }
 }
 
