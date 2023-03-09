@@ -12,6 +12,7 @@ class MenuHandler {
 
       callback.onSuccess({ menu });
     } catch (error) {
+
       callback.onError(error);
     }
   }

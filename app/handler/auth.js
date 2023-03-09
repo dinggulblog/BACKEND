@@ -25,22 +25,24 @@ class AuthHandler {
   }
 
   async issueRenewedToken(req, payload, callback) {
-    try {
-      if (!payload) throw new JwtError('토큰이 삭제되거나 기간이 만료되었습니다. 다시 로그인 해 주세요.');
+    if (payload) {
+      try {
+        const user = await UserModel.findOne(
+          { _id: payload.userId },
+          { roles: 1, isActive: 1 },
+          { lean: true,
+            populate: { path: 'roles', select: { name: 1 } } }
+        ).exec();
 
-      const user = await UserModel.findOne(
-        { _id: payload.userId },
-        { roles: 1, isActive: 1 },
-        { lean: true,
-          populate: { path: 'roles', select: { name: 1 } } }
-      ).exec();
+        const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user));
+        const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(user));
 
-      const { token: accessToken } = await this._authManager.signToken('jwt-auth', this._provideAccessTokenPayload(user));
-      const { token: refreshToken } = await this._authManager.signToken('jwt-auth', this._provideRefreshTokenPayload(user));
-
-      callback.onSuccess({ accessToken, refreshToken });
-    } catch (error) {
-      callback.onError(error);
+        callback.onSuccess({ accessToken, refreshToken });
+      } catch (error) {
+        callback.onError(error);
+      }
+    } else {
+      callback.onError(new JwtError('토큰이 삭제되거나 기간이 만료되었습니다. 다시 로그인 해 주세요.'));
     }
   }
 

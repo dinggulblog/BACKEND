@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { cookieOption } from '../../config/cookie-options.js';
+import ConflictError from '../error/conflict.js';
 
 const BasicResponse = {
   success: false,
@@ -33,6 +34,7 @@ class ResponseManager {
         this.respondWithSuccess(res, code || this.HTTP_STATUS.OK, data, message);
       },
       onError: (error) => {
+        error = this.sanitizeErrorResponse(error);
         this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
       }
     };
@@ -44,6 +46,7 @@ class ResponseManager {
         successCallback(data, message, code);
       },
       onError: (error) => {
+        error = this.sanitizeErrorResponse(error);
         this.respondWithError(res, error.status || this.HTTP_STATUS.INTERNAL_SERVER_ERROR, error.message || 'Unknown error');
       }
     };
@@ -145,6 +148,15 @@ class ResponseManager {
       link: link,
       method: method,
       rel: rel
+    }
+  }
+
+  static sanitizeErrorResponse = (error) => {
+    if (typeof error !== 'object') {
+      return error;
+    }
+    if (error.code === 11000 || error.code === 11001) {
+      return new ConflictError('중복 에러: [' + Object.entries(error.keyValue).map(([key, value]) => ` ${key.charAt(0).toUpperCase()}${key.slice(1)}: '${value}'`) + ' ]');
     }
   }
 }
