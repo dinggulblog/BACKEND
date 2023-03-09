@@ -76,7 +76,7 @@ export class PostHandler {
         } }
       ]).exec();
 
-      console.log('query: ', req.query, '\nposts: ', posts);
+      console.log('query: ', req.query, '\nposts: ', posts.length);
 
       callback.onSuccess({ posts, maxCount });
     } catch (error) {
@@ -244,7 +244,7 @@ export class PostHandler {
     const matchQuery = { isPublic: true, isActive: true };
     const sortQuery = {};
 
-    if (menus.length) {
+    if (Array.isArray(menus)) {
       matchQuery.menu = { $in: menus.map((menu) => new ObjectId(menu)) };
     }
     if (category && !category.includes('전체')) {

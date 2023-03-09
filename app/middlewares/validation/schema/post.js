@@ -53,15 +53,6 @@ const POST_VALIDATION_SCHEMA = () => {
 
 const POSTS_PAGINATION_SCHEMA = () => {
   return {
-    'menus': {
-      toArray: true
-    },
-    'menus.*': {
-      isMongoId: {
-        bail: true,
-        errorMessage: '메뉴 ID가 올바르지 않습니다.'
-      }
-    },
     'category': {
       toString: true,
       customSanitizer: {
