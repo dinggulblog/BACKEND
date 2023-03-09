@@ -10,7 +10,6 @@ const BasicResponse = {
 
 class ResponseManager {
   constructor() {
-
   }
 
   static get HTTP_STATUS() {
@@ -104,8 +103,8 @@ class ResponseManager {
     response.message = message;
     response.links = links;
     cookieNames.forEach(name => name === 'accessToken'
-      ? res.cookie(name, cookies[name], cookieOption(accessTokenMaxAge))
-      : res.cookie(name, cookies[name], cookieOption(refreshTokenMaxAge))
+      ? res.cookie(name, cookies[name], { maxAge: accessTokenMaxAge, ...cookieOption })
+      : res.cookie(name, cookies[name], { maxAge: refreshTokenMaxAge, ...cookieOption })
     );
 
     res.status(code).json(response);
@@ -119,7 +118,7 @@ class ResponseManager {
     response.data = data;
     response.message = message;
     response.links = links;
-    cookieNames.forEach(name => res.cookie(name, '', cookieOption(0)));
+    cookieNames.forEach(name => res.cookie(name, '', { maxAge: 0, ...cookieOption }));
 
     res.status(code).json(response);
   }
