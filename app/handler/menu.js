@@ -29,11 +29,22 @@ class MenuHandler {
   async updateMenu(req, payload, callback) {
     try {
       const { main, sub, type, categories } = req.body;
-      const menu = await MenuModel.findOneAndUpdate(
-        { _id: req.params.id },
-        { $set: { main, sub, type }, $addToSet: { categories } },
-        { lean: true }
-      ).exec();
+      const menu = await MenuModel.findOne({ _id: req.params.id }, null, { lean: true }).exec();
+
+      if (main && main !== menu.main) {
+        await MenuModel.updateMany(
+          { main: menu.main },
+          { $set: { main } },
+          { lean: true }
+        ).exec();
+      }
+      else {
+        await MenuModel.updateOne(
+          { _id: req.params.id },
+          { $set: { main, sub, type, categories } },\
+          { lean: true }
+        ).exec();
+      }
 
       callback.onSuccess({ menu });
     } catch (error) {

@@ -20,24 +20,4 @@ const MenuSchema = new mongoose.Schema({
   }
 });
 
-const menuModel = mongoose.model('Menu', MenuSchema);
-
-MenuSchema.post('findOneAndUpdate', async function (doc, next) {
-  try {
-    const query = this.getUpdate();
-
-    if (query.$set?.main && (query.$set.main !== doc.main)) {
-      await menuModel.updateMany(
-        { main: doc.main },
-        { $set: { main: query.$set.main } },
-        { lean: true }
-      ).exec()
-    }
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-export const MenuModel = menuModel;
+export const MenuModel = mongoose.model('Menu', MenuSchema);
