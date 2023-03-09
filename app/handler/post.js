@@ -245,7 +245,7 @@ export class PostHandler {
     const sortQuery = {};
 
     if (menus.length) {
-      matchQuery.menu = { $in: menus };
+      matchQuery.menu = { $in: menus.map((menu) => new ObjectId(menu)) };
     }
     if (category && !category.includes('전체')) {
       matchQuery.category = category;
