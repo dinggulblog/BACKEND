@@ -253,7 +253,6 @@ export class PostHandler {
     const { menus, category, hasThumbnail, filter, userId, sort } = queries;
     const matchQuery = { isPublic: true, isActive: true };
     const sortQuery = {};
-    console.log('queries: ', queries)
 
     if (Array.isArray(menus)) {
       matchQuery.menu = { $in: menus.map((menu) => new ObjectId(menu)) };
