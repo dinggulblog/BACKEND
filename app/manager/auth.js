@@ -62,15 +62,15 @@ class AuthManager extends BaseAutoBindedClass {
   }
 
   _provideJwtPublicKey() {
-    return readFileSync('config/secret/eddsa-public.pem', 'utf8').trim();
+    return readFileSync(process.env.JWT_PUBLIC_DIR, 'utf8').trim();
   }
 
   _provideJwtPrivateKey() {
-    return readFileSync('config/secret/eddsa-private.pem', 'utf8').trim();
+    return readFileSync(process.env.JWT_PRIVATE_DIR, 'utf8').trim();
   }
 
   _provideSecretKey() {
-    return readFileSync('config/secret/secret.key', 'utf8').trim();
+    return readFileSync(process.env.SECRET_KEY_DIR, 'utf8').trim();
   }
 
   providePassport() {

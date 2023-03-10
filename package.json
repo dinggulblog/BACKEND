@@ -21,6 +21,7 @@
   "author": "Sudal1",
   "license": "MIT",
   "dependencies": {
+    "@google-analytics/data": "^3.2.1",
     "auto-bind": "^5.0.1",
     "aws-sdk": "^2.1288.0",
     "bcrypt": "^5.0.1",
