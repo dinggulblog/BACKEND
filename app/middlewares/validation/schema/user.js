@@ -142,8 +142,8 @@ const ACCOUNTS_VALIDATION_SCHEMA = () => {
       },
       customSanitizer: {
         options: async role => {
-          const { _id } = await RoleModel.findOne({ name: role }, { _id: 1 }, { lean: true }).exec();
-          return _id;
+          const newRole = await RoleModel.findOne({ name: role }, { _id: 1 }, { lean: true }).exec();
+          return newRole._id;
         }
       }
     },

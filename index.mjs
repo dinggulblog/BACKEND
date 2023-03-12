@@ -23,9 +23,7 @@ const app = express();
 if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'));
   app.use(helmet({ contentSecurityPolicy: false }));
-  app.use(hpp({
-    whitelist: ['menus']
-  }));
+  app.use(hpp({ whitelist: ['menus'] }));
 } else {
   app.use(morgan('dev'));
   app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
@@ -37,7 +35,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(csurf({ cookie: { secure: process.env.NODE_ENV === 'production' } }));
 app.use((req, res, next) => {
-  console.log(req.query)
   res.cookie('XSRF-TOKEN', req.csrfToken(), { secure: process.env.NODE_ENV === 'production' });
   next();
 });

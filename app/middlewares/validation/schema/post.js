@@ -22,8 +22,9 @@ const POST_VALIDATION_SCHEMA = () => {
       }
     },
     'category': {
+      toString: true,
       customSanitizer: {
-        options: category => !!category ? String(category).trim() : '기타'
+        options: category => category ? category.trim() : '기타'
       }
     },
     'isPublic': {
@@ -45,7 +46,7 @@ const POST_VALIDATION_SCHEMA = () => {
     },
     'thumbnail': {
       customSanitizer: {
-        options: (value) => ObjectId.isValid(value) ? ObjectId(value) : undefined
+        options: (value) => ObjectId.isValid(value) ? new ObjectId(value) : undefined
       },
     }
   };
@@ -53,25 +54,65 @@ const POST_VALIDATION_SCHEMA = () => {
 
 const POSTS_PAGINATION_SCHEMA = () => {
   return {
-    /*
+    'skip': {
+      toInt: true,
+      isInt: {
+        options: [{ min: 0, max: 255 }],
+        errorMessage: 'Skip 값은 0보다 큰 정수가 필요합니다.'
+      }
+    },
+    'limit': {
+      toInt: true,
+      isInt: {
+        options: [{ min: 1, max: 255 }],
+        errorMessage: 'Limit 값은 1보다 큰 정수가 필요합니다.'
+      }
+    },
     'menus': {
-      toArray: true
+      toArray: true,
+      isArray: {
+        options: [{ max: 10 }],
+        errorMessage: '메뉴는 최대 10개까지 선택 가능합니다.'
+      }
     },
     'menus.*': {
       isMongoId: {
         bail: true,
-        errorMessage: '메뉴 ID가 올바르지 않습니다.'
+        errorMessage: '메뉴 ID가 올바르지 않습니다.',
+      },
+      customSanitizer: {
+        options: (menu) => new ObjectId(menu)
       }
     },
-    */
     'category': {
-      toString: true,
+      custom: {
+        options: (category) => !category || decodeURI(category).trim().match([/^[\.|\w|가-힣]{1,20}$/])
+          ? true
+          : Promise.reject('카테고리는 비어있거나 1글자 이상 20글자 이내의 .(dot), 한글, 영문 및 숫자 조합만 가능합니다(비어있다면 전체로 간주합니다).') ,
+      },
       customSanitizer: {
-        options: (category) => !!category ? decodeURI(category).trim() : null
-      }
+        options: (category) => category ? decodeURI(category).trim() : '전체'
+      },
     },
     'hasThumbnail': {
-      toBoolean: true
+      optional: { options: { nullable: true, checkFalsy: true } },
+      matches: {
+        options: [/\b(?:true|false)\b/],
+        errorMessage: '썸네일 여부는 비어있거나 true 또는 false 이어야 합니다(비어있다면 false로 간주합니다).'
+      },
+      customSanitizer: {
+        options: (str) => str === 'true'
+      }
+    },
+    'author': {
+      optional: { options: { nullable: true, checkFalsy: true } },
+      isMongoId: {
+        bail: true,
+        errorMessage: '작성자 ID가 올바르지 않습니다.',
+      },
+      customSanitizer: {
+        options: (author) => author && ObjectId.isValid(author) ? new ObjectId(author) : null
+      }
     },
     'filter': {
       optional: { options: { nullable: true, checkFalsy: true } },
@@ -83,32 +124,17 @@ const POSTS_PAGINATION_SCHEMA = () => {
     'userId': {
       optional: { options: { nullable: true, checkFalsy: true } },
       customSanitizer: {
-        options: (id) => id && ObjectId.isValid(id) ? ObjectId(id) : null
-      }
-    },
-    'skip': {
-      toInt: true,
-      isInt: {
-        options: [{ min: 0 }],
-        errorMessage: 'Skip 값은 0보다 큰 정수가 필요합니다.'
-      }
-    },
-    'limit': {
-      toInt: true,
-      isInt: {
-        options: [{ min: 1 }],
-        errorMessage: 'Limit 값은 1보다 큰 정수가 필요합니다.'
+        options: (id) => id && ObjectId.isValid(id) ? new ObjectId(id) : null
       }
     },
     'searchText': {
       optional: { options: { nullable: true } },
-      trim: true,
       isString: {
         options: [{ min: 2, max: 255 }],
         errorMessage: '검색어는 최소 2글자 이상, 최대 255글자 이내로 작성해 주세요.'
       },
       customSanitizer: {
-        options: (text) => !!text ? decodeURI(text) : null
+        options: (text) => !!text ? decodeURI(text).trim() : null
       }
     }
   };

@@ -107,14 +107,16 @@ export class PostHandler {
 
   async getPosts(req, payload, callback) {
     try {
-      const userId = payload ? new ObjectId(payload.userId) : null;
+      const { author, skip, limit, searchText } = req.query;
 
-      const { skip, limit, sort, searchText } = req.query;
       const query = !searchText
-        ? await this.#getMatchQuery(req.query, userId)
-        : this.#getSearchQuery(searchText, sort);
+        ? await this.#getMatchQuery(req.query, payload?.userId)
+        : this.#getSearchQuery(req.query, payload?.userId);
 
-      const maxCount = !skip && !searchText ? await PostModel.countDocuments(query[0].$match) : null;
+      const maxCount = !skip && !searchText
+        ? await PostModel.countDocuments(query[0].$match)
+        : null;
+
       const posts = await PostModel.aggregate([
         ...query,
         { $skip: skip },
@@ -143,7 +145,71 @@ export class PostHandler {
         { $addFields: {
           thumbnail: '$thumbnail.thumbnail',
           content: { $substrCP: ['$content', 0, 200] },
-          liked: { $in: [userId, '$likes'] },
+          liked: { $in: [author, '$likes'] },
+          commentCount: { $size: '$comments' }
+        } },
+        { $project: {
+          comments: 0,
+          images: 0,
+          likes: 0
+        } }
+      ]).exec();
+
+      callback.onSuccess({ posts, maxCount });
+    } catch (error) {
+      callback.onError(error);
+    }
+  }
+
+  async getPostsAsAdmin(req, payload, callback) {
+    try {
+      const { author, skip, limit, searchText } = req.query;
+
+      const query = !searchText
+        ? await this.#getMatchQuery(req.query, payload?.userId)
+        : this.#getSearchQuery(req.query, payload?.userId);
+
+      const maxCount = !skip && !searchText
+        ? await PostModel.countDocuments(query[0].$match)
+        : null;
+
+      const posts = await PostModel.aggregate([
+        ...query,
+        { $skip: skip },
+        { $limit: limit },
+        { $lookup: {
+          from: 'users',
+          localField: 'author',
+          foreignField: '_id',
+          pipeline: [{ $project: { nickname: 1 } }],
+          as: 'author'
+        } },
+        { $unwind: '$author' },
+        { $lookup: {
+          from: 'menus',
+          localField: 'menu',
+          foreignField: '_id',
+          pipeline: [{ $project: { main: 1, sub: 1 } }],
+          as: 'menu'
+        } },
+        { $unwind: { path: '$menu' } },
+        { $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'post',
+          as: 'comments'
+        } },
+        { $lookup: {
+          from: 'files',
+          localField: 'thumbnail',
+          foreignField: '_id',
+          as: 'thumbnail'
+        } },
+        { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
+        { $addFields: {
+          thumbnail: '$thumbnail.thumbnail',
+          content: { $substrCP: ['$content', 0, 200] },
+          liked: { $in: [author, '$likes'] },
           commentCount: { $size: '$comments' }
         } },
         { $project: {
@@ -249,18 +315,15 @@ export class PostHandler {
     }
   }
 
-  async #getMatchQuery(queries, loginUserId) {
-    const { menus, category, hasThumbnail, filter, userId, sort } = queries;
-    const matchQuery = { isPublic: true, isActive: true };
+  async #getMatchQuery(queries, adminId) {
+    const { author, menus, category, hasThumbnail, filter, userId, sort, liker, commenter } = queries;
+    const matchQuery = {};
     const sortQuery = {};
 
-    if (Array.isArray(menus)) {
+    if (menus.length) {
       matchQuery.menu = { $in: menus.map((menu) => new ObjectId(menu)) };
     }
-    else if (typeof menus === 'string' && menus !== 'undefined') {
-      matchQuery.menu = new ObjectId(menus);
-    }
-    if (category && !category.includes('전체')) {
+    if (!category.includes('전체')) {
       matchQuery.category = category;
     }
     if (hasThumbnail) {
@@ -273,6 +336,13 @@ export class PostHandler {
       const comments = await CommentModel.distinct('post', { commenter: userId }).exec();
       matchQuery._id = { $in: comments };
     }
+    if (liker) {
+      matchQuery.likes = liker;
+    }
+    else if (commenter) {
+      const comments = await CommentModel.distinct('post', { commenter: userId }).exec();
+      matchQuery._id = { $in: comments };
+    }
 
     if (sort === 'like') {
       sortQuery.likeCount = -1;
@@ -281,61 +351,95 @@ export class PostHandler {
       sortQuery.viewCount = -1;
     }
 
+    if (adminId) {
+      return [{
+        $match: matchQuery,
+      }, {
+        $sort: { ...sortQuery, createdAt: -1 }
+      }];
+    }
+    if (author) {
+      return [{
+        $match: {
+          $or: [{ ...matchQuery, isPublic: true, isActive: true }, { author, ...matchQuery, isPublic: false, isActive: true }]
+        },
+      }, {
+        $sort: { ...sortQuery, createdAt: -1 }
+      }]
+    }
+
     return [{
-      $match: !loginUserId
-        ? matchQuery
-        : { $or: [{ ...matchQuery }, { ...matchQuery, author: loginUserId, isPublic: false }] }
+      $match: { ...matchQuery, isPublic: true, isActive: true }
     }, {
       $sort: { ...sortQuery, createdAt: -1 }
     }];
   }
 
-  #getSearchQuery(searchText, sort) {
+  #getSearchQuery(queries, adminId) {
+    const { author, searchText, sort } = queries;
+    const sortFilter = {
+      compound: {
+        filter: [{
+          text: {
+            path: ['title', 'content'],
+            query: searchText
+          }
+        }],
+        must: {
+          near: {
+            origin: 100000,
+            path: sort === 'view' ? 'viewCount' : 'likeCount',
+            pivot: 2
+          }
+        },
+        should: {
+          near: {
+            origin: 1000000,
+            path: 'postNum',
+            pivot: 1,
+            score: { boost: { value: 999 } }
+          }
+        }
+      }
+    };
+    const textFilter = {
+      compound: {
+        must: {
+          text: {
+            path: ['title', 'content'],
+            query: searchText
+          }
+        },
+        should: {
+          near: {
+            origin: 1000000,
+            path: 'postNum',
+            pivot: 1,
+            score: { boost: { value: 999 } }
+          }
+        }
+      }
+    };
+
+    if (!adminId && sort) {
+      sortFilter.compound.mustNot = {
+        equals: {
+          path: 'isActive',
+          value: false
+        }
+      };
+    }
+    else if (!adminId) {
+      textFilter.compound.mustNot = {
+        equals: {
+          path: 'isActive',
+          value: false
+        }
+      };
+    }
+
     return [{
-      $search: !sort
-        ? {
-          compound: {
-            must: {
-              text: {
-                query: searchText,
-                path: ['title', 'content'],
-              }
-            },
-            should: {
-              near: {
-                origin: 1000000,
-                path: 'postNum',
-                pivot: 1,
-                score: { boost: { value: 999 } }
-              }
-            }
-          }
-        }
-        : {
-          compound: {
-            filter: {
-              text: {
-                query: searchText,
-                path: ['title', 'content'],
-              }
-            },
-            must: {
-              near: {
-                origin: 100000,
-                path: sort === 'view' ? 'viewCount' : 'likeCount',
-                pivot: 2
-              }
-            },
-            should: {
-              near: {
-                origin: 1000000,
-                path: 'postNum',
-                pivot: 1,
-                score: { boost: { value: 999 } }
-              }
-            }
-          }
-        }
+      $search: sort ? { ...sortFilter } : { ...textFilter }
     }];
   }
 };
