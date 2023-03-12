@@ -1,13 +1,13 @@
 import BaseController from './base.js';
 import rules from '../middlewares/validation/post.js';
 import { PostHandler } from '../handler/post.js';
-import { upload, uploadS3 } from '../middlewares/multer.js';
+import { uploadS3 } from '../middlewares/multer.js';
 
 class PostController extends BaseController {
   constructor() {
     super();
     this._postHandler = new PostHandler();
-    this._upload = process.env.NODE_ENV === 'develop' ? upload : uploadS3;
+    this._upload = uploadS3;
   }
 
   create(req, res, next) {
@@ -25,7 +25,7 @@ class PostController extends BaseController {
       onVerified: (token, payload) => {
         this.validate(rules.getPostRules, req, res, () => {
           this._postHandler.getPost(req, payload, this._responseManager.getDefaultResponseHandlerError(res, ((data, message, code) => {
-            const hateoasLinks = this.#getPostHATEOASLink(req.baseUrl, data?.post?.linkedPosts)
+            const hateoasLinks = this.#getPostHATEOASLink(req.baseUrl, data?.post?.linkedPosts);
             this._responseManager.respondWithSuccess(res, code || this._responseManager.HTTP_STATUS.OK, data, message, hateoasLinks);
           })));
         });
@@ -33,7 +33,7 @@ class PostController extends BaseController {
       onFailure: (error) => {
         this.validate(rules.getPostRules, req, res, () => {
           this._postHandler.getPost(req, null, this._responseManager.getDefaultResponseHandlerError(res, ((data, message, code) => {
-            const hateoasLinks = this.#getPostHATEOASLink(req.baseUrl, data?.post?.linkedPosts)
+            const hateoasLinks = this.#getPostHATEOASLink(req.baseUrl, data?.post?.linkedPosts);
             this._responseManager.respondWithSuccess(res, code || this._responseManager.HTTP_STATUS.OK, data, message, hateoasLinks);
           })));
         });
