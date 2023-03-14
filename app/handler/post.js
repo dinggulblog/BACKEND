@@ -107,11 +107,12 @@ export class PostHandler {
 
   async getPosts(req, payload, callback) {
     try {
-      const { author, skip, limit, searchText } = req.query;
+      const userId = payload ? new ObjectId(payload.userId) : null;
+      const { skip, limit, searchText } = req.query;
 
       const query = !searchText
-        ? await this.#getMatchQuery(req.query)
-        : this.#getSearchQuery(req.query);
+        ? await this.#getMatchQuery(req.query, { loginUserId: userId })
+        : this.#getSearchQuery(req.query, { loginUserId: userId });
 
       const maxCount = !skip && !searchText
         ? await PostModel.countDocuments(query[0].$match)
@@ -145,7 +146,7 @@ export class PostHandler {
         { $addFields: {
           thumbnail: '$thumbnail.thumbnail',
           content: { $substrCP: ['$content', 0, 200] },
-          liked: { $in: [author, '$likes'] },
+          liked: { $in: [userId, '$likes'] },
           commentCount: { $size: '$comments' }
         } },
         { $project: {
@@ -163,11 +164,12 @@ export class PostHandler {
 
   async getPostsAsAdmin(req, payload, callback) {
     try {
-      const { author, skip, limit, searchText } = req.query;
+      const userId = payload ? new ObjectId(payload.userId) : null;
+      const { skip, limit, searchText } = req.query;
 
       const query = !searchText
-        ? await this.#getMatchQuery(req.query, payload?.userId)
-        : this.#getSearchQuery(req.query, payload?.userId);
+        ? await this.#getMatchQuery(req.query, { adminId: userId })
+        : this.#getSearchQuery(req.query, { adminId: userId });
 
       const maxCount = !searchText
         ? await PostModel.countDocuments(query[0].$match)
@@ -209,7 +211,7 @@ export class PostHandler {
         { $addFields: {
           thumbnail: '$thumbnail.thumbnail',
           content: { $substrCP: ['$content', 0, 200] },
-          liked: { $in: [author, '$likes'] },
+          liked: { $in: [userId, '$likes'] },
           commentCount: { $size: '$comments' }
         } },
         { $project: {
@@ -315,13 +317,13 @@ export class PostHandler {
     }
   }
 
-  async #getMatchQuery(queries, adminId) {
-    const { author, menus, category, hasThumbnail, filter, userId, sort, liker, commenter } = queries;
+  async #getMatchQuery(queries, { loginUserId, adminId }) {
+    const { menus, category, hasThumbnail, filter, userId, sort, likes, comments } = queries;
     const matchQuery = {};
     const sortQuery = {};
 
     if (menus.length) {
-      matchQuery.menu = { $in: menus.map((menu) => new ObjectId(menu)) };
+      matchQuery.menu = { $in: menus };
     }
     if (!category.includes('전체')) {
       matchQuery.category = category;
@@ -329,6 +331,14 @@ export class PostHandler {
     if (hasThumbnail) {
       matchQuery.thumbnail = { $exists: true, $ne: null };
     }
+    if (likes) {
+      matchQuery.likes = likes;
+    }
+    else if (comments) {
+      matchQuery._id = { $in: comments };
+    }
+
+    // Will be deprecated
     if (filter === 'like') {
       matchQuery.likes = userId;
     }
@@ -336,13 +346,7 @@ export class PostHandler {
       const comments = await CommentModel.distinct('post', { commenter: userId }).exec();
       matchQuery._id = { $in: comments };
     }
-    if (liker) {
-      matchQuery.likes = liker;
-    }
-    else if (commenter) {
-      const comments = await CommentModel.distinct('post', { commenter: userId }).exec();
-      matchQuery._id = { $in: comments };
-    }
+
 
     if (sort === 'like') {
       sortQuery.likeCount = -1;
@@ -358,10 +362,11 @@ export class PostHandler {
         $sort: { ...sortQuery, createdAt: -1 }
       }];
     }
-    if (author) {
+
+    if (loginUserId) {
       return [{
         $match: {
-          $or: [{ ...matchQuery, isPublic: true, isActive: true }, { author, ...matchQuery, isPublic: false, isActive: true }]
+          $or: [{ ...matchQuery, isPublic: true, isActive: true }, { author: loginUserId, ...matchQuery, isPublic: false, isActive: true }]
         },
       }, {
         $sort: { ...sortQuery, createdAt: -1 }
@@ -375,7 +380,7 @@ export class PostHandler {
     }];
   }
 
-  #getSearchQuery(queries, adminId) {
+  #getSearchQuery(queries, { loginUserId, adminId }) {
     const { searchText, sort } = queries;
 
     if (!sort) {

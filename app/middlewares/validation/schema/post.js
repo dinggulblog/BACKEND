@@ -1,4 +1,6 @@
 import { MenuModel } from '../../../model/menu.js';
+import { UserModel } from '../../../model/user.js';
+import { CommentModel } from '../../../model/comment.js';
 
 const POST_VALIDATION_SCHEMA = () => {
   return {
@@ -8,16 +10,13 @@ const POST_VALIDATION_SCHEMA = () => {
     'sub': {
       custom: {
         options: async (sub, { req }) => {
-          const menu = await MenuModel.findOne(
-            { main: req.body.main, sub: sub },
-            { _id: 1 },
-            { lean: true }
-          ).exec();
-
-          if (!menu) return Promise.reject('게시물 메뉴가 올바르지 않습니다.');
-
-          req.body.menu = menu._id;
-          return true
+          try {
+            const menu = await MenuModel.findOne({ main: req.body.main, sub: sub }, { _id: 1 }, { lean: true }).exec();
+            req.body.menu = menu._id;
+            return true
+          } catch (error) {
+            return Promise.reject('게시물 메뉴가 올바르지 않습니다.');
+          }
         }
       }
     },
@@ -85,33 +84,23 @@ const POSTS_PAGINATION_SCHEMA = () => {
       }
     },
     'category': {
-      custom: {
-        options: (category) => !category || decodeURI(category).trim().match([/^[\.|\w|가-힣]{1,20}$/])
-          ? true
-          : Promise.reject('카테고리는 비어있거나 1글자 이상 20글자 이내의 .(dot), 한글, 영문 및 숫자 조합만 가능합니다(비어있다면 전체로 간주합니다).') ,
-      },
       customSanitizer: {
         options: (category) => category ? decodeURI(category).trim() : '전체'
       },
+      isLength: {
+        options: [{ min: 1, max: 20 }],
+        errorMessage: '카테고리는 0 ~ 20글자 이내로 적어주세요(비어있다면 전체로 간주합니다).'
+      }
     },
     'hasThumbnail': {
       optional: { options: { nullable: true, checkFalsy: true } },
-      matches: {
-        options: [/\b(?:true|false)\b/],
+      toLowerCase: true,
+      isIn: {
+        options: [['true', 'false']],
         errorMessage: '썸네일 여부는 비어있거나 true 또는 false 이어야 합니다(비어있다면 false로 간주합니다).'
       },
       customSanitizer: {
         options: (str) => str === 'true'
-      }
-    },
-    'author': {
-      optional: { options: { nullable: true, checkFalsy: true } },
-      isMongoId: {
-        bail: true,
-        errorMessage: '작성자 ID가 올바르지 않습니다.',
-      },
-      customSanitizer: {
-        options: (author) => author && ObjectId.isValid(author) ? new ObjectId(author) : null
       }
     },
     'filter': {
@@ -125,6 +114,34 @@ const POSTS_PAGINATION_SCHEMA = () => {
       optional: { options: { nullable: true, checkFalsy: true } },
       customSanitizer: {
         options: (id) => id && ObjectId.isValid(id) ? new ObjectId(id) : null
+      }
+    },
+    'liker': {
+      optional: { options: { nullable: true } },
+      custom: {
+        options: async (nickname, { req }) => {
+          try {
+            const user = await UserModel.findOne({ nickname: decodeURI(nickname) }, { _id: 1 }, { lean: true }).exec();
+            req.query.likes = user._id;
+            return true;
+          } catch (error) {
+            return Promise.reject(error);
+          }
+        }
+      }
+    },
+    'commenter': {
+      optional: { options: { nullable: true } },
+      custom: {
+        options: async (nickname, { req }) => {
+          try {
+            const user = await UserModel.findOne({ nickname: decodeURI(nickname) }, { _id: 1 }, { lean: true }).exec();
+            req.query.comments = await CommentModel.distinct('post', { commenter: user._id }).exec();
+            return true;
+          } catch (error) {
+            return Promise.reject(error);
+          }
+        }
       }
     },
     'searchText': {

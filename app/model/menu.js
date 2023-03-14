@@ -13,7 +13,7 @@ const MenuSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    defalut: 'list',
+    default: 'list',
     lowercase: true,
     enum: {
       values: ['list', 'card', 'slide'],

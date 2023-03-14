@@ -42,9 +42,18 @@ class PostController extends BaseController {
   }
 
   getMany(req, res, next) {
-    this.validate(rules.getPostsRules, req, res, () => {
-      this._postHandler.getPosts(req, null, this._responseManager.getDefaultResponseHandler(res));
-    });
+    this._passport.authenticate('jwt-auth', {
+      onVerified: (token, payload) => {
+        this.validate(rules.getPostsRules, req, res, () => {
+          this._postHandler.getPosts(req, payload, this._responseManager.getDefaultResponseHandler(res));
+        });
+      },
+      onFailure: (error) => {
+        this.validate(rules.getPostsRules, req, res, () => {
+          this._postHandler.getPosts(req, null, this._responseManager.getDefaultResponseHandler(res));
+        });
+      }
+    })(req, res, next);
   }
 
   getManyAsAdmin(req, res, next) {
