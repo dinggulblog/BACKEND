@@ -10,7 +10,7 @@ class DraftHandler {
       const { menu, category, title, content, isPublic, thumbnail } = req.body;
       const id = new ObjectId();
 
-      const images = req.files ? await FileModel.createManyInstances(payload.userId, id, 'Draft', req.files) : null;
+      const images = req.files ? await FileModel.createManyInstancesS3(payload.userId, id, 'Draft', req.files) : null;
       const draft = await new DraftModel({
         _id: id,
         author: payload.userId,
@@ -48,7 +48,7 @@ class DraftHandler {
     try {
       const { menu, title, content, category, isPublic, thumbnail } = req.body;
 
-      const images = await FileModel.createManyInstances(payload.userId, req.params.id, 'Draft', req.files)
+      const images = await FileModel.createManyInstancesS3(payload.userId, req.params.id, 'Draft', req.files)
       const draft = await DraftModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.userId },
         {

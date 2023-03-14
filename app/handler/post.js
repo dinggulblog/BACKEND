@@ -243,7 +243,7 @@ export class PostHandler {
     try {
       const { menu, category, title, content, isPublic, thumbnail } = req.body;
 
-      const images = await FileModel.createManyInstances(payload.userId, req.params.id, 'Post', req.files)
+      const images = await FileModel.createManyInstancesS3(payload.userId, req.params.id, 'Post', req.files)
       const post = await PostModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.userId },
         {
@@ -322,7 +322,10 @@ export class PostHandler {
     const matchQuery = {};
     const sortQuery = {};
 
-    if (menus.length) {
+    if (menus.length === 1) {
+      matchQuery.menu = new ObjectId(menus[0]);
+    }
+    else if (menus.length > 1) {
       matchQuery.menu = { $in: menus };
     }
     if (!category.includes('전체')) {

@@ -155,7 +155,7 @@ class UserHandler {
 
   async updateProfileAvatar(req, payload, callback) {
     try {
-      const avatar = await FileModel.createSingleInstance(payload.userId, payload.userId, 'User', req.file);
+      const avatar = await FileModel.createSingleInstanceS3(payload.userId, payload.userId, 'User', req.file);
 
       if (!avatar) throw new InvalidRequestError('아바타가 업로드되지 않았습니다.');
 
