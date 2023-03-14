@@ -57,8 +57,8 @@ FileSchema.post('findOneAndDelete', async function (doc, next) {
       unlinkSync(filePath);
     }
 
-    else if (doc.storage === 's3') {
-      deleteS3(doc.serverFileName);
+    else if (doc.storage === 's3' && doc.thumbnail) {
+      deleteS3(doc.thumbnail.split('/').slice(-2).join('/'));
     }
 
     else {
@@ -102,7 +102,7 @@ fileModel.createSingleInstance = async function (uploader, belonging, belongingM
 fileModel.createSingleInstanceS3 = async function (uploader, belonging, belongingModel, file) {
   if (file && typeof file.key === 'string') {
     const serverFileName = file.key.split('/')[file.key.split('/').length - 1];
-    const folder = belongingModel === 'User' ? 'avatar-thumbnail' : 'post-thumbnail';
+    const folder = belongingModel === 'User' ? 'thumbnail-avatar' : 'thumbnail-post';
 
     return await FileModel.create({
       uploader,
@@ -146,7 +146,7 @@ fileModel.createManyInstances = async function (uploader, belonging, belongingMo
 };
 
 fileModel.createManyInstancesS3 = async function (uploader, belonging, belongingModel, files = []) {
-  const folder = belongingModel === 'User' ? 'avatar-thumbnail' : 'post-thumbnail';
+  const folder = belongingModel === 'User' ? 'thumbnail-avatar' : 'thumbnail-post';
 
   return await FileModel.insertMany(files.map(
     file => {

@@ -61,5 +61,6 @@ export const deleteS3 = (key) => {
     Key: key
   }, (err, data) => {
     if (err) throw err;
+    console.log('Delete files: ', data);
   });
 };
