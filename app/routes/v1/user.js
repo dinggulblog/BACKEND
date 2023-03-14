@@ -16,7 +16,7 @@ router.route('/accounts')
   .get(userController.getAll)
   .put(userController.updateMany);
 
-router.route('/profile/:nickname')
+router.route('/profile/:nickname?')
   .get(userController.getProfile)
   .put(userController.updateProfile);
 

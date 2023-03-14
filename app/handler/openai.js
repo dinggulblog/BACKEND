@@ -83,8 +83,6 @@ class OpenAIHandler {
       callback.onError(error);
     }
   }
-
-
 }
 
 export default OpenAIHandler;

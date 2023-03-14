@@ -3,8 +3,6 @@ import { join } from 'path';
 import { accessSync, constants, unlinkSync } from 'fs';
 import { deleteS3 } from '../middlewares/multer.js';
 
-const uploadUrl = `${process.env.S3_URL}thumbnail/`;
-
 const FileSchema = new mongoose.Schema({
   uploader: {
     type: mongoose.Schema.Types.ObjectId,
@@ -17,7 +15,7 @@ const FileSchema = new mongoose.Schema({
   },
   belongingModel: {
     type: String,
-    enum: ['User', 'Post', 'Draft', 'Comment']
+    enum: ['User', 'Post', 'Draft']
   },
   storage: {
     type: String,
@@ -81,19 +79,39 @@ const fileModel = mongoose.model('File', FileSchema);
  * @param {mongoose.Types.ObjectId} belonging
  * @param {String} belongingModel
  * @param {Object} file
- * @returns Single Document
+ * @returns Object of Document or null
  */
 fileModel.createSingleInstance = async function (uploader, belonging, belongingModel, file) {
-  if (file && file?.originalname) {
-    const serverFileName = file?.filename ?? file.key.split('/')[file.key.split('/').length - 1];
+  if (file && typeof file.filename === 'string') {
+    const serverFileName = file.filename;
+
     return await FileModel.create({
       uploader,
       belonging,
       belongingModel,
-      storage: file.key ? 's3' : 'local',
+      storage: 'local',
       originalFileName: file.originalname,
       serverFileName: serverFileName,
-      thumbnail: file.key ? uploadUrl + serverFileName : 'http://localhost:3000/uploads/' + serverFileName,
+      thumbnail: `${process.env.HOST.trim()}/uploads/${serverFileName}`,
+      size: file.size
+    });
+  };
+  return null;
+};
+
+fileModel.createSingleInstanceS3 = async function (uploader, belonging, belongingModel, file) {
+  if (file && typeof file.key === 'string') {
+    const serverFileName = file.key.split('/')[file.key.split('/').length - 1];
+    const folder = belongingModel === 'User' ? 'avatar-thumbnail' : 'post-thumbnail';
+
+    return await FileModel.create({
+      uploader,
+      belonging,
+      belongingModel,
+      storage: 's3',
+      originalFileName: file.originalname,
+      serverFileName: serverFileName,
+      thumbnail: `${process.env.AWS_S3_URL.trim()}/${folder}/${serverFileName}`,
       size: file.size
     });
   };
@@ -109,6 +127,8 @@ fileModel.createSingleInstance = async function (uploader, belonging, belongingM
  * @returns Array of Documents
  */
 fileModel.createManyInstances = async function (uploader, belonging, belongingModel, files = []) {
+  const host = process.env.HOST.trim();
+
   return await FileModel.insertMany(files.map(
     file => {
       const serverFileName = file?.filename ?? file.key.split('/')[file.key.split('/').length - 1];
@@ -119,7 +139,26 @@ fileModel.createManyInstances = async function (uploader, belonging, belongingMo
         storage: file.key ? 's3' : 'local',
         originalFileName: file.originalname,
         serverFileName: serverFileName,
-        thumbnail: file.key ? uploadUrl + serverFileName : 'http://localhost:3000/uploads/' + serverFileName,
+        thumbnail: `${host}/uploads/${serverFileName}`,
+        size: file.size
+    });
+  }));
+};
+
+fileModel.createManyInstancesS3 = async function (uploader, belonging, belongingModel, files = []) {
+  const folder = belongingModel === 'User' ? 'avatar-thumbnail' : 'post-thumbnail';
+
+  return await FileModel.insertMany(files.map(
+    file => {
+      const serverFileName = file.key.split('/')[file.key.split('/').length - 1];
+      return ({
+        uploader,
+        belonging,
+        belongingModel,
+        storage: 's3',
+        originalFileName: file.originalname,
+        serverFileName: serverFileName,
+        thumbnail: `${process.env.AWS_S3_URL.trim()}/${folder}/${serverFileName}`,
         size: file.size
     });
   }));

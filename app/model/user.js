@@ -172,7 +172,7 @@ UserSchema.post('findOneAndUpdate', async function (doc, next) {
   try {
     const query = this.getUpdate();
 
-    if (!doc) next(new ForbiddenError('아이디와 비밀번호를 확인해 주세요.'));
+    if (!doc) next(new ForbiddenError('해당 유저를 찾을 수 없습니다.'));
 
     // 계정이 비활성화 상태이거나 비활성화 된 경우
     else if (!doc.isActive) {

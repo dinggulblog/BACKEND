@@ -36,6 +36,7 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(csurf({ cookie: { secure: process.env.NODE_ENV === 'production' } }));
 app.use((req, res, next) => {
   res.cookie('XSRF-TOKEN', req.csrfToken(), { secure: process.env.NODE_ENV === 'production' });
+  res.locals.csrf = req.csrfToken();
   next();
 });
 
@@ -44,11 +45,12 @@ app.use(authManager.providePassport().initialize());
 
 // Setup routes
 app.use('/', routes);
+app.use('/xsrf-token', (req, res, next) => responseManager.respondWithSuccess(res, 200, { xsrfToken: res.locals.csrf }));
 app.use(history());
 
 // Static route
 app.use(express.static(join(__dirname, 'public')));
-app.use('/uploads', express.static(join(__dirname, 'uploads')));
+app.use('/uploads', express.static(join(__dirname, 'uploads'))); // will be deprecated
 
 // Handling a non-existent route
 app.use((req, res, next) => {

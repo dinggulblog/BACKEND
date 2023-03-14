@@ -64,13 +64,13 @@ class MailHandler {
           </a>
         </div><br/><div>이 링크는 1시간동안 유효합니다.</div>
       </div>
-    `
+    `;
   }
 
   #generateInquiryForm (from, content) {
     return `
       <div>보낸 사람: ${from}</div><br/><br/><div>${content}</div>
-    `
+    `;
   }
 }
 

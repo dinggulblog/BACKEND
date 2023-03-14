@@ -13,7 +13,7 @@ class BaseController extends BaseAutoBindedClass {
     this._passport = passport;
   }
 
-  /***** CRUD methods *****/
+  // CRUD methods
   create(req, res) {
 
   }

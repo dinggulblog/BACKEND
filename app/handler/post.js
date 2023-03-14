@@ -110,8 +110,8 @@ export class PostHandler {
       const { author, skip, limit, searchText } = req.query;
 
       const query = !searchText
-        ? await this.#getMatchQuery(req.query, payload?.userId)
-        : this.#getSearchQuery(req.query, payload?.userId);
+        ? await this.#getMatchQuery(req.query)
+        : this.#getSearchQuery(req.query);
 
       const maxCount = !skip && !searchText
         ? await PostModel.countDocuments(query[0].$match)
@@ -169,9 +169,9 @@ export class PostHandler {
         ? await this.#getMatchQuery(req.query, payload?.userId)
         : this.#getSearchQuery(req.query, payload?.userId);
 
-      const maxCount = !skip && !searchText
+      const maxCount = !searchText
         ? await PostModel.countDocuments(query[0].$match)
-        : null;
+        : null; // will be updated when using mongo atlas 6.0 (current: 5.0)
 
       const posts = await PostModel.aggregate([
         ...query,
@@ -376,15 +376,52 @@ export class PostHandler {
   }
 
   #getSearchQuery(queries, adminId) {
-    const { author, searchText, sort } = queries;
+    const { searchText, sort } = queries;
+
+    if (!sort) {
+      const textFilter = {
+        compound: {
+          must: {
+            text: {
+              path: ['title', 'content'],
+              query: searchText
+            }
+          },
+          mustNot: [{
+            equals: {
+              path: 'isActive',
+              value: false
+            }
+          }, {
+            equals: {
+              path: 'isPublic',
+              value: false
+            }
+          }],
+          should: {
+            near: {
+              origin: 1000000,
+              path: 'postNum',
+              pivot: 1,
+              score: { boost: { value: 999 } }
+            }
+          }
+        }
+      };
+
+      if (adminId) delete textFilter.compound.mustNot;
+
+      return [{ $search: textFilter }];
+    }
+
     const sortFilter = {
       compound: {
-        filter: [{
+        filter: {
           text: {
             path: ['title', 'content'],
             query: searchText
           }
-        }],
+        },
         must: {
           near: {
             origin: 100000,
@@ -392,24 +429,17 @@ export class PostHandler {
             pivot: 2
           }
         },
-        should: {
-          near: {
-            origin: 1000000,
-            path: 'postNum',
-            pivot: 1,
-            score: { boost: { value: 999 } }
+        mustNot: [{
+          equals: {
+            path: 'isActive',
+            value: false
           }
-        }
-      }
-    };
-    const textFilter = {
-      compound: {
-        must: {
-          text: {
-            path: ['title', 'content'],
-            query: searchText
+        }, {
+          equals: {
+            path: 'isPublic',
+            value: false
           }
-        },
+        }],
         should: {
           near: {
             origin: 1000000,
@@ -421,25 +451,8 @@ export class PostHandler {
       }
     };
 
-    if (!adminId && sort) {
-      sortFilter.compound.mustNot = {
-        equals: {
-          path: 'isActive',
-          value: false
-        }
-      };
-    }
-    else if (!adminId) {
-      textFilter.compound.mustNot = {
-        equals: {
-          path: 'isActive',
-          value: false
-        }
-      };
-    }
+    if (adminId) delete sortFilter.compound.mustNot;
 
-    return [{
-      $search: sort ? { ...sortFilter } : { ...textFilter }
-    }];
+    return [{ $search: sortFilter }];
   }
-};
+}
