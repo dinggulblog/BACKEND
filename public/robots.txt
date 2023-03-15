@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /dashboard/
+Disallow: /dashboard/chart
+Disallow: /dashboard/members
+Disallow: /dashboard/manage-posts
+Disallow: /dashboard/manage-menus
