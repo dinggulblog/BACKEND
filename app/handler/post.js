@@ -6,6 +6,7 @@ export const cachedPostIds = new Map();
 
 export class PostHandler {
   constructor() {
+    this._originalUrl = `${process.env.AWS_S3_URL}/post/`
   }
 
   async createPost(req, payload, callback) {
@@ -82,12 +83,8 @@ export class PostHandler {
           pipeline: [{ $project: { serverFileName: 1, thumbnail: 1 } }],
           as: 'images'
         } },
-        { $set: {
-          viewCount: { $add: ['$viewCount', 1] }
-        } },
         { $addFields: {
-          liked: { $in: [userId, '$likes'] },
-          likeCount: { $size: '$likes' }
+          liked: { $in: [userId, '$likes'] }
         } },
         { $project: {
           nearIds: 0
@@ -95,11 +92,11 @@ export class PostHandler {
       ]).exec();
 
       if (post.length) {
-        const id = post[0]._id;
-        cachedPostIds.has(id) ? cachedPostIds.set(id, cachedPostIds.get(id) + 1) : cachedPostIds.set(id, 1)
+        const { _id } = post[0];
+        cachedPostIds.has(_id) ? cachedPostIds.set(_id, cachedPostIds.get(_id) + 1) : cachedPostIds.set(_id, 1)
       }
 
-      callback.onSuccess({ post: post.shift() ?? null });
+      callback.onSuccess({ post: post[0] ?? null });
     } catch (error) {
       callback.onError(error);
     }
@@ -136,15 +133,7 @@ export class PostHandler {
           foreignField: 'post',
           as: 'comments'
         } },
-        { $lookup: {
-          from: 'files',
-          localField: 'thumbnail',
-          foreignField: '_id',
-          as: 'thumbnail'
-        } },
-        { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
         { $addFields: {
-          thumbnail: '$thumbnail.thumbnail',
           content: { $substrCP: ['$content', 0, 200] },
           liked: { $in: [userId, '$likes'] },
           commentCount: { $size: '$comments' }
@@ -201,15 +190,7 @@ export class PostHandler {
           foreignField: 'post',
           as: 'comments'
         } },
-        { $lookup: {
-          from: 'files',
-          localField: 'thumbnail',
-          foreignField: '_id',
-          as: 'thumbnail'
-        } },
-        { $unwind: { path: '$thumbnail', preserveNullAndEmptyArrays: true } },
         { $addFields: {
-          thumbnail: '$thumbnail.thumbnail',
           content: { $substrCP: ['$content', 0, 200] },
           liked: { $in: [userId, '$likes'] },
           commentCount: { $size: '$comments' }
@@ -332,7 +313,7 @@ export class PostHandler {
       matchQuery.category = category;
     }
     if (hasThumbnail) {
-      matchQuery.thumbnail = { $exists: true, $ne: null };
+      matchQuery.thumbnail = { $exists: true, $ne: '' };
     }
     if (likes) {
       matchQuery.likes = likes;

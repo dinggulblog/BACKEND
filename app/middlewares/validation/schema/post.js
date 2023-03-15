@@ -44,9 +44,8 @@ const POST_VALIDATION_SCHEMA = () => {
       }
     },
     'thumbnail': {
-      customSanitizer: {
-        options: (value) => ObjectId.isValid(value) ? new ObjectId(value) : undefined
-      },
+      optional: { options: { nullable: true, checkFalsy: true } },
+      isString: true
     }
   };
 };

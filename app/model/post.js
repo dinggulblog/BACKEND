@@ -20,14 +20,17 @@ const PostSchema = new mongoose.Schema({
     default: '기타'
   },
   postNum: {
-    type: Number
+    type: Number,
+    default: 0
   },
   title: {
     type: String,
     required: true,
+    default: ''
   },
   content: {
-    type: String
+    type: String,
+    default: ''
   },
   isPublic: {
     type: Boolean,
@@ -41,29 +44,29 @@ const PostSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  likeCount: {
-    type: Number,
-    default: 0
-  },
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
-  thumbnail: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'File',
-    default: null
+  likeCount: {
+    type: Number,
+    default: 0
   },
   images: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'File'
-  }]
+  }],
+  thumbnail: {
+    type: String,
+    default: ''
+  }
 }, {
   timestamps: true,
   versionKey: false
 });
 
-PostSchema.index({ menu: 1 });
+PostSchema.index({ author: 1 });
+PostSchema.index({ menu: 1, createdAt: -1 });
 
 // 게시물 저장 전 게시물 넘버링
 PostSchema.pre('save', async function (next) {
@@ -92,7 +95,7 @@ PostSchema.post('save', async function (doc, next) {
           { _id: image },
           { $set: { belonging: doc._id, belongingModel: 'Post' } },
           { lean: true }
-        ).exec()
+        ).exec();
       }
     }
 

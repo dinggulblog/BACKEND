@@ -10,20 +10,25 @@ const DraftSchema = new mongoose.Schema({
   },
   menu: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Menu'
+    ref: 'Menu',
+    required: true
   },
   category: {
     type: String,
     default: '기타'
   },
   postNum: {
-    type: Number
+    type: Number,
+    default: 0
   },
   title: {
-    type: String
+    type: String,
+    required: true,
+    default: ''
   },
   content: {
-    type: String
+    type: String,
+    default: ''
   },
   isPublic: {
     type: Boolean,
@@ -33,18 +38,22 @@ const DraftSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  thumbnail: {
+  likes: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'File'
+    ref: 'User'
+  }],
+  likeCount: {
+    type: Number,
+    default: 0
   },
   images: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'File'
   }],
-  likes: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }]
+  thumbnail: {
+    type: String,
+    default: ''
+  }
 }, {
   timestamps: true,
   versionKey: false
@@ -54,15 +63,20 @@ DraftSchema.index({ author: 1 });
 
 DraftSchema.post('findOneAndDelete', async function (doc, next) {
   try {
-    if (!doc || !doc.images) next();
+    if (!doc || !doc.images.length) next();
+
+    /* Will be updated
+    await FileModel.deleteMany(
+      { belonging: doc._id, belongingModel: 'Draft' },
+      { lean: true }
+    ).exec();
+    */
 
     for await (const image of doc.images) {
-      if (image) {
-        FileModel.findOneAndDelete(
-          { _id: image },
-          { lean: true }
-        ).exec();
-      }
+      FileModel.findOneAndDelete(
+        { _id: image, belonging: doc._id, belongingModel: 'Draft' },
+        { lean: true }
+      ).exec();
     }
 
     next();

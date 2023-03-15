@@ -10,7 +10,7 @@ class DraftHandler {
       const { menu, category, title, content, isPublic, thumbnail } = req.body;
       const id = new ObjectId();
 
-      const images = req.files ? await FileModel.createManyInstancesS3(payload.userId, id, 'Draft', req.files) : null;
+      const images = await FileModel.createManyInstancesS3(payload.userId, id, 'Draft', req.files);
       const draft = await new DraftModel({
         _id: id,
         author: payload.userId,
@@ -34,8 +34,15 @@ class DraftHandler {
       const draft = await DraftModel.findOne(
         { author: payload.userId, isActive: true },
         null,
-        { lean: true,
-          populate: { path: 'images', select: { serverFileName: 1 } } }
+        {
+          lean: true,
+          populate: [{
+            path: 'menu',
+            select: { main: 1, sub: 1 },
+          }, {
+            path: 'images', select: { serverFileName: 1, thumbnail: 1 }, match: { isActive: true }
+          }]
+        }
       ).exec();
 
       callback.onSuccess({ draft });
@@ -46,16 +53,16 @@ class DraftHandler {
 
   async updateDraft(req, payload, callback) {
     try {
-      const { menu, title, content, category, isPublic, thumbnail } = req.body;
+      const { menu, category, title, content, isPublic, thumbnail } = req.body;
 
       const images = await FileModel.createManyInstancesS3(payload.userId, req.params.id, 'Draft', req.files)
       const draft = await DraftModel.findOneAndUpdate(
         { _id: req.params.id, author: payload.userId },
         {
           $set: { menu, category, title, content, isPublic, thumbnail },
-          $addToSet: { images: { $each: images.map(image => image._id) } }
+          $addToSet: { images: { $each: images.map(({ _id }) => _id) } }
         },
-        { upsert: true, lean: true }
+        { new: true, lean: true }
       ).exec();
 
       callback.onSuccess({ draft, images });
