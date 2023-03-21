@@ -24,7 +24,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'));
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(hpp({ whitelist: ['menus'] }));
-  app.use(cors())
+  app.use(cors({ origin: 'https://dinggul.me', credentials: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'] }))
 } else {
   app.use(morgan('dev'));
   app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
