@@ -19,6 +19,11 @@ import responseManager from './app/manager/response.js';
 // Create an express app
 const app = express();
 
+// Set headers
+app.set('etag', false);
+app.enable('trust proxy');
+app.disable('x-powered-by');
+
 // Cors, Loging and Securities
 if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'));
@@ -36,7 +41,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(csurf({ cookie: { secure: process.env.NODE_ENV === 'production' } }));
 app.use((req, res, next) => {
-  res.set('Cache-Control', 'no-store');
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
   res.cookie('XSRF-TOKEN', req.csrfToken(), { secure: process.env.NODE_ENV === 'production' });
   res.locals.csrf = req.csrfToken();
   next();

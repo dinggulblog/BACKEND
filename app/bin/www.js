@@ -14,9 +14,6 @@ import app from '../../index.mjs';
  */
 const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
-app.set('etag', false);
-app.enable('trust proxy');
-app.disable('x-powered-by');
 
 /**
  * Create server and Listen on provided port, on all network interfaces.
