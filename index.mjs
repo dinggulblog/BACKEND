@@ -24,7 +24,7 @@ if (process.env.NODE_ENV === 'production') {
   app.enable('trust proxy');
   app.disable('x-powered-by');
   app.use(morgan('combined'));
-  app.use(helmet({ contentSecurityPolicy: false }));
+  app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
   app.use(hpp({ whitelist: ['menus'] }));
   app.use(cors({ origin: 'https://dinggul.me', credentials: true }));
 } else {
