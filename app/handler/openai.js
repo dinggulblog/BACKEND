@@ -44,7 +44,7 @@ class OpenAIHandler {
         stream: true,
         prompt: `
           Write blog posts in markdown format.
-          Write the theme of your blog as ${encodeURI(prompt)}.
+          Write the theme of your blog as ${decodeURI(prompt)}.
           Highlight, bold, or italicize important words or sentences.
           Please make the entire blog less than 15 ~ 20 minutes long.
           The audience of the article is 20-40 years old.
