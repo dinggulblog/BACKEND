@@ -14,7 +14,7 @@ import cookieParser from 'cookie-parser';
 import history from 'connect-history-api-fallback';
 import routes from './app/routes/index.js';
 import authManager from './app/manager/auth.js';
-import responseManager from './app/manager/response.js';
+import { cspOptions } from './config/csp-options.js';
 
 // Create an express app
 const app = express();
@@ -23,7 +23,7 @@ const app = express();
 if (process.env.NODE_ENV === 'production') {
   app.enable('trust proxy');
   app.use(morgan('combined'));
-  app.use(helmet.contentSecurityPolicy({ useDefaults: false }))
+  app.use(helmet.contentSecurityPolicy({ directives: { ...helmet.contentSecurityPolicy.getDefaultDirectives(), ...cspOptions } }))
   app.use(helmet.crossOriginEmbedderPolicy({ policy: 'credentialless' }));
   app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }));
   app.use(helmet.hidePoweredBy());
@@ -51,7 +51,6 @@ app.use(authManager.providePassport().initialize());
 
 // Setup routes
 app.use('/', routes);
-app.use('/xsrf-token', (req, res, next) => responseManager.respondWithSuccess(res, 200, { xsrfToken: res.locals.csrf }));
 app.use(history());
 
 // Static route
@@ -69,7 +68,7 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   res.locals.message = err.message;
   res.locals.error = process.env.NODE_ENV === 'production' ? {} : err;
-  responseManager.respondWithError(res, res.locals.error.status ?? 500, res.locals.message)
+  res.status(res.locals.error.status ?? 500).json({ success: false, message: res.locals.message, data: {} });
 });
 
 export default app;
