@@ -33,6 +33,7 @@ export class PostHandler {
     try {
       const userId = payload ? new ObjectId(payload.userId) : null;
       const postId = new ObjectId(req.params.id);
+      
       const post = await PostModel.aggregate([
         { $setWindowFields: {
           partitionBy: { menu: '$menu', category: '$category' },

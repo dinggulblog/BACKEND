@@ -22,9 +22,17 @@ const app = express();
 // Cors, Loging and Securities
 if (process.env.NODE_ENV === 'production') {
   app.enable('trust proxy');
-  app.disable('x-powered-by');
   app.use(morgan('combined'));
-  app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+  app.use(helmet({ 
+    hidePoweredBy: true,
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    hsts: {
+      maxAge: 90 * 24 * 60 * 60,
+      includeSubDomains: true,
+      preload: true
+    }
+  }));
   app.use(hpp({ whitelist: ['menus'] }));
   app.use(cors({ origin: 'https://dinggul.me', credentials: true }));
 } else {
