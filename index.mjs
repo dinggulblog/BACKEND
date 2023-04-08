@@ -37,7 +37,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(helmet.referrerPolicy());
   app.use(helmet.xssFilter());
   app.use(hpp({ whitelist: ['menus'] }));
-  app.use(cors({ origin: 'https://dinggul.me', credentials: true }));
+  // app.use(cors({ origin: 'https://dinggul.me', credentials: true }));
 } else {
   app.use(morgan('dev'));
   app.use(cors({ origin: 'http://localhost:8080', credentials: true }));
