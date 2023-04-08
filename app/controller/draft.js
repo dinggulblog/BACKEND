@@ -63,7 +63,7 @@ class DraftController extends BaseController {
   #upload(req, res, callback) {
     this._upload.array('images', 32)(req, res, (error) => {
       return error
-        ? this._responseManager.respondWithError(res, error.status ?? 400, error.message)
+        ? this._responseManager.respondWithError(res, 433, error.message)
         : callback();
     });
   }
