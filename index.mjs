@@ -26,8 +26,16 @@ if (process.env.NODE_ENV === 'production') {
   app.use(helmet.contentSecurityPolicy({ directives: cspOptions }))
   app.use(helmet.crossOriginEmbedderPolicy({ policy: 'credentialless' }));
   app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }));
-  app.use(helmet.hidePoweredBy());
   app.use(helmet.hsts({ maxAge: 90 * 24 * 60 * 60, includeSubDomains: true, preload: true }));
+  app.use(helmet.dnsPrefetchControl());
+  app.use(helmet.frameguard());
+  app.use(helmet.hidePoweredBy());
+  app.use(helmet.ieNoOpen());
+  app.use(helmet.noSniff());
+  app.use(helmet.originAgentCluster());
+  app.use(helmet.permittedCrossDomainPolicies());
+  app.use(helmet.referrerPolicy());
+  app.use(helmet.xssFilter());
   app.use(hpp({ whitelist: ['menus'] }));
   app.use(cors({ origin: 'https://dinggul.me', credentials: true }));
 } else {
