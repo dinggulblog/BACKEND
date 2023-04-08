@@ -23,8 +23,8 @@ const app = express();
 if (process.env.NODE_ENV === 'production') {
   app.enable('trust proxy');
   app.use(morgan('combined'));
-  // app.use(helmet.contentSecurityPolicy({ directives: cspOptions }))
-  // app.use(helmet.crossOriginEmbedderPolicy({ policy: 'credentialless' }));
+  app.use(helmet.contentSecurityPolicy({ directives: cspOptions }))
+  app.use(helmet.crossOriginEmbedderPolicy({ policy: 'require-corp' }));
   app.use(helmet.crossOriginResourcePolicy({ policy: 'same-origin' }));
   app.use(helmet.hsts({ maxAge: 90 * 24 * 60 * 60, includeSubDomains: true, preload: true }));
   app.use(helmet.dnsPrefetchControl());
