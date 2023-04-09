@@ -11,11 +11,12 @@
 + Manage posts and media
 + Categorize posts
 + Various post viewing
-+ User Roles
++ Member Roles
 + Markdown Editor
 + Content moderation
 + User Profile moderation
-+ Amazon S3 integration(incomplete)
++ Amazon S3 integration
++ Statistics like pageviews via Google Analystics(incomplete)
 
 and more...
 
@@ -29,15 +30,15 @@ The backend folder and the frontend folder must be located on the same path like
 2. Run the following commands at the root of each folder<br>
 ``` npm install --save-dev ```
 
-Create the ```.env.develop``` file in the same path and insert the appropriate key-values referring to the ```env-example.json``` file.
-Required keys in .env:
-+ HOST
-+ HOST_MAIL
-+ MONGO_ATLAS_CONNECT_URL
-+ COOKIE_SECRET
-+ SECRET_KEY_DIR
-+ JWT_PUBLIC_DIR
-+ JWT_PRIVATE_DIR
+3. Create the ```.env.develop``` file in the same path and insert the appropriate key-values referring to the ```env-example.json``` file.<br>
+> Required keys in .env:
+> + HOST
+> + HOST_MAIL
+> + MONGO_ATLAS_CONNECT_URL
+> + COOKIE_SECRET
+> + SECRET_KEY_DIR
+> + JWT_PUBLIC_DIR
+> + JWT_PRIVATE_DIR
 
 ## License
 Dinggule Blog is open-sourced software licensed under the MIT license.
