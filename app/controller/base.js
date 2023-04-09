@@ -1,6 +1,6 @@
 import passport from 'passport';
 
-import { validator } from '../middlewares/validation/validator.js';
+import { validator } from '../middlewares/validator.js';
 import { verify } from '../middlewares/verify.js';
 import BaseAutoBindedClass from '../base/autobind.js';
 import ResponseManager from '../manager/response.js';

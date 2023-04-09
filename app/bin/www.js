@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 import { readFileSync, readdirSync, mkdirSync } from 'fs';
-import { connectMongoDB, createDefaultDocuments } from '../../config/mongo.js';
+import { connectMongoDB, createDefaultDocuments } from '../library/mongo.js';
 import http from 'http';
 import http2 from 'node:http2';
 import app from '../../index.mjs';

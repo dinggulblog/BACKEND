@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import { RoleModel } from '../app/model/role.js';
-import { MenuModel } from '../app/model/menu.js';
-import { UserModel } from '../app/model/user.js';
+import { RoleModel } from '../model/role.js';
+import { MenuModel } from '../model/menu.js';
+import { UserModel } from '../model/user.js';
 
 export const ObjectId = mongoose.Types.ObjectId;
 

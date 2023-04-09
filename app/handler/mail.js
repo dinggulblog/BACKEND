@@ -1,9 +1,8 @@
 import { MailModel } from '../model/mail.js';
-import { sendMail } from '../util/sendmail.js';
+import { sendMail } from '../library/sendmail.js';
 
 class MailHandler {
   constructor() {
-    this._MailModel = MailModel;
     this._host = process.env.HOST;
     this._hostMail = process.env.HOST_MAIL;
   }
@@ -12,7 +11,7 @@ class MailHandler {
     try {
       const { email, subject, content } = req.body;
 
-      const mail = await this._MailModel.create({
+      const mail = await MailModel.create({
         to: email,
         subject: `문의: ${subject}`,
         content
@@ -34,7 +33,7 @@ class MailHandler {
     try {
       const { email } = req.body;
 
-      const mail = await this._MailModel.createCode(email);
+      const mail = await MailModel.createCode(email);
 
       await sendMail({
         to: mail.to,

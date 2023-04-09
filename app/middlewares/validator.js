@@ -1,5 +1,5 @@
 import { validationResult } from 'express-validator';
-import UnprocessableError from '../../error/unprocessable.js';
+import UnprocessableError from '../error/unprocessable.js';
 
 /**
  * Express validator with callback
