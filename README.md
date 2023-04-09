@@ -3,6 +3,7 @@ Dinggul Blog API Server with Express.js &amp; MongoDB
 <br><br>
 ## Web Application Architecture
 <img src="https://user-images.githubusercontent.com/56054637/230785846-035d41a7-fedd-4f46-846b-2937bb65a380.png" width="50%" height="50%">
+
 ## Postman API Document Link (Local)
 <[https://documenter.getpostman.com/view/15146904/2s8YzRxhtC](https://documenter.getpostman.com/view/15146904/2s8Z6x3ZL9)>
 <br><br>
