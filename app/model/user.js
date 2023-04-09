@@ -2,7 +2,6 @@ import { genSalt, hash, compareSync } from 'bcrypt';
 import mongoose from 'mongoose';
 
 import { RoleModel } from './role.js';
-import { CommentModel } from './comment.js';
 import { MailModel } from './mail.js';
 import ForbiddenError from '../error/forbidden.js';
 
@@ -145,6 +144,7 @@ UserSchema.pre('save', async function (next) {
   }
 });
 
+// 이메일 인증 코드로 회원정보 수정 성공 시 해당 인증코드 비활성화 -> 수정 필요
 UserSchema.post('save', async function (doc, next) {
   try {
     if (this.code) await MailModel.deleteOne({ code: this.code }, { lean: true }).exec();
@@ -156,10 +156,11 @@ UserSchema.post('save', async function (doc, next) {
 });
 
 // 유저 정보 조회 시 훅
-UserSchema.post('findOne', function (doc, next) {
+UserSchema.post(['findOne', 'findOneAndUpdate'], function (doc, next) {
   return !doc ? next(new ForbiddenError('해당 유저를 찾을 수 없습니다.')) : next();
 });
 
+/*
 UserSchema.post('findOneAndUpdate', async function (doc, next) {
   try {
     const query = this.getUpdate();
@@ -187,5 +188,6 @@ UserSchema.post('findOneAndUpdate', async function (doc, next) {
     next(error);
   }
 });
+*/
 
 export const UserModel = mongoose.model('User', UserSchema);

@@ -61,16 +61,10 @@ const DraftSchema = new mongoose.Schema({
 
 DraftSchema.index({ author: 1 });
 
+/* Will be updated
 DraftSchema.post('findOneAndDelete', async function (doc, next) {
   try {
     if (!doc || !doc.images.length) next();
-
-    /* Will be updated
-    await FileModel.deleteMany(
-      { belonging: doc._id, belongingModel: 'Draft' },
-      { lean: true }
-    ).exec();
-    */
 
     for await (const image of doc.images) {
       FileModel.findOneAndDelete(
@@ -84,5 +78,6 @@ DraftSchema.post('findOneAndDelete', async function (doc, next) {
     next(error);
   }
 });
+*/
 
 export const DraftModel = mongoose.model('Draft', DraftSchema);

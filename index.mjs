@@ -1,5 +1,5 @@
-import './global.js';
-import './env.js';
+import './config/global.js';
+import './config/env.js';
 import './app/util/node-scheduler.js';
 import './app/util/toad-scheduler.js';
 
