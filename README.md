@@ -41,6 +41,7 @@ The backend folder and the frontend folder must be located on the same path like
 > + SECRET_KEY_DIR
 > + JWT_PUBLIC_DIR
 > + JWT_PRIVATE_DIR
+
 <br><br>
 ## License
 Dinggule Blog is open-sourced software licensed under the MIT license.
