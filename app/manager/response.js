@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { cookieOption } from '../../config/cookie-options.js';
+import { jwtOptions } from '../../config/jwt-options.js';
 
 const BasicResponse = {
   success: false,
@@ -100,8 +101,8 @@ class ResponseManager {
     response.message = message;
     response.links = links;
     cookieNames.forEach(name => name === 'accessToken'
-      ? res.cookie(name, cookies[name], { maxAge: accessTokenMaxAge, ...cookieOption })
-      : res.cookie(name, cookies[name], { maxAge: refreshTokenMaxAge, ...cookieOption })
+      ? res.cookie(name, cookies[name], { maxAge: jwtOptions.accessTokenMaxAge, ...cookieOption })
+      : res.cookie(name, cookies[name], { maxAge: jwtOptions.refreshTokenMaxAge, ...cookieOption })
     );
 
     res.status(code).json(response);

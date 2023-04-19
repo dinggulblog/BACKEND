@@ -8,9 +8,6 @@ router.route('/')
   .get(postController.getMany)
   .post(postController.create);
 
-router.route('/admin')
-  .get(postController.getManyAsAdmin);
-
 router.route('/count')
   .get(postController.getCounts);
 

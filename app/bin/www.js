@@ -3,7 +3,7 @@
 /**
  * Module dependencies.
  */
-import { readFileSync, readdirSync, mkdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { connectMongoDB, createDefaultDocuments } from '../library/mongo.js';
 import http from 'http';
 import http2 from 'node:http2';
@@ -38,14 +38,6 @@ else {
 
 // Connect to MongoDB server
 connectMongoDB(process.env.MONGO_ATLAS_CONNECT_URL).then(createDefaultDocuments);
-
-// Create an upload directory
-try {
-  readdirSync('uploads');
-} catch (error) {
-  console.error('Create missing directory: "uploads"');
-  mkdirSync('uploads');
-}
 
 /**
  * Normalize a port into a number, string, or false.

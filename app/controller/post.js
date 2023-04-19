@@ -56,16 +56,6 @@ class PostController extends BaseController {
     })(req, res, next);
   }
 
-  getManyAsAdmin(req, res, next) {
-    this.authenticate(req, res, next, (token, payload) => {
-      this.verify(payload.roles, res, () => {
-        this.validate(rules.getPostsRules, req, res, () => {
-          this._postHandler.getPostsAsAdmin(req, payload, this._responseManager.getDefaultResponseHandler(res));
-        });
-      });
-    });
-  }
-
   getCounts(req, res, next) {
     this._postHandler.getCounts(req, this._responseManager.getDefaultResponseHandler(res));
   }

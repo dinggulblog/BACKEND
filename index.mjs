@@ -7,7 +7,6 @@ import { join } from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import hpp from 'hpp';
-import csurf from 'csurf';
 import morgan from 'morgan';
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -47,12 +46,6 @@ if (process.env.NODE_ENV === 'production') {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
-app.use(csurf({ cookie: { secure: process.env.NODE_ENV === 'production' } }));
-app.use((req, res, next) => {
-  res.cookie('XSRF-TOKEN', req.csrfToken(), { secure: process.env.NODE_ENV === 'production' });
-  res.locals.csrf = req.csrfToken();
-  next();
-});
 
 // Middleware passport initialize
 app.use(authManager.providePassport().initialize());
@@ -63,7 +56,6 @@ app.use(history());
 
 // Static route
 app.use(express.static(join(__dirname, 'public')));
-app.use('/uploads', express.static(join(__dirname, 'uploads'))); // will be deprecated
 
 // Handling a non-existent route
 app.use((req, res, next) => {

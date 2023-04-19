@@ -33,7 +33,7 @@ export class PostHandler {
     try {
       const userId = payload ? new ObjectId(payload.userId) : null;
       const postId = new ObjectId(req.params.id);
-      
+
       const post = await PostModel.aggregate([
         { $setWindowFields: {
           partitionBy: { menu: '$menu', category: '$category' },
@@ -114,55 +114,6 @@ export class PostHandler {
 
       const maxCount = !skip && !searchText
         ? await PostModel.countDocuments(query[0].$match)
-        : null;
-
-      const posts = await PostModel.aggregate([
-        ...query,
-        { $skip: skip },
-        { $limit: limit },
-        { $lookup: {
-          from: 'users',
-          localField: 'author',
-          foreignField: '_id',
-          pipeline: [{ $project: { nickname: 1 } }],
-          as: 'author'
-        } },
-        { $unwind: '$author' },
-        { $lookup: {
-          from: 'comments',
-          localField: '_id',
-          foreignField: 'post',
-          as: 'comments'
-        } },
-        { $addFields: {
-          content: { $substrCP: ['$content', 0, 200] },
-          liked: { $in: [userId, '$likes'] },
-          commentCount: { $size: '$comments' }
-        } },
-        { $project: {
-          comments: 0,
-          images: 0,
-          likes: 0
-        } }
-      ]).exec();
-
-      callback.onSuccess({ posts, maxCount });
-    } catch (error) {
-      callback.onError(error);
-    }
-  }
-
-  async getPostsAsAdmin(req, payload, callback) {
-    try {
-      const userId = payload ? new ObjectId(payload.userId) : null;
-      const { skip, limit, searchText } = req.query;
-
-      const query = !searchText
-        ? await this.#getMatchQuery(req.query, { adminId: userId })
-        : this.#getSearchQuery(req.query, { adminId: userId });
-
-      const maxCount = !searchText
-        ? await PostModel.countDocuments(query[0].$match)
         : null; // will be updated when using mongo atlas 6.0 (current: 5.0)
 
       const posts = await PostModel.aggregate([
@@ -177,14 +128,6 @@ export class PostHandler {
           as: 'author'
         } },
         { $unwind: '$author' },
-        { $lookup: {
-          from: 'menus',
-          localField: 'menu',
-          foreignField: '_id',
-          pipeline: [{ $project: { main: 1, sub: 1 } }],
-          as: 'menu'
-        } },
-        { $unwind: { path: '$menu' } },
         { $lookup: {
           from: 'comments',
           localField: '_id',

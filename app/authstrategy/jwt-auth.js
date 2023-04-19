@@ -3,7 +3,6 @@ import { Strategy } from 'passport-strategy';
 
 import BaseAuthStrategy from './base-auth.js';
 import UnauthorizedError from '../error/unauthorized.js';
-import ServerError from '../error/server-error.js';
 import JwtError from '../error/jwt-error.js';
 
 class JwtAuthStrategy extends BaseAuthStrategy {
@@ -56,13 +55,9 @@ class JwtAuthStrategy extends BaseAuthStrategy {
   }
 
   async authenticate(req, callback) {
-    const ecPublicKey = await importSPKI(this._publicKey, this._jwtOptions.algorithms);
+    const ecPublicKey = await importSPKI(this._publicKey, this._jwtOptions.algorithms[0]);
     const refreshToken = this._extractToken('refreshToken', req);
     const accessToken = this._extractToken('accessToken', req);
-
-    if (!ecPublicKey) {
-      return callback.onFailure(new ServerError('서버 에러: JWT 인증에 사용할 공개키가 존재하지 않음'));
-    }
 
     if (!refreshToken) {
       return callback.onFailure(new JwtError('토큰이 존재하지 않습니다.'));

@@ -58,6 +58,7 @@ class AuthManager extends BaseAutoBindedClass {
     options.publicKey = this._provideJwtPublicKey();
     options.issuer = jwtOptions.issuer;
     options.audience = jwtOptions.audience;
+    options.algorithms = jwtOptions.algorithms;
     return options;
   }
 
@@ -93,11 +94,11 @@ class AuthManager extends BaseAutoBindedClass {
 
   async signToken(strategyName, payload) {
     const key = this.getSecretKeyForStrategy(strategyName);
-    const importedPrivateKey = await importPKCS8(key, 'EdDSA');
+    const importedPrivateKey = await importPKCS8(key, jwtOptions.algorithms[0]);
 
     switch (strategyName) {
       case 'jwt-auth':
-        return new JwtTokenModel(await new SignJWT(payload).setProtectedHeader({ alg: 'EdDSA' }).sign(importedPrivateKey));
+        return new JwtTokenModel(await new SignJWT(payload).setProtectedHeader({ alg: jwtOptions.algorithms[0] }).sign(importedPrivateKey));
       default:
         throw new TypeError('Cannot sign token for the ' + strategyName + ' strategy');
     }

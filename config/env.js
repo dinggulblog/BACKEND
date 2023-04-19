@@ -1,6 +1,8 @@
 import { config } from 'dotenv';
-import { join } from 'path';
+import { resolve, join } from 'path';
 import { exit } from 'process';
+
+resolve();
 
 // Set config variables in .env
 if (process.env.NODE_ENV === 'production') {

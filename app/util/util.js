@@ -1,5 +1,3 @@
-import { accessSync, unlinkSync, constants } from 'fs';
-import { join } from 'path';
 import { randomBytes } from 'crypto';
 
 /**
@@ -32,28 +30,10 @@ export const convertFlatToTree = (array = [], idFieldName, parentIdFieldName, ch
 };
 
 /**
- * Delete the files if an error occurs after the files are uploaded
- * @param {Object} fileObject requested file object
- * @returns undefined
+ * Generates an IP string with the host part obscured
+ * @param {String} ip
+ * @returns IP string
  */
-export const deleteMissingFiles = (fileObject) => {
-  const { file, files } = fileObject;
-
-  if (file) {
-    const filePath = join(__dirname, 'uploads', file.filename);
-    accessSync(filePath, constants.F_OK);
-    unlinkSync(filePath);
-  }
-
-  if (files && files.length) {
-    files.forEach(file => {
-      const filePath = join(__dirname, 'uploads', file.filename);
-      accessSync(filePath, constants.F_OK);
-      unlinkSync(filePath);
-    })
-  }
-};
-
 export const securedIPString = (ip = '') => {
   const IP = ip.split('.');
   return IP.shift() + '.' + IP.shift() + '.' + '***.***';
