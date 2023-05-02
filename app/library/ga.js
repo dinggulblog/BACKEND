@@ -1,7 +1,7 @@
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 import { readFileSync } from 'fs';
 
-const credentials = readFileSync(process.env.GA_CREDENTIALS_DIR, 'utf8');
+const credentials = readFileSync('config/secret/credentials-dinggul.json', 'utf8');
 
 const analyticsDataClient = new BetaAnalyticsDataClient(credentials);
 

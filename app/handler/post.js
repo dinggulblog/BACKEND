@@ -275,7 +275,6 @@ export class PostHandler {
       matchQuery._id = { $in: comments };
     }
 
-
     if (sort === 'like') {
       sortQuery.likeCount = -1;
     }
