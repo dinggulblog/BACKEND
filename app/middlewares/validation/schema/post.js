@@ -143,6 +143,9 @@ const POSTS_PAGINATION_SCHEMA = () => {
         }
       }
     },
+    'sort': {
+      optional: { options: { nullable: true } }
+    },
     'searchText': {
       optional: { options: { nullable: true } },
       isString: {

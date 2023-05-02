@@ -106,13 +106,13 @@ export class PostHandler {
   async getPosts(req, payload, callback) {
     try {
       const userId = payload ? new ObjectId(payload.userId) : null;
-      const { skip, limit, searchText } = req.query;
+      const { skip, limit, sort, searchText } = req.query;
 
       const query = !searchText
         ? await this.#getMatchQuery(req.query, { loginUserId: userId })
-        : this.#getSearchQuery(req.query, { loginUserId: userId });
+        : this.#getSearchQuery({ sort, searchText });
 
-      const maxCount = !skip && !searchText
+      const maxCount = !searchText && !skip
         ? await PostModel.countDocuments(query[0].$match)
         : null; // will be updated when using mongo atlas 6.0 (current: 5.0)
 
@@ -307,9 +307,7 @@ export class PostHandler {
     }];
   }
 
-  #getSearchQuery(queries, { loginUserId, adminId }) {
-    const { searchText, sort } = queries;
-
+  #getSearchQuery({ sort, searchText, loginUserId, adminId }) {
     if (!sort) {
       const textFilter = {
         compound: {
@@ -332,7 +330,7 @@ export class PostHandler {
           }],
           should: {
             near: {
-              origin: 1000000,
+              origin: 100000,
               path: 'postNum',
               pivot: 1,
               score: { boost: { value: 999 } }
