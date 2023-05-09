@@ -8,8 +8,8 @@ resolve();
 if (process.env.NODE_ENV === 'production') {
   config({ path: join(__dirname, '.env.production')});
 }
-else if (process.env.NODE_ENV === 'develop') {
-  config({ path: join(__dirname, '.env.develop')});
+else if (process.env.NODE_ENV === 'development') {
+  config({ path: join(__dirname, '.env')});
 }
 else {
   console.log('.env 파일을 찾을 수 없습니다. 서버를 종료합니다.');

@@ -4,7 +4,7 @@
   "watch": ["app", "config", "public"],
   "ext": "ts, js, mjs, json",
   "env": {
-    "NODE_ENV": "develop"
+    "NODE_ENV": "development"
   },
   "execMap": {
     "mjs": "node"

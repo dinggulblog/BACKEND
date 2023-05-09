@@ -16,7 +16,7 @@ class OpenAIHandler {
   #openai;
 
   constructor() {
-    this.#configuration = new Configuration({ organization: process.env.OPENAI_ORG_ID, apiKey: process.env.OPENAI_API_KEY });
+    this.#configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
     this.#openai = new OpenAIApi(this.#configuration);
     this._sessions = new Map();
   }
